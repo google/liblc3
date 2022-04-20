@@ -25,51 +25,108 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * Resample to 12.8 KHz (cf. 3.3.9.3-4) Template
- * sr              Samplerate source of the frame
- * hp50            State of the High-Pass 50 Hz filter
+ * Resample from 8 / 16 / 32 KHz to 12.8 KHz Template
+ * p               Resampling factor with 64 KHz (8, 4 or 2)
  * x               [-d..-1] Previous, [0..ns-1] Current samples
  * y, n            [0..n-1] Output `n` processed samples
  *
  * The number of previous samples `d` accessed on `x` is :
- *   d: { 10, 20, 30, 40, 60 } - 1 for samplerates from 8KHz to 48KHz
+ *   d: { 10, 20, 40 } - 1 for resampling factors 8, 4 and 2.
  */
-static inline void resample_12k8_template(const enum lc3_srate sr,
+static inline void resample_base_64k_12k8(const int p,
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
     /* --- Parameters  ---
-     * p: Resampling factor, from 4 to 24
-     * w: Half width of polyphase filter
-     *
      * bn, an: High-Pass Biquad coefficients,
      * with `bn` support of rescaling resampling factor.
      * Note that it's an High-Pass filter, so we have `b0 = b2`,
      * in the following steps we use `b0` as `b2`. */
 
-    const int p = 192 / LC3_SRATE_KHZ(sr);
-    const int w = 5 * LC3_SRATE_KHZ(sr) / 8;
-
-    const int b_scale = p >> (sr == LC3_SRATE_8K);
-    const float a1 = -1.965293373f, b1 = -1.965589417f * b_scale;
-    const float a2 =  0.965885461f, b2 =  0.982794708f * b_scale;
-
-    /* --- Resampling ---
-     * The value `15*8 * n` is divisible by all resampling factors `p`,
-     * integer and fractionnal position can be determined at compilation
-     * time while unrolling the loops by 8 samples.
-     * The biquad filter implementation chosen in the `Direct Form 2`. */
+    const int w = 40 / p;
 
     const float *h = lc3_ltpf_h12k8 + 119;
-    x -= w;
+    const float a1 = -1.965293373f, b1 = -1.965589417f * 3*LC3_MIN(p, 4);
+    const float a2 =  0.965885461f, b2 =  0.982794708f * 3*LC3_MIN(p, 4);
 
-    for (int i = 0; i < n; i += 8, x += 120/p)
-        for (int j = 0; j < 15*8; j += 15) {
-            float un, yn;
-            int e, f, k;
+    /* --- Resampling & filtering --- */
 
-            e = j / p, f = j % p;
-            for (un = 0, k = 1-w; k <= w; k++)
-                un += x[e+k] * h[k*p - f];
+    for (int i = 0; i < n; i += 8, x += w)
+        for (int j = 0; j < 40; j += 5) {
+
+            const float *hn = h - 3*(p*w + (j % p));
+            const float *xn = x -   (2*w - (j / p));
+            float yn, un = 0;
+
+            for (int k = 0; k < 2*w; k += 10) {
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+                un += *(++xn) * *(hn += (3*p));
+            }
+
+            yn = b2 * un + hp50->s1;
+            hp50->s1 = b1 * un - a1 * yn + hp50->s2;
+            hp50->s2 = b2 * un - a2 * yn;
+            *(y++) = yn;
+        }
+}
+
+/**
+ * Resample from 24 / 48 KHz to 12.8 KHz Template
+ * p               Resampling factor with 192 KHz (8 or 4)
+ * x               [-d..-1] Previous, [0..ns-1] Current samples
+ * y, n            [0..n-1] Output `n` processed samples
+ *
+ * The number of previous samples `d` accessed on `x` is :
+ *   d: { 30, 60 } - 1 for resampling factors 8 and 4.
+ */
+static inline void resample_base_192k_12k8(const int p,
+    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
+{
+    /* --- Parameters  ---
+     * bn, an: High-Pass Biquad coefficients,
+     * with `bn` support of rescaling resampling factor.
+     * Note that it's an High-Pass filter, so we have `b0 = b2`,
+     * in the following steps we use `b0` as `b2`. */
+
+    const int w = 120 / p;
+
+    const float *h = lc3_ltpf_h12k8 + 119;
+    const float a1 = -1.965293373f, b1 = -1.965589417f * p;
+    const float a2 =  0.965885461f, b2 =  0.982794708f * p;
+
+    /* --- Resampling & filtering --- */
+
+    for (int i = 0; i < n; i += 8, x += w)
+        for (int j = 0; j < 120; j += 15) {
+
+            const float *hn = h - (p*w + (j % p));
+            const float *xn = x - (2*w - (j / p));
+            float yn, un = 0;
+
+            for (int k = 0; k < 2*w; k += 15) {
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+                un += *(++xn) * *(hn += p);
+            }
 
             yn = b2 * un + hp50->s1;
             hp50->s1 = b1 * un - a1 * yn + hp50->s2;
@@ -85,31 +142,31 @@ static inline void resample_12k8_template(const enum lc3_srate sr,
 static void resample_8k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
-    resample_12k8_template(LC3_SRATE_8K, hp50, x, y, n);
+    resample_base_64k_12k8(8, hp50, x, y, n);
 }
 
 static void resample_16k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
-    resample_12k8_template(LC3_SRATE_16K, hp50, x, y, n);
+    resample_base_64k_12k8(4, hp50, x, y, n);
 }
 
 static void resample_24k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
-    resample_12k8_template(LC3_SRATE_24K, hp50, x, y, n);
+    resample_base_192k_12k8(8, hp50, x, y, n);
 }
 
 static void resample_32k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
-    resample_12k8_template(LC3_SRATE_32K, hp50, x, y, n);
+    resample_base_64k_12k8(2, hp50, x, y, n);
 }
 
 static void resample_48k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
 {
-    resample_12k8_template(LC3_SRATE_48K, hp50, x, y, n);
+    resample_base_192k_12k8(4, hp50, x, y, n);
 }
 
 static void (* const resample_12k8[])
