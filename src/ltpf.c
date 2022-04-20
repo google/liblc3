@@ -50,8 +50,8 @@ static inline void resample_12k8_template(const enum lc3_srate sr,
     const int w = 5 * LC3_SRATE_KHZ(sr) / 8;
 
     const int b_scale = p >> (sr == LC3_SRATE_8K);
-    const float a1 = -1.965293373, b1 = -1.965589417 * b_scale;
-    const float a2 =  0.965885461, b2 =  0.982794708 * b_scale;
+    const float a1 = -1.965293373f, b1 = -1.965589417f * b_scale;
+    const float a2 =  0.965885461f, b2 =  0.982794708f * b_scale;
 
     /* --- Resampling ---
      * The value `15*8 * n` is divisible by all resampling factors `p`,
@@ -291,7 +291,7 @@ static bool detect_pitch(
 
     correlate(x, x - r0, n, r, nr);
 
-    int t1 = argmax_weighted(r, nr, -.5/(nr-1), &rm1);
+    int t1 = argmax_weighted(r, nr, -.5f/(nr-1), &rm1);
     int t2 = k0 + argmax(r + k0, nk, &rm2);
 
     const float *x1 = x - (r0 + t1);
@@ -303,11 +303,11 @@ static bool detect_pitch(
     float nc2 = rm2 <= 0 ? 0 :
         rm2 / sqrtf(dot(x, x, n) * dot(x2, x2, n));
 
-    int t1sel = nc2 <= 0.85 * nc1;
+    int t1sel = nc2 <= 0.85f * nc1;
     ltpf->tc = (t1sel ? t1 : t2);
 
     *tc = r0 + ltpf->tc;
-    return (t1sel ? nc1 : nc2) > 0.6;
+    return (t1sel ? nc1 : nc2) > 0.6f;
 }
 
 /**
@@ -408,12 +408,12 @@ bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
         float nc_diff = nc - ltpf->nc[0];
 
         data->active = pitch_present &&
-            ((nc > 0.9) || (nc > 0.84 && pitch_diff < 8 && nc_diff > -0.1));
+            ((nc > 0.9f) || (nc > 0.84f && pitch_diff < 8 && nc_diff > -0.1f));
 
      } else {
          data->active = pitch_present &&
-            ( (dt == LC3_DT_10M || ltpf->nc[1] > 0.94) &&
-              (ltpf->nc[0] > 0.94 && nc > 0.94) );
+            ( (dt == LC3_DT_10M || ltpf->nc[1] > 0.94f) &&
+              (ltpf->nc[0] > 0.94f && nc > 0.94f) );
      }
 
      ltpf->active = data->active;

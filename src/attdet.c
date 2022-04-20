@@ -52,7 +52,7 @@ bool lc3_attdet_run(enum lc3_dt dt, enum lc3_srate sr,
 
             for (int j = 0; j < 40; j++, x += 2, xn2 = xn1, xn1 = xn) {
                 xn = x[0] + x[1];
-                xf = 0.375 * xn - 0.5 * xn1 + 0.125 * xn2;
+                xf = 0.375f * xn - 0.5f * xn1 + 0.125f * xn2;
                 e[i] += xf * xf;
             }
         }
@@ -64,7 +64,7 @@ bool lc3_attdet_run(enum lc3_dt dt, enum lc3_srate sr,
 
             for (int j = 0; j < 40; j++, x += 3, xn2 = xn1, xn1 = xn) {
                 xn = x[0] + x[1] + x[2];
-                xf = 0.375 * xn - 0.5 * xn1 + 0.125 * xn2;
+                xf = 0.375f * xn - 0.5f * xn1 + 0.125f * xn2;
                 e[i] += xf * xf;
             }
         }
@@ -78,10 +78,10 @@ bool lc3_attdet_run(enum lc3_dt dt, enum lc3_srate sr,
     float a[4];
 
     for (int i = 0; i < nblk; i++) {
-        a[i] = fmaxf(0.25 * attdet->an1, attdet->en1);
+        a[i] = fmaxf(0.25f * attdet->an1, attdet->en1);
         attdet->en1 = e[i], attdet->an1 = a[i];
 
-        if (e[i] > 8.5 * a[i])
+        if (e[i] > 8.5f * a[i])
             p_att = i + 1;
     }
 

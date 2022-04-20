@@ -269,47 +269,47 @@ static void compute_scale_factors(enum lc3_dt dt, enum lc3_srate sr,
     float e_sum = 0;
 
     for (int i = 0; i < LC3_NUM_BANDS-1; ) {
-        e[i] = (e0 * 0.25 + e1 * 0.5 + (e2 = e[i+1]) * 0.25) * ge[i];
+        e[i] = (e0 * 0.25f + e1 * 0.5f + (e2 = e[i+1]) * 0.25f) * ge[i];
         e_sum += e[i++];
 
-        e[i] = (e1 * 0.25 + e2 * 0.5 + (e0 = e[i+1]) * 0.25) * ge[i];
+        e[i] = (e1 * 0.25f + e2 * 0.5f + (e0 = e[i+1]) * 0.25f) * ge[i];
         e_sum += e[i++];
 
-        e[i] = (e2 * 0.25 + e0 * 0.5 + (e1 = e[i+1]) * 0.25) * ge[i];
+        e[i] = (e2 * 0.25f + e0 * 0.5f + (e1 = e[i+1]) * 0.25f) * ge[i];
         e_sum += e[i++];
     }
 
-    e[LC3_NUM_BANDS-1] = (e0 * 0.25 + e1 * 0.75) * ge[LC3_NUM_BANDS-1];
+    e[LC3_NUM_BANDS-1] = (e0 * 0.25f + e1 * 0.75f) * ge[LC3_NUM_BANDS-1];
     e_sum += e[LC3_NUM_BANDS-1];
 
-    float noise_floor = fmaxf(e_sum * (1e-4 / 64), 0x1p-32);
+    float noise_floor = fmaxf(e_sum * (1e-4f / 64), 0x1p-32f);
 
     for (int i = 0; i < LC3_NUM_BANDS; i++)
-        e[i] = log2f(fmaxf(e[i], noise_floor)) * 0.5;
+        e[i] = log2f(fmaxf(e[i], noise_floor)) * 0.5f;
 
     /* --- Grouping & scaling --- */
 
     float scf_sum;
 
-    scf[0] = (e[0] + e[4]) * 1./12 +
-             (e[0] + e[3]) * 2./12 +
-             (e[1] + e[2]) * 3./12  ;
+    scf[0] = (e[0] + e[4]) * 1.f/12 +
+             (e[0] + e[3]) * 2.f/12 +
+             (e[1] + e[2]) * 3.f/12  ;
     scf_sum = scf[0];
 
     for (int i = 1; i < 15; i++) {
-        scf[i] = (e[4*i-1] + e[4*i+4]) * 1./12 +
-                 (e[4*i  ] + e[4*i+3]) * 2./12 +
-                 (e[4*i+1] + e[4*i+2]) * 3./12  ;
+        scf[i] = (e[4*i-1] + e[4*i+4]) * 1.f/12 +
+                 (e[4*i  ] + e[4*i+3]) * 2.f/12 +
+                 (e[4*i+1] + e[4*i+2]) * 3.f/12  ;
         scf_sum += scf[i];
     }
 
-    scf[15] = (e[59] + e[63]) * 1./12 +
-              (e[60] + e[63]) * 2./12 +
-              (e[61] + e[62]) * 3./12  ;
+    scf[15] = (e[59] + e[63]) * 1.f/12 +
+              (e[60] + e[63]) * 2.f/12 +
+              (e[61] + e[62]) * 3.f/12  ;
     scf_sum += scf[15];
 
     for (int i = 0; i < 16; i++)
-        scf[i] = 0.85 * (scf[i] - scf_sum * 1./16);
+        scf[i] = 0.85f * (scf[i] - scf_sum * 1.f/16);
 
     /* --- Attack handling --- */
 
@@ -319,23 +319,23 @@ static void compute_scale_factors(enum lc3_dt dt, enum lc3_srate sr,
     float s0, s1 = scf[0], s2 = scf[1], s3 = scf[2], s4 = scf[3];
     float sn = s1 + s2;
 
-    scf[0] = (sn += s3) * 1./3;
-    scf[1] = (sn += s4) * 1./4;
+    scf[0] = (sn += s3) * 1.f/3;
+    scf[1] = (sn += s4) * 1.f/4;
     scf_sum = scf[0] + scf[1];
 
     for (int i = 2; i < 14; i++, sn -= s0) {
         s0 = s1, s1 = s2, s2 = s3, s3 = s4, s4 = scf[i+2];
-        scf[i] = (sn += s4) * 1./5;
+        scf[i] = (sn += s4) * 1.f/5;
         scf_sum += scf[i];
     }
 
-    scf[14] = (sn      ) * 1./4;
-    scf[15] = (sn -= s1) * 1./3;
+    scf[14] = (sn      ) * 1.f/4;
+    scf[15] = (sn -= s1) * 1.f/3;
     scf_sum += scf[14] + scf[15];
 
     for (int i = 0; i < 16; i++)
-        scf[i] = (dt == LC3_DT_7M5 ? 0.3 : 0.5) *
-                 (scf[i] - scf_sum * 1./16);
+        scf[i] = (dt == LC3_DT_7M5 ? 0.3f : 0.5f) *
+                 (scf[i] - scf_sum * 1.f/16);
 }
 
 /**
@@ -446,7 +446,7 @@ static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
         xm_sum += xm[i];
     }
 
-    float proj_factor = (6 - 1) / fmaxf(xm_sum, 1e-31);
+    float proj_factor = (6 - 1) / fmaxf(xm_sum, 1e-31f);
     float corr = 0, energy = 0;
     int npulses = 0;
 
@@ -684,19 +684,19 @@ static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     scf[0] = scf[1] = s1;
     for (int i = 0; i < 15; i++) {
         s0 = s1, s1 = inv ? -scf_q[i+1] : scf_q[i+1];
-        scf[4*i+2] = s0 + 0.125 * (s1 - s0);
-        scf[4*i+3] = s0 + 0.375 * (s1 - s0);
-        scf[4*i+4] = s0 + 0.625 * (s1 - s0);
-        scf[4*i+5] = s0 + 0.875 * (s1 - s0);
+        scf[4*i+2] = s0 + 0.125f * (s1 - s0);
+        scf[4*i+3] = s0 + 0.375f * (s1 - s0);
+        scf[4*i+4] = s0 + 0.625f * (s1 - s0);
+        scf[4*i+5] = s0 + 0.875f * (s1 - s0);
     }
-    scf[62] = s1 + 0.125 * (s1 - s0);
-    scf[63] = s1 + 0.375 * (s1 - s0);
+    scf[62] = s1 + 0.125f * (s1 - s0);
+    scf[63] = s1 + 0.375f * (s1 - s0);
 
     int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
     int n2 = LC3_NUM_BANDS - nb;
 
     for (int i2 = 0; i2 < n2; i2++)
-        scf[i2] = 0.5 * (scf[2*i2] + scf[2*i2+1]);
+        scf[i2] = 0.5f * (scf[2*i2] + scf[2*i2+1]);
 
     if (n2 > 0)
         memmove(scf + n2, scf + 2*n2, (nb - n2) * sizeof(float));

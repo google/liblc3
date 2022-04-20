@@ -97,7 +97,7 @@ static int estimate_gain(
             }
         }
 
-        if (v > nbits * 1.4 * 28./20)
+        if (v > nbits * 1.4f * 28.f/20)
             g_int += i;
     }
 
@@ -758,7 +758,7 @@ void lc3_spec_analyze(enum lc3_dt dt, enum lc3_srate sr,
 
     float nbits_off = spec->nbits_off + spec->nbits_spare;
     nbits_off = fminf(fmaxf(nbits_off, -40), 40);
-    nbits_off = 0.8 * spec->nbits_off + 0.2 * nbits_off;
+    nbits_off = 0.8f * spec->nbits_off + 0.2f * nbits_off;
 
     int g_off = resolve_gain_offset(sr, nbytes);
 

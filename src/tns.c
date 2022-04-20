@@ -150,7 +150,9 @@ static void compute_lpc_coeffs(enum lc3_dt dt, enum lc3_bandwidth bw,
  */
 static void lpc_weighting(float pred_gain, float *a)
 {
-    float gamma = 1. - (1. - 0.85) * (2. - pred_gain) / (2. - 1.5), g = 1;
+    float gamma = 1.f - (1.f - 0.85f) * (2.f - pred_gain) / (2.f - 1.5f);
+    float g = 1.f;
+
     for (int i = 1; i < 9; i++)
         a[i] *= (g *= gamma);
 }
@@ -354,10 +356,10 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
     for (int f = 0; f < data->nfilters; f++) {
 
         data->rc_order[f] = 0;
-        if (nn_flag || pred_gain[f] <= 1.5)
+        if (nn_flag || pred_gain[f] <= 1.5f)
             continue;
 
-        if (data->lpc_weighting && pred_gain[f] < 2)
+        if (data->lpc_weighting && pred_gain[f] < 2.f)
             lpc_weighting(pred_gain[f], a[f]);
 
         lpc_reflection(a[f], rc[f]);
