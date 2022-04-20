@@ -203,15 +203,16 @@ static void resample_6k4(const float *x, float *y, int n)
 
 /**
  * Return dot product of 2 vectors
- * a, b, n         The 2 vectors of size `n`
+ * a, b, n         The 2 vectors of size `n` (multiple of 16)
  * return          sum( a[i] * b[i] ), i = [0..n-1]
  */
 static inline float dot(const float *a, const float *b, int n)
 {
     float v = 0;
 
-    while (n--)
-        v += *(a++) * *(b++);
+    for (int i = 0; i < (n >> 4); i++)
+        for (int j = 0; j < 16; j++)
+            v += *(a++) * *(b++);
 
     return v;
 }
