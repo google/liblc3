@@ -1,0 +1,6 @@
+.*
+!.gitignore
+bin
+build
+test/build
+*__pycache__
