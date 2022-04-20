@@ -58,7 +58,7 @@
 /**
  * Return number of samples, delayed samples and
  * encoded spectrum coefficients within a frame
- * For decoding, add number of samples of 18 ms history
+ * For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
 #define LC3_NS(dt, sr) \
@@ -73,8 +73,8 @@
 #define LC3_MAX_NE \
     LC3_NE(LC3_DT_10M, LC3_SRATE_48K)
 
-#define LC3_NH(sr) \
-    (18 * LC3_SRATE_KHZ(sr))
+#define LC3_NR(dt, sr) \
+    ( ((3 - dt) + 1) * LC3_NS(dt, sr) )
 
 
 /**

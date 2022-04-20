@@ -96,12 +96,15 @@ void lc3_ltpf_get_data(lc3_bits_t *bits, lc3_ltpf_data_t *data);
  * nbytes          Size in bytes of the frame
  * ltpf            Context of synthesis
  * data            Bitstream data, NULL when pitch not present
- * x               [-d..-1] Previous, [0..ns-1] Current, filtered as output
+ * xr              Base address of ring buffer of decoded samples
+ * x               Samples to proceed in the ring buffer, filtered as output
  *
- * The number of previous samples `d` accessed on `x` is about 18 ms
+ * The size of the ring buffer is `nh + ns`.
+ * The filtering needs an history of at least 18 ms.
  */
 void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
-    lc3_ltpf_synthesis_t *ltpf, const lc3_ltpf_data_t *data, float *x);
+    lc3_ltpf_synthesis_t *ltpf, const lc3_ltpf_data_t *data,
+    const float *xr, float *x);
 
 
 #endif /* __LC3_LTPF_H */

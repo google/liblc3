@@ -26,7 +26,7 @@
 /**
  * Return number of samples, delayed samples and
  * encoded spectrum coefficients within a frame
- * For decoding, add number of samples of 18 ms history
+ * For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
 #define __LC3_NS(dt_us, sr_hz) \
@@ -36,8 +36,8 @@
     ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 \
                       :  5 * __LC3_NS(dt_us, sr_hz) /  8 )
 
-#define __LC3_NH(sr_hz) \
-    ( (18 * sr_hz) / 1000 )
+#define __LC3_NR(dt_us, sr_hz) \
+    ( ((3 - ((dt_us) >= 10000)) + 1) * __LC3_NS(dt_us, sr_hz) )
 
 
 /**
@@ -123,7 +123,7 @@ struct lc3_encoder {
 typedef struct lc3_ltpf_synthesis {
     bool active;
     int pitch;
-    float c[12][2], x[12];
+    float c[2*12], x[12];
 } lc3_ltpf_synthesis_t;
 
 typedef struct lc3_plc_state {
@@ -139,12 +139,12 @@ struct lc3_decoder {
     lc3_ltpf_synthesis_t ltpf;
     lc3_plc_state_t plc;
 
-    float *xs, *xd, *xg, s[0];
+    float *xr, *xs, *xd, *xg, s[0];
 };
 
 #define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( __LC3_NH(sr_hz) +  __LC3_NS(dt_us, sr_hz) + \
-      __LC3_ND(dt_us, sr_hz) + __LC3_NS(dt_us, sr_hz) )
+    ( __LC3_NR(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) + \
+      __LC3_NS(dt_us, sr_hz) )
 
 #define LC3_DECODER_MEM_T(dt_us, sr_hz) \
     struct { \

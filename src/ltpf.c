@@ -431,95 +431,109 @@ bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
 
 /**
  * Synthesis filter template
- * ym              [-w/2..0] Previous, [0..w-1] Current pitch samples
- * xm              w-1 previous input samples
+ * xr, nr          Ring buffer of filtered samples
+ * lag             Lag parameter in the ring buffer
+ * x0              w-1 previous input samples
  * x, n            Current samples as input, filtered as output
- * c, w            Coefficients by pair (num, den), and count of pairs
+ * c, w            Coefficients `den` then `num`, and width of filter
  * fade            Fading mode of filter  -1: Out  1: In  0: None
  */
-static inline void synthesize_template(const float *ym, const float *xm,
-    float *x, int n, const float (*c)[2], const int w, int fade)
+static inline void synthesize_template(const float *xr, int nr, int lag,
+    const float *x0, float *x, int n, const float *c, const int w, int fade)
 {
     float g = (float)(fade <= 0);
     float g_incr = (float)((fade > 0) - (fade < 0)) / n;
     float u[w];
-    int i;
-
-    ym -= (w >> 1);
 
     /* --- Load previous samples --- */
 
-    for (i = 1-w; i < 0; i++) {
-        float xi = *(xm++), yi = *(ym++);
+    lag += (w >> 1);
 
-        u[i + w-1] = 0;
-        for (int k = w-1; k+i >= 0; k--)
-            u[i+k] += xi * c[k][0] - yi * c[k][1];
+    const float *y = x - xr < lag ? x + (nr - lag) : x - lag;
+    const float *y_end = xr + nr - 1;
+
+    for (int j = 0; j < w-1; j++) {
+
+        u[j] = 0;
+
+        float yi = *y, xi = *(x0++);
+        y = y < y_end ? y + 1 : xr;
+
+        for (int k = 0; k <= j; k++)
+            u[j-k] -= yi * c[k];
+
+        for (int k = 0; k <= j; k++)
+            u[j-k] += xi * c[w+k];
     }
 
     u[w-1] = 0;
 
-    /* --- Process --- */
+    /* --- Process by filter length --- */
 
-    for (; i < n; i += w) {
-
+    for (int i = 0; i < n; i += w)
         for (int j = 0; j < w; j++, g += g_incr) {
-            float xi = *x, yi = *(ym++);
 
-            for (int k = w-1; k >= 0; k--)
-                u[(j+k)%w] += xi * c[k][0] - yi * c[k][1];
+            float yi = *y, xi = *x;
+            y = y < y_end ? y + 1 : xr;
+
+            for (int k = 0; k < w; k++)
+                u[(j+(w-1)-k)%w] -= yi * c[k];
+
+            for (int k = 0; k < w; k++)
+                u[(j+(w-1)-k)%w] += xi * c[w+k];
 
             *(x++) = xi - g * u[j];
             u[j] = 0;
         }
-    }
 }
 
 /**
  * Synthesis filter for each samplerates (width of filter)
  */
 
-static void synthesize_4(const float *ym, const float *xm,
-    float *x, int n, const float (*c)[2], int fade)
+static void nsynthesize_4(const float *xr, int nr, int lag,
+    const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(ym, xm, x, n, c, 4, fade);
+    synthesize_template(xr, nr, lag, x0, x, n, c, 4, fade);
 }
 
-static void synthesize_6(const float *ym, const float *xm,
-    float *x, int n, const float (*c)[2], int fade)
+static void nsynthesize_6(const float *xr, int nr, int lag,
+    const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(ym, xm, x, n, c, 6, fade);
+    synthesize_template(xr, nr, lag, x0, x, n, c, 6, fade);
 }
 
-static void synthesize_8(const float *ym, const float *xm,
-    float *x, int n, const float (*c)[2], int fade)
+static void nsynthesize_8(const float *xr, int nr, int lag,
+    const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(ym, xm, x, n, c, 8, fade);
+    synthesize_template(xr, nr, lag, x0, x, n, c, 8, fade);
 }
 
-static void synthesize_12(const float *ym, const float *xm,
-    float *x, int n, const float (*c)[2], int fade)
+static void nsynthesize_12(const float *xr, int nr, int lag,
+    const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(ym, xm, x, n, c, 12, fade);
+    synthesize_template(xr, nr, lag, x0, x, n, c, 12, fade);
 }
 
-static void (* const synthesize[])(
-    const float *, const float *, float *, int, const float (*)[2], int) =
+static void (* const synthesize[])(const float *, int, int,
+    const float *, float *, int, const float *, int) =
 {
-    [LC3_SRATE_8K ] = synthesize_4,
-    [LC3_SRATE_16K] = synthesize_4,
-    [LC3_SRATE_24K] = synthesize_6,
-    [LC3_SRATE_32K] = synthesize_8,
-    [LC3_SRATE_48K] = synthesize_12,
+    [LC3_SRATE_8K ] = nsynthesize_4,
+    [LC3_SRATE_16K] = nsynthesize_4,
+    [LC3_SRATE_24K] = nsynthesize_6,
+    [LC3_SRATE_32K] = nsynthesize_8,
+    [LC3_SRATE_48K] = nsynthesize_12,
 };
+
 
 /**
  * LTPF Synthesis
  */
-void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr,
-    int nbytes, struct lc3_ltpf_synthesis *ltpf,
-    const struct lc3_ltpf_data *data, float *x)
+void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
+    lc3_ltpf_synthesis_t *ltpf, const lc3_ltpf_data_t *data,
+    const float *xr, float *x)
 {
+    int nr = LC3_NR(dt, sr);
     int dt_us = LC3_DT_US(dt);
 
     /* --- Filter parameters --- */
@@ -527,8 +541,8 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr,
     int p_idx = data ? data->pitch_index : 0;
     int pitch =
         p_idx >= 440 ? (((p_idx     ) - 283) << 2)  :
-        p_idx >= 380 ? (((p_idx >> 1) -  63) << 2) + (((p_idx  & 1)) << 1) :
-                       (((p_idx >> 2) +  32) << 2) + (((p_idx  & 3)) << 0)  ;
+        p_idx >= 380 ? (((p_idx >> 1) -  63) << 2) + (((p_idx & 1)) << 1) :
+                       (((p_idx >> 2) +  32) << 2) + (((p_idx & 3)) << 0)  ;
 
     pitch = (pitch * LC3_SRATE_KHZ(sr) * 10 + 64) / 128;
 
@@ -537,47 +551,47 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr,
     bool active = data && data->active && g_idx < 4;
 
     int w = LC3_MAX(4, LC3_SRATE_KHZ(sr) / 4);
-    float c[w][2];
+    float c[2*w];
 
     for (int i = 0; i < w; i++) {
         float g = active ? 0.4f - 0.05f * g_idx : 0;
-
-        c[i][0] = active ? 0.85f * g * lc3_ltpf_cnum[sr][g_idx][i] : 0;
-        c[i][1] = active ? g * lc3_ltpf_cden[sr][pitch & 3][i] : 0;
+        c[  i] = g * lc3_ltpf_cden[sr][pitch & 3][(w-1)-i];
+        c[w+i] = 0.85f * g * lc3_ltpf_cnum[sr][g_idx][(w-1)-i];
     }
 
     /* --- Transition handling --- */
 
     int ns = LC3_NS(dt, sr);
-    int nt = ns / (4 - (dt == LC3_DT_7M5));
-    float xm[12];
+    int nt = ns / (3 + dt);
+    float x0[w];
 
     if (active)
-        memcpy(xm, x + nt-(w-1), (w-1) * sizeof(float));
+        memcpy(x0, x + nt-(w-1), (w-1) * sizeof(float));
 
     if (!ltpf->active && active)
-        synthesize[sr](x - pitch/4, ltpf->x, x, nt, c, 1);
+        synthesize[sr](xr, nr, pitch/4, ltpf->x, x, nt, c, 1);
     else if (ltpf->active && !active)
-        synthesize[sr](x - ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xr, nr, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
     else if (ltpf->active && active && ltpf->pitch == pitch)
-        synthesize[sr](x - pitch/4, ltpf->x, x, nt, c, 0);
+        synthesize[sr](xr, nr, pitch/4, ltpf->x, x, nt, c, 0);
     else if (ltpf->active && active) {
-        synthesize[sr](x - ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
-        synthesize[sr](x - pitch/4, x - (w-1), x, nt, c, 1);
+        synthesize[sr](xr, nr, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xr, nr, pitch/4,
+            (x <= xr ? x + nr : x) - (w-1), x, nt, c, 1);
     }
 
     /* --- Remainder --- */
 
-    memcpy(ltpf->x, x + ns-(w-1), (w-1) * sizeof(float));
+    memcpy(ltpf->x, x + ns - (w-1), (w-1) * sizeof(float));
 
     if (active)
-        synthesize[sr](x - pitch/4 + nt, xm, x + nt, ns-nt, c, 0);
+        synthesize[sr](xr, nr, pitch/4, x0, x + nt, ns-nt, c, 0);
 
     /* --- Update state --- */
 
     ltpf->active = active;
     ltpf->pitch = pitch;
-    memcpy(ltpf->c, c, w * sizeof(ltpf->c[0]));
+    memcpy(ltpf->c, c, 2*w * sizeof(*ltpf->c));
 }
 
 
