@@ -285,7 +285,7 @@ static void compute_scale_factors(enum lc3_dt dt, enum lc3_srate sr,
     float noise_floor = fmaxf(e_sum * (1e-4f / 64), 0x1p-32f);
 
     for (int i = 0; i < LC3_NUM_BANDS; i++)
-        e[i] = log2f(fmaxf(e[i], noise_floor)) * 0.5f;
+        e[i] = fast_log2f(fmaxf(e[i], noise_floor)) * 0.5f;
 
     /* --- Grouping & scaling --- */
 
@@ -706,7 +706,7 @@ static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     const int *lim = lc3_band_lim[dt][sr];
 
     for (int i = 0, ib = 0; ib < nb; ib++) {
-        float g_sns = powf(2, -scf[ib]);
+        float g_sns = fast_exp2f(-scf[ib]);
 
         for ( ; i < lim[ib+1]; i++)
             y[i] = x[i] * g_sns;

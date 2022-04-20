@@ -69,7 +69,7 @@ static int estimate_gain(
         x_max = fmaxf(x_max, x3);
 
         float s2 = x0*x0 + x1*x1 + x2*x2 + x3*x3;
-        e[i] = 28.f/20 * 10 * (s2 > 0 ? log10f(s2) : -10);
+        e[i] = 28.f/20 * 10 * (s2 > 0 ? fast_log10f(s2) : -10);
     }
 
     /* --- Determine gain index --- */

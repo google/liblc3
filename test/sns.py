@@ -477,7 +477,7 @@ def check_analysis(rng, dt, sr):
                 ok = ok and data_c[k] == data[k]
 
             ok = ok and lc3.sns_get_nbits() == analysis.get_nbits()
-            ok = ok and np.amax(np.abs(y - y_c)) < 1e-2
+            ok = ok and np.amax(np.abs(y - y_c)) < 1e-1
 
     return ok
 
@@ -518,7 +518,7 @@ def check_analysis_appendix_c(dt):
     for i in range(len(C.E_B[dt])):
 
         scf = lc3.sns_compute_scale_factors(dt, sr, C.E_B[dt][i], False)
-        ok = ok and np.amax(np.abs(scf - C.SCF[dt][i])) < 1e-5
+        ok = ok and np.amax(np.abs(scf - C.SCF[dt][i])) < 1e-4
 
         (lf, hf) = lc3.sns_resolve_codebooks(scf)
         ok = ok and lf == C.IND_LF[dt][i] and hf == C.IND_HF[dt][i]
@@ -535,7 +535,7 @@ def check_analysis_appendix_c(dt):
         ok = ok and np.amax(np.abs(scf_q - C.SCF_Q[dt][i])) < 1e-5
 
         x = lc3.sns_spectral_shaping(dt, sr, C.SCF_Q[dt][i], False, C.X[dt][i])
-        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-6
+        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-5
 
         (x, data) = lc3.sns_analyze(dt, sr, C.E_B[dt][i], False, C.X[dt][i])
         ok = ok and data['lfcb'] == C.IND_LF[dt][i]
@@ -549,7 +549,7 @@ def check_analysis_appendix_c(dt):
             data['idx_b'] == C.IDX_B[dt][i])
         ok = ok and (C.LS_IND_B[dt][i] is None or
             data['ls_b'] == C.LS_IND_B[dt][i])
-        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-6
+        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-5
 
     return ok
 
