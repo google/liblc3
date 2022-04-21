@@ -646,12 +646,12 @@ static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     for (i = 6*(3 + dt) - w; i < LC3_MIN(nq, bw_stop); i++) {
         z = xq[i] ? 0 : z + 1;
         if (z > 2*w)
-            sum += fabs(x[i - w]), n++;
+            sum += fabsf(x[i - w]), n++;
     }
 
     for ( ; i < bw_stop + w; i++)
         if (++z > 2*w)
-            sum += fabs(x[i - w]), n++;
+            sum += fabsf(x[i - w]), n++;
 
     int nf = n ? 8 - (int)((16 * sum) / n + 0.5f) : 0;
 
