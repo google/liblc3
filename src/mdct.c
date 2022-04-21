@@ -24,12 +24,11 @@
  * -------------------------------------------------------------------------- */
 
 /**
- * FFT 5 Points template
- * s               -1: Forward  1: Inverse
+ * FFT 5 Points
  * x, y            Input and output coefficients, of size 5xn
  * n               Number of interleaved transform to perform
  */
-static inline void xfft_5(const float s,
+static inline void fft_5(
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
     static const float cos1 =  0.3090169944;  /* cos(-2Pi 1/5) */
@@ -53,41 +52,40 @@ static inline void xfft_5(const float s,
         y[0].re = x[0].re + s14.re + s23.re;
         y[0].im = x[0].im + s14.im + s23.im;
 
-        y[1].re = x[0].re + s14.re * cos1 + s * d14.im * sin1
-                          + s23.re * cos2 + s * d23.im * sin2;
+        y[1].re = x[0].re + s14.re * cos1 - d14.im * sin1
+                          + s23.re * cos2 - d23.im * sin2;
 
-        y[1].im = x[0].im + s14.im * cos1 - s * d14.re * sin1
-                          + s23.im * cos2 - s * d23.re * sin2;
+        y[1].im = x[0].im + s14.im * cos1 + d14.re * sin1
+                          + s23.im * cos2 + d23.re * sin2;
 
-        y[2].re = x[0].re + s14.re * cos2 + s * d14.im * sin2
-                          + s23.re * cos1 - s * d23.im * sin1;
+        y[2].re = x[0].re + s14.re * cos2 - d14.im * sin2
+                          + s23.re * cos1 + d23.im * sin1;
 
-        y[2].im = x[0].im + s14.im * cos2 - s * d14.re * sin2
-                          + s23.im * cos1 + s * d23.re * sin1;
+        y[2].im = x[0].im + s14.im * cos2 + d14.re * sin2
+                          + s23.im * cos1 - d23.re * sin1;
 
-        y[3].re = x[0].re + s14.re * cos2 - s * d14.im * sin2
-                          + s23.re * cos1 + s * d23.im * sin1;
+        y[3].re = x[0].re + s14.re * cos2 + d14.im * sin2
+                          + s23.re * cos1 - d23.im * sin1;
 
-        y[3].im = x[0].im + s14.im * cos2 + s * d14.re * sin2
-                          + s23.im * cos1 - s * d23.re * sin1;
+        y[3].im = x[0].im + s14.im * cos2 - d14.re * sin2
+                          + s23.im * cos1 + d23.re * sin1;
 
-        y[4].re = x[0].re + s14.re * cos1 - s * d14.im * sin1
-                          + s23.re * cos2 - s * d23.im * sin2;
+        y[4].re = x[0].re + s14.re * cos1 + d14.im * sin1
+                          + s23.re * cos2 + d23.im * sin2;
 
-        y[4].im = x[0].im + s14.im * cos1 + s * d14.re * sin1
-                          + s23.im * cos2 + s * d23.re * sin2;
+        y[4].im = x[0].im + s14.im * cos1 - d14.re * sin1
+                          + s23.im * cos2 - d23.re * sin2;
     }
 }
 
 /**
- * FFT Butterfly 3 Points template
- * s               -1: Forward  1: Inverse
+ * FFT Butterfly 3 Points
  * x, y            Input and output coefficients
  * twiddles        Twiddles factors, determine size of transform
  * n               Number of interleaved transforms
  */
-static inline void xfft_bf3(
-    const float s, const struct lc3_fft_bf3_twiddles *twiddles,
+static inline void fft_bf3(
+    const struct lc3_fft_bf3_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
     int n3 = twiddles->n3;
@@ -101,36 +99,35 @@ static inline void xfft_bf3(
 
         for (int j = 0; j < n3; j++, x0++, x1++, x2++) {
 
-            y0[j].re = x0->re + x1->re * w0[j][0].re + s * x1->im * w0[j][0].im
-                              + x2->re * w0[j][1].re + s * x2->im * w0[j][1].im;
+            y0[j].re = x0->re + x1->re * w0[j][0].re - x1->im * w0[j][0].im
+                              + x2->re * w0[j][1].re - x2->im * w0[j][1].im;
 
-            y0[j].im = x0->im + x1->im * w0[j][0].re - s * x1->re * w0[j][0].im
-                              + x2->im * w0[j][1].re - s * x2->re * w0[j][1].im;
+            y0[j].im = x0->im + x1->im * w0[j][0].re + x1->re * w0[j][0].im
+                              + x2->im * w0[j][1].re + x2->re * w0[j][1].im;
 
-            y1[j].re = x0->re + x1->re * w1[j][0].re + s * x1->im * w1[j][0].im
-                              + x2->re * w1[j][1].re + s * x2->im * w1[j][1].im;
+            y1[j].re = x0->re + x1->re * w1[j][0].re - x1->im * w1[j][0].im
+                              + x2->re * w1[j][1].re - x2->im * w1[j][1].im;
 
-            y1[j].im = x0->im + x1->im * w1[j][0].re - s * x1->re * w1[j][0].im
-                              + x2->im * w1[j][1].re - s * x2->re * w1[j][1].im;
+            y1[j].im = x0->im + x1->im * w1[j][0].re + x1->re * w1[j][0].im
+                              + x2->im * w1[j][1].re + x2->re * w1[j][1].im;
 
-            y2[j].re = x0->re + x1->re * w2[j][0].re + s * x1->im * w2[j][0].im
-                              + x2->re * w2[j][1].re + s * x2->im * w2[j][1].im;
+            y2[j].re = x0->re + x1->re * w2[j][0].re - x1->im * w2[j][0].im
+                              + x2->re * w2[j][1].re - x2->im * w2[j][1].im;
 
-            y2[j].im = x0->im + x1->im * w2[j][0].re - s * x1->re * w2[j][0].im
-                              + x2->im * w2[j][1].re - s * x2->re * w2[j][1].im;
+            y2[j].im = x0->im + x1->im * w2[j][0].re + x1->re * w2[j][0].im
+                              + x2->im * w2[j][1].re + x2->re * w2[j][1].im;
         }
     }
 }
 
 /**
- * FFT Butterfly 2 Points template
- * s               -1: Forward  1: Inverse
+ * FFT Butterfly 2 Points
  * twiddles        Twiddles factors, determine size of transform
  * x, y            Input and output coefficients
  * n               Number of interleaved transforms
  */
-static inline void xfft_bf2(
-    const float s, const struct lc3_fft_bf2_twiddles *twiddles,
+static inline void fft_bf2(
+    const struct lc3_fft_bf2_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
     int n2 = twiddles->n2;
@@ -143,94 +140,24 @@ static inline void xfft_bf2(
 
         for (int j = 0; j < n2; j++, x0++, x1++) {
 
-            y0[j].re = x0->re + x1->re * w[j].re + s * x1->im * w[j].im;
-            y0[j].im = x0->im + x1->im * w[j].re - s * x1->re * w[j].im;
+            y0[j].re = x0->re + x1->re * w[j].re - x1->im * w[j].im;
+            y0[j].im = x0->im + x1->im * w[j].re + x1->re * w[j].im;
 
-            y1[j].re = x0->re - x1->re * w[j].re - s * x1->im * w[j].im;
-            y1[j].im = x0->im - x1->im * w[j].re + s * x1->re * w[j].im;
+            y1[j].re = x0->re - x1->re * w[j].re + x1->im * w[j].im;
+            y1[j].im = x0->im - x1->im * w[j].re - x1->re * w[j].im;
         }
     }
 }
 
 /**
- * Forward FFT 5 Points
- * x, y            Input and output coefficients, of size 5xn
- * n               Number of interleaved transform to perform
- */
-static void ffft_5(const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_5(-1, x, y, n);
-}
-
-/**
- * Inverse FFT 5 Points
- * x, y            Input and output coefficients, of size 5xn
- * n               Number of interleaved transform to perform
- */
-static void ifft_5(const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_5(1, x, y, n);
-}
-
-/**
- * Forward FFT Butterfly 3 Points
- * twiddles        Twiddles factors, determine size of transform
- * x, y            Input and output coefficients
- * n               Number of interleaved transforms
- */
-static void ffft_bf3(const struct lc3_fft_bf3_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_bf3(-1, twiddles, x, y, n);
-}
-
-/**
- * Inverse FFT Butterfly 3 Points
- * twiddles        Twiddles factors, determine size of transform
- * x, y            Input and output coefficients
- * n               Number of interleaved transforms
- */
-static void ifft_bf3(const struct lc3_fft_bf3_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_bf3(1, twiddles, x, y, n);
-}
-
-/**
- * Forward FFT Butterfly 2 Points
- * twiddles        Twiddles factors, determine size of transform
- * x, y            Input and output coefficients
- * n               Number of interleaved transforms
- */
-static void ffft_bf2(const struct lc3_fft_bf2_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_bf2(-1, twiddles, x, y, n);
-}
-
-/**
- * InverseIFFT Butterfly 2 Points
- * twiddles        Twiddles factors, determine size of transform
- * x, y            Input and output coefficients
- * n               Number of interleaved transforms
- */
-static void ifft_bf2(const struct lc3_fft_bf2_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
-{
-    xfft_bf2(1, twiddles, x, y, n);
-}
-
-/**
  * Perform FFT
- * inverse         True on inverse transform else forward
  * x, y0, y1       Input, and 2 scratch buffers of size `n`
  * n               Number of points 30, 40, 60, 80, 90, 120, 160, 180, 240
  * return          The buffer `y0` or `y1` that hold the result
  *
  * Input `x` can be the same as the `y0` second scratch buffer
  */
-static struct lc3_complex *fft(
-    bool inverse, const struct lc3_complex *x, int n,
+static struct lc3_complex *fft(const struct lc3_complex *x, int n,
     struct lc3_complex *y0, struct lc3_complex *y1)
 {
     struct lc3_complex *y[2] = { y1, y0 };
@@ -247,15 +174,13 @@ static struct lc3_complex *fft(
      * Note that the expression `n & (n-1) == 0` is equivalent
      * to the check that `n` is a power of 2. */
 
-    (inverse ? ifft_5 : ffft_5)(x, y[is], n /= 5);
+    fft_5(x, y[is], n /= 5);
 
     for (i3 = 0; n & (n-1); i3++, is ^= 1)
-        (inverse ? ifft_bf3 : ffft_bf3)
-            (lc3_fft_twiddles_bf3[i3], y[is], y[is ^ 1], n /= 3);
+        fft_bf3(lc3_fft_twiddles_bf3[i3], y[is], y[is ^ 1], n /= 3);
 
     for (i2 = 0; n > 1; i2++, is ^= 1)
-        (inverse ? ifft_bf2 : ffft_bf2)
-            (lc3_fft_twiddles_bf2[i2][i3], y[is], y[is ^ 1], n >>= 1);
+        fft_bf2(lc3_fft_twiddles_bf2[i2][i3], y[is], y[is ^ 1], n >>= 1);
 
     return y[is];
 }
@@ -364,7 +289,9 @@ static void mdct_post_fft(const struct lc3_mdct_rot_def *def,
  * def             Size and twiddles factors
  * x, y            Input and output coefficients
  *
- * `x` and y` can be the same buffer
+ * `x` and `y` can be the same buffer
+ * The real and imaginary parts of `y` are swapped,
+ * to operate on FFT instead of IFFT
  */
 static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
     const float *x, struct lc3_complex *y)
@@ -381,11 +308,11 @@ static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
         float v0 = *(x0++), v1 = *(--x1);
         struct lc3_complex uw = *(w0++), vw = *(--w1);
 
-        (y0  )->re = - u1 * uw.re + u0 * uw.im;
-        (y0++)->im = - u0 * uw.re - u1 * uw.im;
+        (y0  )->re = - u0 * uw.re - u1 * uw.im;
+        (y0++)->im = - u1 * uw.re + u0 * uw.im;
 
-        (--y1)->re = - v0 * vw.re + v1 * vw.im;
-        (  y1)->im = - v1 * vw.re - v0 * vw.im;
+        (--y1)->re = - v1 * vw.re - v0 * vw.im;
+        (  y1)->im = - v0 * vw.re + v1 * vw.im;
     }
 }
 
@@ -396,6 +323,8 @@ static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
  * scale           Scale on output coefficients
  *
  * `x` and y` can be the same buffer
+ * The real and imaginary parts of `x` are swapped,
+ * to operate on FFT instead of IFFT
  */
 static void imdct_post_fft(const struct lc3_mdct_rot_def *def,
     const struct lc3_complex *x, float *y, float scale)
@@ -411,11 +340,11 @@ static void imdct_post_fft(const struct lc3_mdct_rot_def *def,
         struct lc3_complex uz = *(x0++), vz = *(--x1);
         struct lc3_complex uw = *(w0++), vw = *(--w1);
 
-        *(y0++) = (uz.im * uw.im - uz.re * uw.re) * scale;
-        *(--y1) = (uz.im * uw.re + uz.re * uw.im) * scale;
+        *(y0++) = (uz.re * uw.im - uz.im * uw.re) * scale;
+        *(--y1) = (uz.re * uw.re + uz.im * uw.im) * scale;
 
-        *(--y1) = (vz.im * vw.im - vz.re * vw.re) * scale;
-        *(y0++) = (vz.im * vw.re + vz.re * vw.im) * scale;
+        *(--y1) = (vz.re * vw.im - vz.im * vw.re) * scale;
+        *(y0++) = (vz.re * vw.re + vz.im * vw.im) * scale;
     }
 }
 
@@ -476,7 +405,7 @@ void lc3_mdct_forward(enum lc3_dt dt, enum lc3_srate sr,
     mdct_window(dt, sr, x, u.f);
 
     mdct_pre_fft(rot, u.f, u.z);
-    u.z = fft(false, u.z, ns/2, u.z, z);
+    u.z = fft(u.z, ns/2, u.z, z);
     mdct_post_fft(rot, u.z, y, sqrtf( (2.f*nf) / (ns*ns) ));
 }
 
@@ -495,7 +424,7 @@ void lc3_mdct_inverse(enum lc3_dt dt, enum lc3_srate sr,
     union { float *f; struct lc3_complex *z; } u = { .z = buffer };
 
     imdct_pre_fft(rot, x, z);
-    z = fft(true, z, ns/2, z, u.z);
+    z = fft(z, ns/2, z, u.z);
     imdct_post_fft(rot, z, u.f, sqrtf(2.f / nf));
 
     imdct_window(dt, sr, u.f, d, y);
