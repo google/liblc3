@@ -614,7 +614,7 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     for (int i = 0; i < w; i++) {
         float g = active ? 0.4f - 0.05f * g_idx : 0;
         c[  i] = g * lc3_ltpf_cden[sr][pitch & 3][(w-1)-i];
-        c[w+i] = 0.85f * g * lc3_ltpf_cnum[sr][g_idx][(w-1)-i];
+        c[w+i] = 0.85f * g * lc3_ltpf_cnum[sr][LC3_MIN(g_idx, 3)][(w-1)-i];
     }
 
     /* --- Transition handling --- */
