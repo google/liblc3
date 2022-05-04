@@ -366,8 +366,8 @@ static void store_s16(
     int ns = LC3_NS(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
-        int s = *xs >= 0 ? (int)(*xs + 0.5f) : (int)(*xs - 0.5f);
-        *pcm = LC3_CLIP(s, INT16_MIN, INT16_MAX);
+        int32_t s = *xs >= 0 ? (int)(*xs + 0.5f) : (int)(*xs - 0.5f);
+        *pcm = LC3_SAT16(s);
     }
 }
 
@@ -380,8 +380,6 @@ static void store_s24(
     struct lc3_decoder *decoder, void *_pcm, int stride)
 {
     int32_t *pcm = _pcm;
-    const int32_t int24_max =  (1 << 23) - 1;
-    const int32_t int24_min = -(1 << 23);
 
     enum lc3_dt dt = decoder->dt;
     enum lc3_srate sr = decoder->sr_pcm;
@@ -392,7 +390,7 @@ static void store_s24(
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
         int32_t s = *xs >= 0 ? (int32_t)(ldexpf(*xs, 8) + 0.5f)
                              : (int32_t)(ldexpf(*xs, 8) - 0.5f);
-        *pcm = LC3_CLIP(s, int24_min, int24_max);
+        *pcm = LC3_SAT24(s);
     }
 }
 
