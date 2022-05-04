@@ -75,7 +75,7 @@ enum lc3_srate {
  */
 
 typedef struct lc3_attdet_analysis {
-    float en1, an1;
+    int32_t en1, an1;
     int p_att;
 } lc3_attdet_analysis_t;
 

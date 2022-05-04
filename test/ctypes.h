@@ -201,10 +201,10 @@ static PyObject *to_attdet_analysis(
     CTYPES_CHECK("attdet", obj && PyDict_Check(obj));
 
     CTYPES_CHECK("attdet.en1", to_scalar(
-        PyDict_GetItemString(obj, "en1"), NPY_FLOAT, &attdet->en1));
+        PyDict_GetItemString(obj, "en1"), NPY_INT32, &attdet->en1));
 
     CTYPES_CHECK("attdet.an1", to_scalar(
-        PyDict_GetItemString(obj, "an1"), NPY_FLOAT, &attdet->an1));
+        PyDict_GetItemString(obj, "an1"), NPY_INT32, &attdet->an1));
 
     CTYPES_CHECK("attdet.p_att", to_scalar(
         PyDict_GetItemString(obj, "p_att"), NPY_INT, &attdet->p_att));
@@ -219,10 +219,10 @@ static PyObject *from_attdet_analysis(
     if (!obj) obj = PyDict_New();
 
     PyDict_SetItemString(obj, "en1",
-        new_scalar(NPY_FLOAT, &attdet->en1));
+        new_scalar(NPY_INT32, &attdet->en1));
 
     PyDict_SetItemString(obj, "an1",
-        new_scalar(NPY_FLOAT, &attdet->an1));
+        new_scalar(NPY_INT32, &attdet->an1));
 
     PyDict_SetItemString(obj, "p_att",
         new_scalar(NPY_INT, &attdet->p_att));

@@ -132,8 +132,8 @@ def check_unit(rng, dt, sr):
 
         ### Generate noise, and an attack at random point
 
-        x = (2 * rng.random(ns)) - 1
-        x[(ns * rng.random()).astype(int)] *= 100
+        x = ((2 * rng.random(ns)) - 1) * (2 ** 8 - 1)
+        x[(ns * rng.random()).astype(int)] *= 2 ** 7
 
         ### Check Implementation
 
@@ -143,8 +143,8 @@ def check_unit(rng, dt, sr):
         f_att_c = lc3.attdet_run(dt, sr, 100, state_c, x_c)
 
         ok = ok and f_att_c == f_att
-        ok = ok and np.amax(np.abs(1 - state_c['en1']/attdet.en1)) < 1e-6
-        ok = ok and np.amax(np.abs(1 - state_c['an1']/attdet.an1)) < 1e-6
+        ok = ok and np.amax(np.abs(1 - state_c['en1']/attdet.en1)) < 2
+        ok = ok and np.amax(np.abs(1 - state_c['an1']/attdet.an1)) < 2
         ok = ok and state_c['p_att'] == attdet.p_att
 
     return ok

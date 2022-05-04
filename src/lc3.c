@@ -214,7 +214,7 @@ static void analyze(struct lc3_encoder *encoder,
 
     /* --- Temporal --- */
 
-    bool att = lc3_attdet_run(dt, sr_pcm, nbytes, &encoder->attdet, xs);
+    bool att = lc3_attdet_run(dt, sr_pcm, nbytes, &encoder->attdet, xt);
 
     side->pitch_present =
         lc3_ltpf_analyse(dt, sr_pcm, &encoder->ltpf, xt, &side->ltpf);

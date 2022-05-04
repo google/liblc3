@@ -27,7 +27,7 @@ static PyObject *attdet_run_py(PyObject *m, PyObject *args)
     unsigned dt, sr, nbytes;
     PyObject *attdet_obj, *x_obj;
     struct lc3_attdet_analysis attdet = { 0 };
-    float *x;
+    int16_t *x;
 
     if (!PyArg_ParseTuple(args, "IIIOO",
                 &dt, &sr, &nbytes, &attdet_obj, &x_obj))
@@ -39,7 +39,7 @@ static PyObject *attdet_run_py(PyObject *m, PyObject *args)
 
     int ns = LC3_NS(dt, sr);
 
-    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ns+6, &x));
+    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_INT16, ns+6, &x));
 
     int att = lc3_attdet_run(dt, sr, nbytes, &attdet, x+6);
 
