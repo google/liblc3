@@ -549,38 +549,38 @@ static inline void synthesize_template(const float *xr, int nr, int lag,
  * Synthesis filter for each samplerates (width of filter)
  */
 
-static void nsynthesize_4(const float *xr, int nr, int lag,
+static void synthesize_4(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(xr, nr, lag, x0, x, n, c, 4, fade);
+    synthesize_template(xh, nh, lag, x0, x, n, c, 4, fade);
 }
 
-static void nsynthesize_6(const float *xr, int nr, int lag,
+static void synthesize_6(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(xr, nr, lag, x0, x, n, c, 6, fade);
+    synthesize_template(xh, nh, lag, x0, x, n, c, 6, fade);
 }
 
-static void nsynthesize_8(const float *xr, int nr, int lag,
+static void synthesize_8(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(xr, nr, lag, x0, x, n, c, 8, fade);
+    synthesize_template(xh, nh, lag, x0, x, n, c, 8, fade);
 }
 
-static void nsynthesize_12(const float *xr, int nr, int lag,
+static void synthesize_12(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
-    synthesize_template(xr, nr, lag, x0, x, n, c, 12, fade);
+    synthesize_template(xh, nh, lag, x0, x, n, c, 12, fade);
 }
 
 static void (* const synthesize[])(const float *, int, int,
     const float *, float *, int, const float *, int) =
 {
-    [LC3_SRATE_8K ] = nsynthesize_4,
-    [LC3_SRATE_16K] = nsynthesize_4,
-    [LC3_SRATE_24K] = nsynthesize_6,
-    [LC3_SRATE_32K] = nsynthesize_8,
-    [LC3_SRATE_48K] = nsynthesize_12,
+    [LC3_SRATE_8K ] = synthesize_4,
+    [LC3_SRATE_16K] = synthesize_4,
+    [LC3_SRATE_24K] = synthesize_6,
+    [LC3_SRATE_32K] = synthesize_8,
+    [LC3_SRATE_48K] = synthesize_12,
 };
 
 
