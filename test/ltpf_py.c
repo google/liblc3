@@ -27,7 +27,7 @@ static PyObject *resample_py(PyObject *m, PyObject *args)
     unsigned dt, sr;
     PyObject *hp50_obj, *x_obj, *y_obj;
     struct lc3_ltpf_hp50_state hp50;
-    float *x, *y;
+    int16_t *x, *y;
 
     if (!PyArg_ParseTuple(args, "IIOOO", &dt, &sr, &hp50_obj, &x_obj, &y_obj))
         return NULL;
@@ -36,14 +36,14 @@ static PyObject *resample_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
     CTYPES_CHECK(NULL, hp50_obj = to_ltpf_hp50_state(hp50_obj, &hp50));
 
-    int ns = LC3_NS(dt, sr), nd = LC3_ND(dt, sr);
-    int ny = sizeof((struct lc3_ltpf_analysis){ }.x_12k8) / sizeof(float);
+    int ns = LC3_NS(dt, sr), nt = LC3_NT(dt);
+    int ny = sizeof((struct lc3_ltpf_analysis){ }.x_12k8) / sizeof(int16_t);
     int n  = dt == LC3_DT_7M5 ? 96 : 128;
 
-    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ns+nd, &x));
-    CTYPES_CHECK("y", y_obj = to_1d_ptr(y_obj, NPY_FLOAT, ny, &y));
+    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_INT16, ns+nt, &x));
+    CTYPES_CHECK("y", y_obj = to_1d_ptr(y_obj, NPY_INT16, ny, &y));
 
-    resample_12k8[sr](&hp50, x + nd, y + (ny - n), n);
+    resample_12k8[sr](&hp50, x + nt, y + (ny - n), n);
 
     from_ltpf_hp50_state(hp50_obj, &hp50);
     return Py_BuildValue("O", y_obj);
@@ -55,7 +55,7 @@ static PyObject *analyse_py(PyObject *m, PyObject *args)
     unsigned dt, sr;
     struct lc3_ltpf_analysis ltpf;
     struct lc3_ltpf_data data = { 0 };
-    float *x;
+    int16_t *x;
 
     if (!PyArg_ParseTuple(args, "IIOO", &dt, &sr, &ltpf_obj, &x_obj))
         return NULL;
@@ -64,12 +64,12 @@ static PyObject *analyse_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("sr", sr < LC3_NUM_SRATE);
     CTYPES_CHECK(NULL, ltpf_obj = to_ltpf_analysis(ltpf_obj, &ltpf));
 
-    int ns = LC3_NS(dt, sr), nd = LC3_ND(dt, sr);
+    int ns = LC3_NS(dt, sr), nt = LC3_NT(sr);
 
-    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ns+nd, &x));
+    CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_INT16, ns+nt, &x));
 
     int pitch_present =
-        lc3_ltpf_analyse(dt, sr, &ltpf, x + nd, &data);
+        lc3_ltpf_analyse(dt, sr, &ltpf, x + nt, &data);
 
     from_ltpf_analysis(ltpf_obj, &ltpf);
     return Py_BuildValue("iN", pitch_present, new_ltpf_data(&data));

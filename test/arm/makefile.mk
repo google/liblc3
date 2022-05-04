@@ -14,19 +14,18 @@
 # limitations under the License.
 #
 
-TEST_DIR := test
+test_arm_src += \
+    $(TEST_DIR)/arm/test_arm.c \
+    $(TEST_DIR)/arm/ltpf_arm.c \
+    $(SRC_DIR)/tables.c
 
-test_py:
-	$(V)cd $(TEST_DIR) && python3 setup.py && python3 run.py
+test_arm_include += $(SRC_DIR)
+test_arm_ldlibs += m
 
-.PHONY: test test-clean
+$(eval $(call add-bin,test_arm))
 
-test: test_py
+test_arm: $(test_arm_bin)
+	@echo "  RUN     $(notdir $<)"
+	$(V)$<
 
-test-clean:
-	$(V)cd $(TEST_DIR) && python3 setup.py clean > /tmp/zero
-
--include $(TEST_DIR)/arm/makefile.mk
--include $(TEST_DIR)/neon/makefile.mk
-
-clean-all: test-clean
+test: test_arm

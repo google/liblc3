@@ -26,17 +26,21 @@
 /**
  * Return number of samples, delayed samples and
  * encoded spectrum coefficients within a frame
- * For decoding, keep 18 ms of history, aligned on frames, and a frame
+ * - For encoding, keep 1.25 ms of temporal winodw
+ * - For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
 #define __LC3_NS(dt_us, sr_hz) \
-    ((dt_us * sr_hz) / 1000 / 1000)
+    ( (dt_us * sr_hz) / 1000 / 1000 )
 
 #define __LC3_ND(dt_us, sr_hz) \
     ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 \
                       :  5 * __LC3_NS(dt_us, sr_hz) /  8 )
 
-#define __LC3_NR(dt_us, sr_hz) \
+#define __LC3_NT(sr_hz) \
+    ( (5 * sr_hz) / 4000 )
+
+#define __LC3_NH(dt_us, sr_hz) \
     ( ((3 - ((dt_us) >= 10000)) + 1) * __LC3_NS(dt_us, sr_hz) )
 
 
@@ -76,7 +80,7 @@ typedef struct lc3_attdet_analysis {
 } lc3_attdet_analysis_t;
 
 struct lc3_ltpf_hp50_state {
-    float s1, s2;
+    int64_t s1, s2;
 };
 
 typedef struct lc3_ltpf_analysis {
@@ -85,8 +89,8 @@ typedef struct lc3_ltpf_analysis {
     float nc[2];
 
     struct lc3_ltpf_hp50_state hp50;
-    float x_12k8[384];
-    float x_6k4[178];
+    int16_t x_12k8[384];
+    int16_t x_6k4[178];
     int tc;
 } lc3_ltpf_analysis_t;
 
@@ -103,11 +107,13 @@ struct lc3_encoder {
     lc3_ltpf_analysis_t ltpf;
     lc3_spec_analysis_t spec;
 
+    int16_t *xt;
     float *xs, *xf, s[0];
 };
 
 #define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( 2*__LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
+    ( ( __LC3_NS(dt_us, sr_hz) + __LC3_NT(sr_hz) ) / 2 + \
+      2*__LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
 
 #define LC3_ENCODER_MEM_T(dt_us, sr_hz) \
     struct { \
@@ -139,11 +145,11 @@ struct lc3_decoder {
     lc3_ltpf_synthesis_t ltpf;
     lc3_plc_state_t plc;
 
-    float *xr, *xs, *xd, *xg, s[0];
+    float *xh, *xs, *xd, *xg, s[0];
 };
 
 #define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( __LC3_NR(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) + \
+    ( __LC3_NH(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) + \
       __LC3_NS(dt_us, sr_hz) )
 
 #define LC3_DECODER_MEM_T(dt_us, sr_hz) \

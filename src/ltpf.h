@@ -53,11 +53,12 @@ typedef struct lc3_ltpf_data {
  * data            Return bitstream data
  * return          True when pitch present, False otherwise
  *
+ * The `x` vector is aligned on 32 bits
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 10, 20, 30, 40, 60 } - 1 for samplerates from 8KHz to 48KHz
  */
 bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
-    lc3_ltpf_analysis_t *ltpf, const float *x, lc3_ltpf_data_t *data);
+    lc3_ltpf_analysis_t *ltpf, const int16_t *x, lc3_ltpf_data_t *data);
 
 /**
  * LTPF disable

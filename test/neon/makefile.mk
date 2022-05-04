@@ -14,19 +14,18 @@
 # limitations under the License.
 #
 
-TEST_DIR := test
+test_neon_src += \
+    $(TEST_DIR)/neon/test_neon.c \
+    $(TEST_DIR)/neon/ltpf_neon.c \
+    $(SRC_DIR)/tables.c
 
-test_py:
-	$(V)cd $(TEST_DIR) && python3 setup.py && python3 run.py
+test_neon_include += $(SRC_DIR)
+test_neon_ldlibs += m
 
-.PHONY: test test-clean
+$(eval $(call add-bin,test_neon))
 
-test: test_py
+test_neon: $(test_neon_bin)
+	@echo "  RUN     $(notdir $<)"
+	$(V)$<
 
-test-clean:
-	$(V)cd $(TEST_DIR) && python3 setup.py clean > /tmp/zero
-
--include $(TEST_DIR)/arm/makefile.mk
--include $(TEST_DIR)/neon/makefile.mk
-
-clean-all: test-clean
+test: test_neon

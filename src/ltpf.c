@@ -19,158 +19,347 @@
 #include "ltpf.h"
 #include "tables.h"
 
+#include "ltpf_arm.h"
+#include "ltpf_neon.h"
+
 
 /* ----------------------------------------------------------------------------
  *  Resampling
  * -------------------------------------------------------------------------- */
 
 /**
+ * Resampling coefficients
+ * The coefficients, in fixed Q15, are reordered by phase for each source
+ * samplerate (coefficient matrix transposed)
+ */
+
+#ifndef resample_8k_12k8
+static const int16_t h_8k_12k8_q15[8*10] = {
+      214,   417, -1052, -4529, 26233, -4529, -1052,   417,   214,     0,
+      180,     0, -1522, -2427, 24506, -5289,     0,   763,   156,   -28,
+       92,  -323, -1361,     0, 19741, -3885,  1317,   861,     0,   -61,
+        0,  -457,  -752,  1873, 13068,     0,  2389,   598,  -213,   -79,
+      -61,  -398,     0,  2686,  5997,  5997,  2686,     0,  -398,   -61,
+      -79,  -213,   598,  2389,     0, 13068,  1873,  -752,  -457,     0,
+      -61,     0,   861,  1317, -3885, 19741,     0, -1361,  -323,    92,
+      -28,   156,   763,     0, -5289, 24506, -2427, -1522,     0,   180,
+};
+#endif /* resample_8k_12k8 */
+
+#ifndef resample_16k_12k8
+static const int16_t h_16k_12k8_q15[4*20] = {
+      -61,   214,  -398,   417,     0, -1052,  2686, -4529,  5997, 26233,
+     5997, -4529,  2686, -1052,     0,   417,  -398,   214,   -61,     0,
+
+      -79,   180,  -213,     0,   598, -1522,  2389, -2427,     0, 24506,
+    13068, -5289,  1873,     0,  -752,   763,  -457,   156,     0,   -28,
+
+      -61,    92,     0,  -323,   861, -1361,  1317,     0, -3885, 19741,
+    19741, -3885,     0,  1317, -1361,   861,  -323,     0,    92,   -61,
+
+      -28,     0,   156,  -457,   763,  -752,     0,  1873, -5289, 13068,
+    24506,     0, -2427,  2389, -1522,   598,     0,  -213,   180,   -79,
+};
+#endif /* resample_16k_12k8 */
+
+#ifndef resample_32k_12k8
+static const int16_t h_32k_12k8_q15[2*40] = {
+      -30,   -31,    46,   107,     0,  -199,  -162,   209,   430,     0,
+     -681,  -526,   658,  1343,     0, -2264, -1943,  2999,  9871, 13116,
+     9871,  2999, -1943, -2264,     0,  1343,   658,  -526,  -681,     0,
+      430,   209,  -162,  -199,     0,   107,    46,   -31,   -30,     0,
+
+      -14,   -39,     0,    90,    78,  -106,  -229,     0,   382,   299,
+     -376,  -761,     0,  1194,   937, -1214, -2644,     0,  6534, 12253,
+    12253,  6534,     0, -2644, -1214,   937,  1194,     0,  -761,  -376,
+      299,   382,     0,  -229,  -106,    78,    90,     0,   -39,   -14,
+};
+#endif /* resample_32k_12k8 */
+
+#ifndef resample_24k_12k8
+static const int16_t h_24k_12k8_q15[8*30] = {
+      -50,    19,   143,   -93,  -290,   278,   485,  -658,  -701,  1396,
+      901, -3019, -1042, 10276, 17488, 10276, -1042, -3019,   901,  1396,
+     -701,  -658,   485,   278,  -290,   -93,   143,    19,   -50,     0,
+
+      -46,     0,   141,   -45,  -305,   185,   543,  -501,  -854,  1153,
+     1249, -2619, -1908,  8712, 17358, 11772,     0, -3319,   480,  1593,
+     -504,  -796,   399,   367,  -261,  -142,   138,    40,   -52,    -5,
+
+      -41,   -17,   133,     0,  -304,    91,   574,  -334,  -959,   878,
+     1516, -2143, -2590,  7118, 16971, 13161,  1202, -3495,     0,  1731,
+     -267,  -908,   287,   445,  -215,  -188,   125,    62,   -52,   -12,
+
+      -34,   -30,   120,    41,  -291,     0,   577,  -164, -1015,   585,
+     1697, -1618, -3084,  5534, 16337, 14406,  2544, -3526,  -523,  1800,
+        0,  -985,   152,   509,  -156,  -230,   104,    83,   -48,   -19,
+
+      -26,   -41,   103,    76,  -265,   -83,   554,     0, -1023,   288,
+     1791, -1070, -3393,  3998, 15474, 15474,  3998, -3393, -1070,  1791,
+      288, -1023,     0,   554,   -83,  -265,    76,   103,   -41,   -26,
+
+      -19,   -48,    83,   104,  -230,  -156,   509,   152,  -985,     0,
+     1800,  -523, -3526,  2544, 14406, 16337,  5534, -3084, -1618,  1697,
+      585, -1015,  -164,   577,     0,  -291,    41,   120,   -30,   -34,
+
+      -12,   -52,    62,   125,  -188,  -215,   445,   287,  -908,  -267,
+     1731,     0, -3495,  1202, 13161, 16971,  7118, -2590, -2143,  1516,
+      878,  -959,  -334,   574,    91,  -304,     0,   133,   -17,   -41,
+
+       -5,   -52,    40,   138,  -142,  -261,   367,   399,  -796,  -504,
+     1593,   480, -3319,     0, 11772, 17358,  8712, -1908, -2619,  1249,
+     1153,  -854,  -501,   543,   185,  -305,   -45,   141,     0,   -46,
+};
+#endif /* resample_24k_12k8 */
+
+#ifndef resample_48k_12k8
+static const int16_t h_48k_12k8_q15[4*60] = {
+      -13,   -25,   -20,    10,    51,    71,    38,   -47,  -133,  -145,
+      -42,   139,   277,   242,     0,  -329,  -511,  -351,   144,   698,
+      895,   450,  -535, -1510, -1697,  -521,  1999,  5138,  7737,  8744,
+     7737,  5138,  1999,  -521, -1697, -1510,  -535,   450,   895,   698,
+      144,  -351,  -511,  -329,     0,   242,   277,   139,   -42,  -145,
+     -133,   -47,    38,    71,    51,    10,   -20,   -25,   -13,     0,
+
+       -9,   -23,   -24,     0,    41,    71,    52,   -23,  -115,  -152,
+      -78,    92,   254,   272,    76,  -251,  -493,  -427,     0,   576,
+      900,   624,  -262, -1309, -1763,  -954,  1272,  4356,  7203,  8679,
+     8169,  5886,  2767,     0, -1542, -1660,  -809,   240,   848,   796,
+      292,  -252,  -507,  -398,   -82,   199,   288,   183,     0,  -130,
+     -145,   -71,    20,    69,    60,    20,   -15,   -26,   -17,    -3,
+
+       -6,   -20,   -26,    -8,    31,    67,    62,     0,   -94,  -152,
+     -108,    45,   223,   287,   143,  -167,  -454,  -480,  -134,   439,
+      866,   758,     0, -1071, -1748, -1295,   601,  3559,  6580,  8485,
+     8485,  6580,  3559,   601, -1295, -1748, -1071,     0,   758,   866,
+      439,  -134,  -480,  -454,  -167,   143,   287,   223,    45,  -108,
+     -152,   -94,     0,    62,    67,    31,    -8,   -26,   -20,    -6,
+
+       -3,   -17,   -26,   -15,    20,    60,    69,    20,   -71,  -145,
+     -130,     0,   183,   288,   199,   -82,  -398,  -507,  -252,   292,
+      796,   848,   240,  -809, -1660, -1542,     0,  2767,  5886,  8169,
+     8679,  7203,  4356,  1272,  -954, -1763, -1309,  -262,   624,   900,
+      576,     0,  -427,  -493,  -251,    76,   272,   254,    92,   -78,
+     -152,  -115,   -23,    52,    71,    41,     0,   -24,   -23,    -9,
+};
+#endif /* resample_48k_12k8 */
+
+
+/**
+ * High-pass 50Hz filtering, at 12.8 KHz samplerate
+ * hp50            Biquad filter state
+ * xn              Input sample, in fixed Q30
+ * return          Filtered sample, in fixed Q30
+ */
+static inline int32_t filter_hp50(
+    struct lc3_ltpf_hp50_state *hp50, int32_t xn)
+{
+    int32_t yn;
+
+    const int32_t a1 = -2110217691, a2 = 1037111617;
+    const int32_t b1 = -2110535566, b2 = 1055267782;
+
+    yn       = (hp50->s1 + (int64_t)xn * b2) >> 30;
+    hp50->s1 = (hp50->s2 + (int64_t)xn * b1 - (int64_t)yn * a1);
+    hp50->s2 = (           (int64_t)xn * b2 - (int64_t)yn * a2);
+
+    return yn;
+}
+
+/**
  * Resample from 8 / 16 / 32 KHz to 12.8 KHz Template
- * p               Resampling factor with 64 KHz (8, 4 or 2)
- * x               [-d..-1] Previous, [0..ns-1] Current samples
- * y, n            [0..n-1] Output `n` processed samples
+ * p               Resampling factor with compared to 192 KHz (8, 4 or 2)
+ * h               Arrange by phase coefficients table
+ * hp50            High-Pass biquad filter state
+ * x               [-d..-1] Previous, [0..ns-1] Current samples, Q15
+ * y, n            [0..n-1] Output `n` processed samples, Q14
  *
+ * The `x` vector is aligned on 32 bits
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 10, 20, 40 } - 1 for resampling factors 8, 4 and 2.
  */
-static inline void resample_base_64k_12k8(const int p,
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
+static inline void resample_x64k_12k8(const int p, const int16_t *h,
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
-    /* --- Parameters  ---
-     * bn, an: High-Pass Biquad coefficients,
-     * with `bn` support of rescaling resampling factor.
-     * Note that it's an High-Pass filter, so we have `b0 = b2`,
-     * in the following steps we use `b0` as `b2`. */
+    const int w = 2*(40 / p);
 
-    const int w = 40 / p;
+    x -= w - 1;
 
-    const float *h = lc3_ltpf_h12k8 + 119;
-    const float a1 = -1.965293373f, b1 = -1.965589417f * 3*LC3_MIN(p, 4);
-    const float a2 =  0.965885461f, b2 =  0.982794708f * 3*LC3_MIN(p, 4);
+    for (int i = 0; i < 5*n; i += 5) {
+        const int16_t *hn = h + (i % p) * w;
+        const int16_t *xn = x + (i / p);
+        int32_t un = 0;
 
-    /* --- Resampling & filtering --- */
-
-    for (int i = 0; i < n; i += 8, x += w)
-        for (int j = 0; j < 40; j += 5) {
-
-            const float *hn = h - 3*(p*w + (j % p));
-            const float *xn = x -   (2*w - (j / p));
-            float yn, un = 0;
-
-            for (int k = 0; k < 2*w; k += 10) {
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-                un += *(++xn) * *(hn += (3*p));
-            }
-
-            yn = b2 * un + hp50->s1;
-            hp50->s1 = b1 * un - a1 * yn + hp50->s2;
-            hp50->s2 = b2 * un - a2 * yn;
-            *(y++) = yn;
+        for (int k = 0; k < w; k += 10) {
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
         }
+
+        int32_t yn = filter_hp50(hp50, un);
+        *(y++) = (yn + (1 << 15)) >> 16;
+    }
 }
 
 /**
  * Resample from 24 / 48 KHz to 12.8 KHz Template
- * p               Resampling factor with 192 KHz (8 or 4)
- * x               [-d..-1] Previous, [0..ns-1] Current samples
- * y, n            [0..n-1] Output `n` processed samples
+ * p               Resampling factor with compared to 192 KHz (8 or 4)
+ * h               Arrange by phase coefficients table
+ * hp50            High-Pass biquad filter state
+ * x               [-d..-1] Previous, [0..ns-1] Current samples, Q15
+ * y, n            [0..n-1] Output `n` processed samples, Q14
  *
+ * The `x` vector is aligned on 32 bits
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 30, 60 } - 1 for resampling factors 8 and 4.
  */
-static inline void resample_base_192k_12k8(const int p,
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
+static inline void resample_x192k_12k8(const int p, const int16_t *h,
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
-    /* --- Parameters  ---
-     * bn, an: High-Pass Biquad coefficients,
-     * with `bn` support of rescaling resampling factor.
-     * Note that it's an High-Pass filter, so we have `b0 = b2`,
-     * in the following steps we use `b0` as `b2`. */
+    const int w = 2*(120 / p);
 
-    const int w = 120 / p;
+    x -= w - 1;
 
-    const float *h = lc3_ltpf_h12k8 + 119;
-    const float a1 = -1.965293373f, b1 = -1.965589417f * p;
-    const float a2 =  0.965885461f, b2 =  0.982794708f * p;
+    for (int i = 0; i < 15*n; i += 15) {
+        const int16_t *hn = h + (i % p) * w;
+        const int16_t *xn = x + (i / p);
+        int32_t un = 0;
 
-    /* --- Resampling & filtering --- */
-
-    for (int i = 0; i < n; i += 8, x += w)
-        for (int j = 0; j < 120; j += 15) {
-
-            const float *hn = h - (p*w + (j % p));
-            const float *xn = x - (2*w - (j / p));
-            float yn, un = 0;
-
-            for (int k = 0; k < 2*w; k += 15) {
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-                un += *(++xn) * *(hn += p);
-            }
-
-            yn = b2 * un + hp50->s1;
-            hp50->s1 = b1 * un - a1 * yn + hp50->s2;
-            hp50->s2 = b2 * un - a2 * yn;
-            *(y++) = yn;
+        for (int k = 0; k < w; k += 15) {
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
+            un += *(xn++) * *(hn++);
         }
+
+        int32_t yn = filter_hp50(hp50, un);
+        *(y++) = (yn + (1 << 15)) >> 16;
+    }
 }
+
+/**
+ * Resample from 8 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-10..-1] Previous, [0..ns-1] Current samples, Q15
+ * y, n            [0..n-1] Output `n` processed samples, Q14
+ *
+ * The `x` vector is aligned on 32 bits
+ */
+#ifndef resample_8k_12k8
+static void resample_8k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x64k_12k8(8, h_8k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_8k_12k8 */
+
+/**
+ * Resample from 16 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-20..-1] Previous, [0..ns-1] Current samples, in fixed Q15
+ * y, n            [0..n-1] Output `n` processed samples, in fixed Q14
+ *
+ * The `x` vector is aligned on 32 bits
+ */
+#ifndef resample_16k_12k8
+static void resample_16k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x64k_12k8(4, h_16k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_16k_12k8 */
+
+/**
+ * Resample from 32 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-30..-1] Previous, [0..ns-1] Current samples, in fixed Q15
+ * y, n            [0..n-1] Output `n` processed samples, in fixed Q14
+ *
+ * The `x` vector is aligned on 32 bits
+ */
+#ifndef resample_32k_12k8
+static void resample_32k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x64k_12k8(2, h_32k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_32k_12k8 */
+
+/**
+ * Resample from 24 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-30..-1] Previous, [0..ns-1] Current samples, in fixed Q15
+ * y, n            [0..n-1] Output `n` processed samples, in fixed Q14
+ *
+ * The `x` vector is aligned on 32 bits
+ */
+#ifndef resample_24k_12k8
+static void resample_24k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x192k_12k8(8, h_24k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_24k_12k8 */
+
+/**
+ * Resample from 48 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-60..-1] Previous, [0..ns-1] Current samples, in fixed Q15
+ * y, n            [0..n-1] Output `n` processed samples, in fixed Q14
+ *
+* The `x` vector is aligned on 32 bits
+*/
+#ifndef resample_48k_12k8
+static void resample_48k_12k8(
+struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x192k_12k8(4, h_48k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_48k_12k8 */
+
+/**
+* Resample to 6.4 KHz
+* x               [-3..-1] Previous, [0..n-1] Current samples
+* y, n            [0..n-1] Output `n` processed samples
+*
+* The `x` vector is aligned on 32 bits
+ */
+#ifndef resample_6k4
+static void resample_6k4(const int16_t *x, int16_t *y, int n)
+{
+    static const int16_t h[] = { 18477, 15424, 8105 };
+    const int16_t *ye = y + n;
+
+    for (x--; y < ye; x += 2)
+        *(y++) = (x[0] * h[0] + (x[-1] + x[1]) * h[1]
+                              + (x[-2] + x[2]) * h[2]) >> 16;
+}
+#endif /* resample_6k4 */
 
 /**
  * LTPF Resample to 12.8 KHz implementations for each samplerates
  */
 
-static void resample_8k_12k8(
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
-{
-    resample_base_64k_12k8(8, hp50, x, y, n);
-}
-
-static void resample_16k_12k8(
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
-{
-    resample_base_64k_12k8(4, hp50, x, y, n);
-}
-
-static void resample_24k_12k8(
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
-{
-    resample_base_192k_12k8(8, hp50, x, y, n);
-}
-
-static void resample_32k_12k8(
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
-{
-    resample_base_64k_12k8(2, hp50, x, y, n);
-}
-
-static void resample_48k_12k8(
-    struct lc3_ltpf_hp50_state *hp50, const float *x, float *y, int n)
-{
-    resample_base_192k_12k8(4, hp50, x, y, n);
-}
-
 static void (* const resample_12k8[])
-    (struct lc3_ltpf_hp50_state *, const float *, float *, int ) =
+    (struct lc3_ltpf_hp50_state *, const int16_t *, int16_t *, int ) =
 {
     [LC3_SRATE_8K ] = resample_8k_12k8,
     [LC3_SRATE_16K] = resample_16k_12k8,
@@ -179,23 +368,6 @@ static void (* const resample_12k8[])
     [LC3_SRATE_48K] = resample_48k_12k8,
 };
 
-/**
- * Resample to 6.4 KHz (cf. 3.3.9.3-4)
- * x               [-3..-1] Previous, [0..n-1] Current samples
- * y, n            [0..n-1] Output `n` processed samples
- */
-static void resample_6k4(const float *x, float *y, int n)
-{
-    static const float h[] = { 0.2819382921, 0.2353512128, 0.1236796411 };
-    float xn2 = x[-3], xn1 = x[-2], x0 = x[-1], x1, x2;
-
-    for (const float *ye = y + n; y < ye; xn2 = x0, xn1 = x1, x0 = x2) {
-        x1 = *(x++); x2 = *(x++);
-
-        *(y++) = x0 * h[0] + (xn1 + x1) * h[1] + (xn2 + x2) * h[2];
-    }
-}
-
 
 /* ----------------------------------------------------------------------------
  *  Analysis
@@ -203,33 +375,41 @@ static void resample_6k4(const float *x, float *y, int n)
 
 /**
  * Return dot product of 2 vectors
- * a, b, n         The 2 vectors of size `n` (multiple of 16)
+ * a, b, n         The 2 vectors of size `n` (> 0 and <= 128)
  * return          sum( a[i] * b[i] ), i = [0..n-1]
- */
-static inline float dot(const float *a, const float *b, int n)
+ *
+ * The size `n` of vectors must be multiple of 16, and less or equal to 128
+*/
+#ifndef dot
+static inline float dot(const int16_t *a, const int16_t *b, int n)
 {
-    float v = 0;
+    int64_t v = 0;
 
     for (int i = 0; i < (n >> 4); i++)
         for (int j = 0; j < 16; j++)
             v += *(a++) * *(b++);
 
-    return v;
+    int32_t v32 = (v + (1 << 5)) >> 6;
+    return (float)v32;
 }
+#endif /* dot */
 
 /**
  * Return vector of correlations
- * a, b, n         The 2 vector of size `n` to correlate
+ * a, b, n         The 2 vector of size `n` (> 0 and <= 128)
  * y, nc           Output the correlation vector of size `nc`
  *
- * The size `n` of input vectors must be multiple of 16
+ * The first vector `a` is aligned of 32 bits
+ * The size `n` of vectors is multiple of 16, and less or equal to 128
  */
+#ifndef correlate
 static void correlate(
-    const float *a, const float *b, int n, float *y, int nc)
+    const int16_t *a, const int16_t *b, int n, float *y, int nc)
 {
     for (const float *ye = y + nc; y < ye; )
         *(y++) = dot(a, b--, n);
 }
+#endif /* correlate */
 
 /**
  * Search the maximum value and returns its argument
@@ -279,24 +459,30 @@ static int argmax_weighted(
  *
  * The size `n` of vectors must be multiple of 4
  */
-static void interpolate(const float *x, int n, int d, float *y)
+static void interpolate(const int16_t *x, int n, int d, int16_t *y)
 {
-    static const float h4[][8] = {
-        { 2.09880463e-01, 5.83527575e-01, 2.09880463e-01                 },
-        { 1.06999186e-01, 5.50075002e-01, 3.35690625e-01, 6.69885837e-03 },
-        { 3.96711478e-02, 4.59220930e-01, 4.59220930e-01, 3.96711478e-02 },
-        { 6.69885837e-03, 3.35690625e-01, 5.50075002e-01, 1.06999186e-01 },
-    };
+    static const int16_t h4_q15[][4] = {
+        { 6877, 19121,  6877,     0 }, { 3506, 18025, 11000,   220 },
+        { 1300, 15048, 15048,  1300 }, {  220, 11000, 18025,  3506 } };
 
-    const float *h = h4[d];
-    float x3 = x[-2], x2 = x[-1], x1, x0;
+    const int16_t *h = h4_q15[d];
+    int16_t x3 = x[-2], x2 = x[-1], x1, x0;
 
     x1 = (*x++);
-    for (const float *ye = y + n; y < ye; ) {
-        *(y++) = (x0 = *(x++)) * h[0] + x1 * h[1] + x2 * h[2] + x3 * h[3];
-        *(y++) = (x3 = *(x++)) * h[0] + x0 * h[1] + x1 * h[2] + x2 * h[3];
-        *(y++) = (x2 = *(x++)) * h[0] + x3 * h[1] + x0 * h[2] + x1 * h[3];
-        *(y++) = (x1 = *(x++)) * h[0] + x2 * h[1] + x3 * h[2] + x0 * h[3];
+    for (const int16_t *ye = y + n; y < ye; ) {
+        int32_t yn;
+
+        yn = (x0 = *(x++)) * h[0] + x1 * h[1] + x2 * h[2] + x3 * h[3];
+        *(y++) = yn >> 15;
+
+        yn = (x3 = *(x++)) * h[0] + x0 * h[1] + x1 * h[2] + x2 * h[3];
+        *(y++) = yn >> 15;
+
+        yn = (x2 = *(x++)) * h[0] + x3 * h[1] + x0 * h[2] + x1 * h[3];
+        *(y++) = yn >> 15;
+
+        yn = (x1 = *(x++)) * h[0] + x2 * h[1] + x3 * h[2] + x0 * h[3];
+        *(y++) = yn >> 15;
     }
 }
 
@@ -306,7 +492,7 @@ static void interpolate(const float *x, int n, int d, float *y)
  * d               The phase of interpolation (-3 to 3)
  * return          The interpolated value
  */
-static float interpolate_4(const float *x, int d)
+static float interpolate_corr(const float *x, int d)
 {
     static const float h4[][8] = {
         {  1.53572770e-02, -4.72963246e-02,  8.35788573e-02,  8.98638285e-01,
@@ -336,9 +522,11 @@ static float interpolate_4(const float *x, int d)
  * x, n            [-114..-17] Previous, [0..n-1] Current 6.4KHz samples
  * tc              Return the pitch-lag estimation
  * return          True when pitch present
+ *
+ * The `x` vector is aligned on 32 bits
  */
 static bool detect_pitch(
-    struct lc3_ltpf_analysis *ltpf, const float *x, int n, int *tc)
+    struct lc3_ltpf_analysis *ltpf, const int16_t *x, int n, int *tc)
 {
     float rm1, rm2;
     float r[98];
@@ -352,8 +540,8 @@ static bool detect_pitch(
     int t1 = argmax_weighted(r, nr, -.5f/(nr-1), &rm1);
     int t2 = k0 + argmax(r + k0, nk, &rm2);
 
-    const float *x1 = x - (r0 + t1);
-    const float *x2 = x - (r0 + t2);
+    const int16_t *x1 = x - (r0 + t1);
+    const int16_t *x2 = x - (r0 + t2);
 
     float nc1 = rm1 <= 0 ? 0 :
         rm1 / sqrtf(dot(x, x, n) * dot(x1, x1, n));
@@ -370,12 +558,14 @@ static bool detect_pitch(
 
 /**
  * Pitch-lag parameter (3.3.9.7)
- * x, n            [-232..-28] Previous, [0..n-1] Current 12.8KHz samples
+ * x, n            [-232..-28] Previous, [0..n-1] Current 12.8KHz samples, Q14
  * tc              Pitch-lag estimation
  * pitch           The pitch value, in fixed .4
  * return          The bitstream pitch index value
+ *
+ * The `x` vector is aligned on 32 bits
  */
-static int refine_pitch(const float *x, int n, int tc, int *pitch)
+static int refine_pitch(const int16_t *x, int n, int tc, int *pitch)
 {
     float r[17], rm;
     int e, f;
@@ -388,17 +578,17 @@ static int refine_pitch(const float *x, int n, int tc, int *pitch)
     e = r0 + argmax(r + 4, nr, &rm);
     const float *re = r + (e - (r0 - 4));
 
-    float dm = interpolate_4(re, f = 0);
+    float dm = interpolate_corr(re, f = 0);
     for (int i = 1; i <= 3; i++) {
         float d;
 
         if (e >= 127 && ((i & 1) | (e >= 157)))
             continue;
 
-        if ((d = interpolate_4(re, i)) > dm)
+        if ((d = interpolate_corr(re, i)) > dm)
             dm = d, f = i;
 
-        if (e > 32 && (d = interpolate_4(re, -i)) > dm)
+        if (e > 32 && (d = interpolate_corr(re, -i)) > dm)
             dm = d, f = -i;
     }
 
@@ -413,31 +603,34 @@ static int refine_pitch(const float *x, int n, int tc, int *pitch)
 /**
  * LTPF Analysis
  */
-bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
-    struct lc3_ltpf_analysis *ltpf, const float *x, struct lc3_ltpf_data *data)
+bool lc3_ltpf_analyse(
+    enum lc3_dt dt, enum lc3_srate sr, struct lc3_ltpf_analysis *ltpf,
+    const int16_t *x, struct lc3_ltpf_data *data)
 {
     /* --- Resampling to 12.8 KHz --- */
 
-    int z_12k8 = sizeof(ltpf->x_12k8) / sizeof(float);
+    int z_12k8 = sizeof(ltpf->x_12k8) / sizeof(*ltpf->x_12k8);
     int n_12k8 = dt == LC3_DT_7M5 ? 96 : 128;
 
     memmove(ltpf->x_12k8, ltpf->x_12k8 + n_12k8,
-        (z_12k8 - n_12k8) * sizeof(float));
+        (z_12k8 - n_12k8) * sizeof(*ltpf->x_12k8));
 
-    float *x_12k8 = ltpf->x_12k8 + (z_12k8 - n_12k8);
+    int16_t *x_12k8 = ltpf->x_12k8 + (z_12k8 - n_12k8);
+
     resample_12k8[sr](&ltpf->hp50, x, x_12k8, n_12k8);
 
     x_12k8 -= (dt == LC3_DT_7M5 ? 44 :  24);
 
     /* --- Resampling to 6.4 KHz --- */
 
-    int z_6k4 = sizeof(ltpf->x_6k4) / sizeof(float);
+    int z_6k4 = sizeof(ltpf->x_6k4) / sizeof(*ltpf->x_6k4);
     int n_6k4 = n_12k8 >> 1;
 
     memmove(ltpf->x_6k4, ltpf->x_6k4 + n_6k4,
-        (z_6k4 - n_6k4) * sizeof(float));
+        (z_6k4 - n_6k4) * sizeof(*ltpf->x_6k4));
 
-    float *x_6k4 = ltpf->x_6k4 + (z_6k4 - n_6k4);
+    int16_t *x_6k4 = ltpf->x_6k4 + (z_6k4 - n_6k4);
+
     resample_6k4(x_12k8, x_6k4, n_6k4);
 
     /* --- Pitch detection --- */
@@ -448,7 +641,7 @@ bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
     bool pitch_present = detect_pitch(ltpf, x_6k4, n_6k4, &tc);
 
     if (pitch_present) {
-        float u[n_12k8], v[n_12k8];
+        int16_t u[n_12k8], v[n_12k8];
 
         data->pitch_index = refine_pitch(x_12k8, n_12k8, tc, &pitch);
 
@@ -489,14 +682,14 @@ bool lc3_ltpf_analyse(enum lc3_dt dt, enum lc3_srate sr,
 
 /**
  * Synthesis filter template
- * xr, nr          Ring buffer of filtered samples
+ * xh, nh          History ring buffer of filtered samples
  * lag             Lag parameter in the ring buffer
  * x0              w-1 previous input samples
  * x, n            Current samples as input, filtered as output
  * c, w            Coefficients `den` then `num`, and width of filter
  * fade            Fading mode of filter  -1: Out  1: In  0: None
  */
-static inline void synthesize_template(const float *xr, int nr, int lag,
+static inline void synthesize_template(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, const int w, int fade)
 {
     float g = (float)(fade <= 0);
@@ -507,15 +700,15 @@ static inline void synthesize_template(const float *xr, int nr, int lag,
 
     lag += (w >> 1);
 
-    const float *y = x - xr < lag ? x + (nr - lag) : x - lag;
-    const float *y_end = xr + nr - 1;
+    const float *y = x - xh < lag ? x + (nh - lag) : x - lag;
+    const float *y_end = xh + nh - 1;
 
     for (int j = 0; j < w-1; j++) {
 
         u[j] = 0;
 
         float yi = *y, xi = *(x0++);
-        y = y < y_end ? y + 1 : xr;
+        y = y < y_end ? y + 1 : xh;
 
         for (int k = 0; k <= j; k++)
             u[j-k] -= yi * c[k];
@@ -532,7 +725,7 @@ static inline void synthesize_template(const float *xr, int nr, int lag,
         for (int j = 0; j < w; j++, g += g_incr) {
 
             float yi = *y, xi = *x;
-            y = y < y_end ? y + 1 : xr;
+            y = y < y_end ? y + 1 : xh;
 
             for (int k = 0; k < w; k++)
                 u[(j+(w-1)-k)%w] -= yi * c[k];
@@ -589,9 +782,9 @@ static void (* const synthesize[])(const float *, int, int,
  */
 void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     lc3_ltpf_synthesis_t *ltpf, const lc3_ltpf_data_t *data,
-    const float *xr, float *x)
+    const float *xh, float *x)
 {
-    int nr = LC3_NR(dt, sr);
+    int nh = LC3_NH(dt, sr);
     int dt_us = LC3_DT_US(dt);
 
     /* --- Filter parameters --- */
@@ -627,15 +820,15 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
         memcpy(x0, x + nt-(w-1), (w-1) * sizeof(float));
 
     if (!ltpf->active && active)
-        synthesize[sr](xr, nr, pitch/4, ltpf->x, x, nt, c, 1);
+        synthesize[sr](xh, nh, pitch/4, ltpf->x, x, nt, c, 1);
     else if (ltpf->active && !active)
-        synthesize[sr](xr, nr, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xh, nh, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
     else if (ltpf->active && active && ltpf->pitch == pitch)
-        synthesize[sr](xr, nr, pitch/4, ltpf->x, x, nt, c, 0);
+        synthesize[sr](xh, nh, pitch/4, ltpf->x, x, nt, c, 0);
     else if (ltpf->active && active) {
-        synthesize[sr](xr, nr, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
-        synthesize[sr](xr, nr, pitch/4,
-            (x <= xr ? x + nr : x) - (w-1), x, nt, c, 1);
+        synthesize[sr](xh, nh, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xh, nh, pitch/4,
+            (x <= xh ? x + nh : x) - (w-1), x, nt, c, 1);
     }
 
     /* --- Remainder --- */
@@ -643,7 +836,7 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     memcpy(ltpf->x, x + ns - (w-1), (w-1) * sizeof(float));
 
     if (active)
-        synthesize[sr](xr, nr, pitch/4, x0, x + nt, ns-nt, c, 0);
+        synthesize[sr](xh, nh, pitch/4, x0, x + nt, ns-nt, c, 0);
 
     /* --- Update state --- */
 

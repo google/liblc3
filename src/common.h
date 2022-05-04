@@ -26,6 +26,7 @@
 #include <lc3.h>
 #include "fastmath.h"
 
+#include <stdalign.h>
 #include <limits.h>
 #include <string.h>
 
@@ -72,7 +73,8 @@
 /**
  * Return number of samples, delayed samples and
  * encoded spectrum coefficients within a frame
- * For decoding, keep 18 ms of history, aligned on frames, and a frame
+ * - For encoding, keep 1.25 ms for temporal window
+ * - For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
 #define LC3_NS(dt, sr) \
@@ -87,7 +89,10 @@
 #define LC3_MAX_NE \
     LC3_NE(LC3_DT_10M, LC3_SRATE_48K)
 
-#define LC3_NR(dt, sr) \
+#define LC3_NT(sr_hz) \
+    ( (5 * LC3_SRATE_KHZ(sr)) / 4 )
+
+#define LC3_NH(dt, sr) \
     ( ((3 - dt) + 1) * LC3_NS(dt, sr) )
 
 

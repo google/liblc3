@@ -78,8 +78,6 @@ extern const uint16_t lc3_tns_coeffs_bits[][17];
  * Long Term Postfilter
  */
 
-extern const float lc3_ltpf_h12k8[240];
-
 extern const float *lc3_ltpf_cnum[LC3_NUM_SRATE][4];
 extern const float *lc3_ltpf_cden[LC3_NUM_SRATE][4];
 

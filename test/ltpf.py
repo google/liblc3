@@ -120,7 +120,7 @@ class Resampler_6k4:
 
 
 def initial_hp50_state():
-    return { 's1': 0.0, 's2': 0.0 }
+    return { 's1': 0, 's2': 0 }
 
 ### ------------------------------------------------------------------------ ###
 
@@ -442,25 +442,25 @@ def initial_sstate():
 def check_resampler(rng, dt, sr):
 
     ns = T.NS[dt][sr]
-    nd = T.ND[dt][sr]
+    nt = (5 * T.SRATE_KHZ[sr]) // 4
     ok = True
 
     r = Resampler_12k8(dt, sr)
 
     hp50_c = initial_hp50_state()
-    x_c = np.zeros(nd)
+    x_c = np.zeros(nt)
     y_c = np.zeros(384)
 
     for run in range(10):
 
-        x = (2 * rng.random(ns)) - 1
+        x = ((2 * rng.random(ns)) - 1) * (2 ** 15 - 1)
         y = r.resample(x)
 
-        x_c = np.append(x_c[-nd:], x)
+        x_c = np.append(x_c[-nt:], x.astype(np.int16))
         y_c[:-r.n] = y_c[r.n:]
         y_c = lc3.ltpf_resample(dt, sr, hp50_c, x_c, y_c)
 
-        ok = ok and np.amax(np.abs(y_c[-r.d-r.n:] - y[:r.d+r.n])) < 1e-4
+        ok = ok and np.amax(np.abs(y_c[-r.d-r.n:] - y[:r.d+r.n]/2)) < 4
 
     return ok
 
@@ -469,54 +469,54 @@ def check_resampler_appendix_c(dt):
     sr = T.SRATE_16K
     ok = True
 
-    nd = T.ND[dt][sr]
+    nt = (5 * T.SRATE_KHZ[sr]) // 4
     n  = [ 96, 128 ][dt]
     k  = [ 44,  24 ][dt] + n
 
     state = initial_hp50_state()
 
-    x = np.append(np.zeros(nd), C.X_PCM[dt][0])
+    x = np.append(np.zeros(nt), C.X_PCM[dt][0])
     y = np.zeros(384)
     y = lc3.ltpf_resample(dt, sr, state, x, y)
     u = y[-k:len(C.X_TILDE_12K8D[dt][0])-k]
 
-    ok = np.amax(np.abs(u - C.X_TILDE_12K8D[dt][0])) < 1e0
+    ok = ok and np.amax(np.abs(u - C.X_TILDE_12K8D[dt][0]/2)) < 2
 
-    x = np.append(x[-nd:], C.X_PCM[dt][1])
+    x = np.append(x[-nt:], C.X_PCM[dt][1])
     y[:-n] = y[n:]
     y = lc3.ltpf_resample(dt, sr, state, x, y)
     u = y[-k:len(C.X_TILDE_12K8D[dt][1])-k]
 
-    ok = ok and np.amax(np.abs(u - C.X_TILDE_12K8D[dt][1])) < 1e0
+    ok = ok and np.amax(np.abs(u - C.X_TILDE_12K8D[dt][1]/2)) < 2
 
     return ok
 
 def check_analysis(rng, dt, sr):
 
     ns = T.NS[dt][sr]
-    nd = T.ND[dt][sr]
+    nt = (5 * T.SRATE_KHZ[sr]) // 4
     ok = True
 
     state_c = initial_state()
-    x_c = np.zeros(ns+nd)
+    x_c = np.zeros(ns+nt)
 
     ltpf = LtpfAnalysis(dt, sr)
 
     t = np.arange(100 * ns) / (T.SRATE_KHZ[sr] * 1000)
-    s = signal.chirp(t, f0=50, f1=3e3, t1=t[-1], method='logarithmic')
+    s = signal.chirp(t, f0=10, f1=3e3, t1=t[-1], method='logarithmic')
 
     for i in range(20):
 
-        x = s[i*ns:(i+1)*ns]
+        x = s[i*ns:(i+1)*ns] * (2 ** 15 - 1)
 
         pitch_present = ltpf.run(x)
         data = ltpf.get_data()
 
-        x_c = np.append(x_c[-nd:], x)
+        x_c = np.append(x_c[-nt:], x.astype(np.int16))
         (pitch_present_c, data_c) = lc3.ltpf_analyse(dt, sr, state_c, x_c)
 
-        ok = ok and state_c['tc'] == ltpf.tc
-        ok = ok and np.amax(np.abs(state_c['nc'][0] - ltpf.nc[0])) < 1e-4
+        ok = ok and (not pitch_present or state_c['tc'] == ltpf.tc)
+        ok = ok and np.amax(np.abs(state_c['nc'][0] - ltpf.nc[0])) < 1e-2
         ok = ok and pitch_present_c == pitch_present
         ok = ok and data_c['active'] == data['active']
         ok = ok and data_c['pitch_index'] == data['pitch_index']
@@ -564,12 +564,12 @@ def check_synthesis(rng, dt, sr):
 def check_analysis_appendix_c(dt):
 
     sr = T.SRATE_16K
-    nd = T.ND[dt][sr]
+    nt = (5 * T.SRATE_KHZ[sr]) // 4
     ok = True
 
     state = initial_state()
 
-    x = np.append(np.zeros(nd), C.X_PCM[dt][0])
+    x = np.append(np.zeros(nt), C.X_PCM[dt][0])
     (pitch_present, data) = lc3.ltpf_analyse(dt, sr, state, x)
 
     ok = ok and C.T_CURR[dt][0] - state['tc'] == 17
@@ -578,7 +578,7 @@ def check_analysis_appendix_c(dt):
     ok = ok and data['pitch_index'] == C.PITCH_INDEX[dt][0]
     ok = ok and data['active'] == C.LTPF_ACTIVE[dt][0]
 
-    x = np.append(x[-nd:], C.X_PCM[dt][1])
+    x = np.append(x[-nt:], C.X_PCM[dt][1])
     (pitch_present, data) = lc3.ltpf_analyse(dt, sr, state, x)
 
     ok = ok and C.T_CURR[dt][1] - state['tc'] == 17
