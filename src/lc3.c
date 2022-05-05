@@ -205,12 +205,12 @@ static void analyze(struct lc3_encoder *encoder,
     enum lc3_srate sr = encoder->sr;
     enum lc3_srate sr_pcm = encoder->sr_pcm;
     int ns = LC3_NS(dt, sr_pcm);
-    int nd = LC3_ND(dt, sr_pcm);
     int nt = LC3_NT(sr_pcm);
 
     int16_t *xt = encoder->xt;
     float *xs = encoder->xs;
-    float *xf = encoder->xf;
+    float *xd = encoder->xd;
+    float *xf = xs;
 
     /* --- Temporal --- */
 
@@ -225,8 +225,7 @@ static void analyze(struct lc3_encoder *encoder,
 
     float e[LC3_NUM_BANDS];
 
-    lc3_mdct_forward(dt, sr_pcm, sr, xs, xf);
-    memmove(xs - nd, xs + (ns-nd), nd * sizeof(*xs));
+    lc3_mdct_forward(dt, sr_pcm, sr, xs, xd, xf);
 
     bool nn_flag = lc3_energy_compute(dt, sr, xf, e);
     if (nn_flag)
@@ -256,7 +255,7 @@ static void encode(struct lc3_encoder *encoder,
     enum lc3_dt dt = encoder->dt;
     enum lc3_srate sr = encoder->sr;
     enum lc3_bandwidth bw = side->bw;
-    float *xf = encoder->xf;
+    float *xf = encoder->xs;
 
     lc3_bits_t bits;
 
@@ -312,7 +311,6 @@ struct lc3_encoder *lc3_setup_encoder(
 
     struct lc3_encoder *encoder = mem;
     int ns = LC3_NS(dt, sr_pcm);
-    int nd = LC3_ND(dt, sr_pcm);
     int nt = LC3_NT(sr_pcm);
 
     *encoder = (struct lc3_encoder){
@@ -320,8 +318,8 @@ struct lc3_encoder *lc3_setup_encoder(
         .sr_pcm = sr_pcm,
 
         .xt = (int16_t *)encoder->s + nt,
-        .xs = encoder->s + (nt+ns)/2 + nd,
-        .xf = encoder->s + (nt+ns)/2 + nd+ns,
+        .xs = encoder->s + (nt+ns)/2,
+        .xd = encoder->s + (nt+ns)/2 + ns,
     };
 
     memset(encoder->s, 0,

@@ -108,12 +108,12 @@ struct lc3_encoder {
     lc3_spec_analysis_t spec;
 
     int16_t *xt;
-    float *xs, *xf, s[0];
+    float *xs, *xd, s[0];
 };
 
 #define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) \
     ( ( __LC3_NS(dt_us, sr_hz) + __LC3_NT(sr_hz) ) / 2 + \
-      2*__LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
+        __LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
 
 #define LC3_ENCODER_MEM_T(dt_us, sr_hz) \
     struct { \

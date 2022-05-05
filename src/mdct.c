@@ -193,39 +193,35 @@ static struct lc3_complex *fft(const struct lc3_complex *x, int n,
 /**
  * Windowing of samples before MDCT
  * dt, sr          Duration and samplerate (size of the transform)
- * x               [-nd..-1] Previous, [0..ns-1] Current samples
- * y               Output `ns` windowed samples
- *
- * The number of previous samples `nd` accessed on `x` is :
- *   nd: `ns` * 23/30 for 7.5ms frame duration
- *   nd: `ns` *  5/ 8 for  10ms frame duration
+ * x, y            Input current and delayed samples
+ * y, d            Output windowed samples, and delayed ones
  */
-static void mdct_window(
-    enum lc3_dt dt, enum lc3_srate sr, const float *x, float *y)
+static void mdct_window(enum lc3_dt dt, enum lc3_srate sr,
+    const float *x, float *d, float *y)
 {
     int ns = LC3_NS(dt, sr), nd = LC3_ND(dt, sr);
 
     const float *w0 = lc3_mdct_win[dt][sr], *w1 = w0 + ns;
     const float *w2 = w1, *w3 = w2 + nd;
 
-    const float *x0 = x - nd, *x1 = x0 + ns;
-    const float *x2 = x1, *x3 = x2 + nd;
-
+    const float *x0 = x + ns-nd, *x1 = x0;
     float *y0 = y + ns/2, *y1 = y0;
+    float *d0 = d, *d1 = d + nd;
 
-    while (x0 < x1) {
-        *(--y0) = *(x0++) * *(w0++) - *(--x1) * *(--w1);
-        *(--y0) = *(x0++) * *(w0++) - *(--x1) * *(--w1);
+    while (x1 > x) {
+        *(--y0) = *d0 * *(w0++) - *(--x1) * *(--w1);
+        *(y1++) = (*(d0++) = *(x0++)) * *(w2++);
+
+        *(--y0) = *d0 * *(w0++) - *(--x1) * *(--w1);
+        *(y1++) = (*(d0++) = *(x0++)) * *(w2++);
     }
 
-    for (const float *xe = x2 + ns-nd; x2 < xe; ) {
-        *(y1++) = *(x2++) * *(w2++);
-        *(y1++) = *(x2++) * *(w2++);
-    }
+    for (x1 += ns; x0 < x1; ) {
+        *(--y0) = *d0 * *(w0++) - *(--d1) * *(--w1);
+        *(y1++) = (*(d0++) = *(x0++)) * *(w2++) + (*d1 = *(--x1)) * *(--w3);
 
-    while (x2 < x3) {
-        *(y1++) = *(x2++) * *(w2++) + *(--x3) * *(--w3);
-        *(y1++) = *(x2++) * *(w2++) + *(--x3) * *(--w3);
+        *(--y0) = *d0 * *(w0++) - *(--d1) * *(--w1);
+        *(y1++) = (*(d0++) = *(x0++)) * *(w2++) + (*d1 = *(--x1)) * *(--w3);
     }
 }
 
@@ -409,16 +405,17 @@ static void imdct_window(enum lc3_dt dt, enum lc3_srate sr,
  * Forward MDCT transformation
  */
 void lc3_mdct_forward(enum lc3_dt dt, enum lc3_srate sr,
-    enum lc3_srate sr_dst, const float *x, float *y)
+    enum lc3_srate sr_dst, const float *x, float *d, float *y)
 {
     const struct lc3_mdct_rot_def *rot = lc3_mdct_rot[dt][sr];
     int nf = LC3_NS(dt, sr_dst);
     int ns = LC3_NS(dt, sr);
 
-    union { float *f; struct lc3_complex *z; } u = { .f = y };
-    struct lc3_complex z[ns/2];
+    struct lc3_complex buffer[ns/2];
+    struct lc3_complex *z = (struct lc3_complex *)y;
+    union { float *f; struct lc3_complex *z; } u = { .z = buffer };
 
-    mdct_window(dt, sr, x, u.f);
+    mdct_window(dt, sr, x, d, u.f);
 
     mdct_pre_fft(rot, u.f, u.z);
     u.z = fft(u.z, ns/2, u.z, z);

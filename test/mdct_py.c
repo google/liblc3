@@ -25,12 +25,12 @@
 
 static PyObject *mdct_forward_py(PyObject *m, PyObject *args)
 {
-    PyObject *x_obj, *y_obj;
+    PyObject *x_obj, *xd_obj, *y_obj, *d_obj;
     enum lc3_dt dt;
     enum lc3_srate sr;
-    float *x, *y;
+    float *x, *xd, *y, *d;
 
-    if (!PyArg_ParseTuple(args, "iiO", &dt, &sr, &x_obj))
+    if (!PyArg_ParseTuple(args, "iiOO", &dt, &sr, &x_obj, &xd_obj))
         return NULL;
 
     CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
@@ -38,12 +38,16 @@ static PyObject *mdct_forward_py(PyObject *m, PyObject *args)
 
     int ns = LC3_NS(dt, sr), nd = LC3_ND(dt, sr);
 
-    CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, nd+ns, &x));
+    CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, ns, &x));
+    CTYPES_CHECK("xd", to_1d_ptr(xd_obj, NPY_FLOAT, nd, &xd));
+    d_obj = new_1d_ptr(NPY_FLOAT, nd, &d);
     y_obj = new_1d_ptr(NPY_FLOAT, ns, &y);
 
-    lc3_mdct_forward(dt, sr, sr, x+nd, y);
+    memcpy(d, xd, nd * sizeof(float));
 
-    return Py_BuildValue("N", y_obj);
+    lc3_mdct_forward(dt, sr, sr, x, d, y);
+
+    return Py_BuildValue("NN", y_obj, d_obj);
 }
 
 static PyObject *mdct_inverse_py(PyObject *m, PyObject *args)

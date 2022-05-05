@@ -83,6 +83,7 @@
 #define LC3_ND(dt, sr) \
     ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 \
                          :  5 * LC3_NS(dt, sr) /  8 )
+
 #define LC3_NE(dt, sr) \
     ( 20 * (3 + (dt)) * (1 + (sr)) )
 

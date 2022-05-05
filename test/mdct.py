@@ -99,11 +99,15 @@ def check_forward_unit(rng, dt, sr):
 
     x = (2 * rng.random(ns)) - 1
 
-    mdct = MdctForward(dt, sr)
-    y = [ mdct.run(x), mdct.run(x) ]
+    y   = [ None ] * 2
+    y_c = [ None ] * 2
 
-    y_c = [ lc3.mdct_forward(dt, sr, np.append(np.zeros(nd), x)),
-            lc3.mdct_forward(dt, sr, np.append(x[-nd:], x))      ]
+    mdct = MdctForward(dt, sr)
+    y[0] = mdct.run(x)
+    y[1] = mdct.run(x)
+
+    (y_c[0], d_c) = lc3.mdct_forward(dt, sr, x, np.zeros(nd))
+    y_c[1] = lc3.mdct_forward(dt, sr, x, d_c)[0]
 
     ok = ok and np.amax(np.abs(y[0] - y_c[0])) < 1e-5
     ok = ok and np.amax(np.abs(y[1] - y_c[1])) < 1e-5
@@ -118,12 +122,10 @@ def check_forward_appendix_c(dt):
     nd = T.ND[dt][sr]
     ok = True
 
-    y  = lc3.mdct_forward(dt, sr,
-            np.append(np.zeros(nd), C.X_PCM[dt][0]))
+    (y, d) = lc3.mdct_forward(dt, sr, C.X_PCM[dt][0], np.zeros(nd))
     ok = ok and np.amax(np.abs(y - C.X[dt][0])) < 1e-1
 
-    y  = lc3.mdct_forward(dt, sr,
-            np.append(C.X_PCM[dt][0][-nd:], C.X_PCM[dt][1]))
+    (y, d) = lc3.mdct_forward(dt, sr, C.X_PCM[dt][1], d)
     ok = ok and np.amax(np.abs(y - C.X[dt][1])) < 1e-1
 
     return ok
