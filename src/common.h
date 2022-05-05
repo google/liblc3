@@ -36,6 +36,24 @@
 
 
 /**
+ * Hot Function attribute
+ * Selectively disable sanitizer
+ */
+
+#ifdef __clang__
+
+#define LC3_HOT \
+    __attribute__((no_sanitize("bounds"))) \
+    __attribute__((no_sanitize("integer")))
+
+#else /* __clang__ */
+
+#define LC3_HOT
+
+#endif /* __clang__ */
+
+
+/**
  * Macros
  * MIN/MAX  Minimum and maximum between 2 values
  * CLIP     Clip a value between low and high limits

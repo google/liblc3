@@ -28,7 +28,7 @@
  * x, y            Input and output coefficients, of size 5xn
  * n               Number of interleaved transform to perform
  */
-static inline void fft_5(
+LC3_HOT static inline void fft_5(
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
     static const float cos1 =  0.3090169944;  /* cos(-2Pi 1/5) */
@@ -84,7 +84,7 @@ static inline void fft_5(
  * twiddles        Twiddles factors, determine size of transform
  * n               Number of interleaved transforms
  */
-static inline void fft_bf3(
+LC3_HOT static inline void fft_bf3(
     const struct lc3_fft_bf3_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
@@ -126,7 +126,7 @@ static inline void fft_bf3(
  * x, y            Input and output coefficients
  * n               Number of interleaved transforms
  */
-static inline void fft_bf2(
+LC3_HOT static inline void fft_bf2(
     const struct lc3_fft_bf2_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
@@ -196,7 +196,7 @@ static struct lc3_complex *fft(const struct lc3_complex *x, int n,
  * x, y            Input current and delayed samples
  * y, d            Output windowed samples, and delayed ones
  */
-static void mdct_window(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static void mdct_window(enum lc3_dt dt, enum lc3_srate sr,
     const float *x, float *d, float *y)
 {
     int ns = LC3_NS(dt, sr), nd = LC3_ND(dt, sr);
@@ -232,7 +232,7 @@ static void mdct_window(enum lc3_dt dt, enum lc3_srate sr,
  *
  * `x` and y` can be the same buffer
  */
-static void mdct_pre_fft(const struct lc3_mdct_rot_def *def,
+LC3_HOT static void mdct_pre_fft(const struct lc3_mdct_rot_def *def,
     const float *x, struct lc3_complex *y)
 {
     int n4 = def->n4;
@@ -263,7 +263,7 @@ static void mdct_pre_fft(const struct lc3_mdct_rot_def *def,
  *
  * `x` and y` can be the same buffer
  */
-static void mdct_post_fft(const struct lc3_mdct_rot_def *def,
+LC3_HOT static void mdct_post_fft(const struct lc3_mdct_rot_def *def,
     const struct lc3_complex *x, float *y, float scale)
 {
     int n4 = def->n4, n8 = n4 >> 1;
@@ -295,7 +295,7 @@ static void mdct_post_fft(const struct lc3_mdct_rot_def *def,
  * The real and imaginary parts of `y` are swapped,
  * to operate on FFT instead of IFFT
  */
-static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
+LC3_HOT static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
     const float *x, struct lc3_complex *y)
 {
     int n4 = def->n4;
@@ -328,7 +328,7 @@ static void imdct_pre_fft(const struct lc3_mdct_rot_def *def,
  * The real and imaginary parts of `x` are swapped,
  * to operate on FFT instead of IFFT
  */
-static void imdct_post_fft(const struct lc3_mdct_rot_def *def,
+LC3_HOT static void imdct_post_fft(const struct lc3_mdct_rot_def *def,
     const struct lc3_complex *x, float *y, float scale)
 {
     int n4 = def->n4;
@@ -356,7 +356,7 @@ static void imdct_post_fft(const struct lc3_mdct_rot_def *def,
  * x, d            Middle half of IMDCT coefficients and delayed samples
  * y, d            Output samples and delayed ones
  */
-static void imdct_window(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static void imdct_window(enum lc3_dt dt, enum lc3_srate sr,
     const float *x, float *d, float *y)
 {
     /* The full MDCT coefficients is given by symmetry :

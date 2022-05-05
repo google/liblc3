@@ -151,7 +151,7 @@ static const int16_t h_48k_12k8_q15[4*60] = {
  * xn              Input sample, in fixed Q30
  * return          Filtered sample, in fixed Q30
  */
-static inline int32_t filter_hp50(
+LC3_HOT static inline int32_t filter_hp50(
     struct lc3_ltpf_hp50_state *hp50, int32_t xn)
 {
     int32_t yn;
@@ -178,7 +178,7 @@ static inline int32_t filter_hp50(
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 10, 20, 40 } - 1 for resampling factors 8, 4 and 2.
  */
-static inline void resample_x64k_12k8(const int p, const int16_t *h,
+LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     const int w = 2*(40 / p);
@@ -220,7 +220,7 @@ static inline void resample_x64k_12k8(const int p, const int16_t *h,
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 30, 60 } - 1 for resampling factors 8 and 4.
  */
-static inline void resample_x192k_12k8(const int p, const int16_t *h,
+LC3_HOT static inline void resample_x192k_12k8(const int p, const int16_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     const int w = 2*(120 / p);
@@ -264,7 +264,7 @@ static inline void resample_x192k_12k8(const int p, const int16_t *h,
  * The `x` vector is aligned on 32 bits
  */
 #ifndef resample_8k_12k8
-static void resample_8k_12k8(
+LC3_HOT static void resample_8k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     resample_x64k_12k8(8, h_8k_12k8_q15, hp50, x, y, n);
@@ -280,7 +280,7 @@ static void resample_8k_12k8(
  * The `x` vector is aligned on 32 bits
  */
 #ifndef resample_16k_12k8
-static void resample_16k_12k8(
+LC3_HOT static void resample_16k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     resample_x64k_12k8(4, h_16k_12k8_q15, hp50, x, y, n);
@@ -296,7 +296,7 @@ static void resample_16k_12k8(
  * The `x` vector is aligned on 32 bits
  */
 #ifndef resample_32k_12k8
-static void resample_32k_12k8(
+LC3_HOT static void resample_32k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     resample_x64k_12k8(2, h_32k_12k8_q15, hp50, x, y, n);
@@ -312,7 +312,7 @@ static void resample_32k_12k8(
  * The `x` vector is aligned on 32 bits
  */
 #ifndef resample_24k_12k8
-static void resample_24k_12k8(
+LC3_HOT static void resample_24k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     resample_x192k_12k8(8, h_24k_12k8_q15, hp50, x, y, n);
@@ -328,8 +328,8 @@ static void resample_24k_12k8(
 * The `x` vector is aligned on 32 bits
 */
 #ifndef resample_48k_12k8
-static void resample_48k_12k8(
-struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+LC3_HOT static void resample_48k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
     resample_x192k_12k8(4, h_48k_12k8_q15, hp50, x, y, n);
 }
@@ -343,7 +343,7 @@ struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 * The `x` vector is aligned on 32 bits
  */
 #ifndef resample_6k4
-static void resample_6k4(const int16_t *x, int16_t *y, int n)
+LC3_HOT static void resample_6k4(const int16_t *x, int16_t *y, int n)
 {
     static const int16_t h[] = { 18477, 15424, 8105 };
     const int16_t *ye = y + n;
@@ -381,7 +381,7 @@ static void (* const resample_12k8[])
  * The size `n` of vectors must be multiple of 16, and less or equal to 128
 */
 #ifndef dot
-static inline float dot(const int16_t *a, const int16_t *b, int n)
+LC3_HOT static inline float dot(const int16_t *a, const int16_t *b, int n)
 {
     int64_t v = 0;
 
@@ -403,7 +403,7 @@ static inline float dot(const int16_t *a, const int16_t *b, int n)
  * The size `n` of vectors is multiple of 16, and less or equal to 128
  */
 #ifndef correlate
-static void correlate(
+LC3_HOT static void correlate(
     const int16_t *a, const int16_t *b, int n, float *y, int nc)
 {
     for (const float *ye = y + nc; y < ye; )
@@ -417,7 +417,7 @@ static void correlate(
  * x_max           Return the maximum value
  * return          Return the argument of the maximum
  */
-static int argmax(const float *x, int n, float *x_max)
+LC3_HOT static int argmax(const float *x, int n, float *x_max)
 {
     int arg = 0;
 
@@ -436,7 +436,7 @@ static int argmax(const float *x, int n, float *x_max)
  * x_max, xw_max   Return the maximum not weighted value
  * return          Return the argument of the weigthed maximum
  */
-static int argmax_weighted(
+LC3_HOT static int argmax_weighted(
     const float *x, int n, float w_incr, float *x_max)
 {
     int arg;
@@ -459,7 +459,7 @@ static int argmax_weighted(
  *
  * The size `n` of vectors must be multiple of 4
  */
-static void interpolate(const int16_t *x, int n, int d, int16_t *y)
+LC3_HOT static void interpolate(const int16_t *x, int n, int d, int16_t *y)
 {
     static const int16_t h4_q15[][4] = {
         { 6877, 19121,  6877,     0 }, { 3506, 18025, 11000,   220 },
@@ -492,7 +492,7 @@ static void interpolate(const int16_t *x, int n, int d, int16_t *y)
  * d               The phase of interpolation (-3 to 3)
  * return          The interpolated value
  */
-static float interpolate_corr(const float *x, int d)
+LC3_HOT static float interpolate_corr(const float *x, int d)
 {
     static const float h4[][8] = {
         {  1.53572770e-02, -4.72963246e-02,  8.35788573e-02,  8.98638285e-01,
@@ -689,8 +689,10 @@ bool lc3_ltpf_analyse(
  * c, w            Coefficients `den` then `num`, and width of filter
  * fade            Fading mode of filter  -1: Out  1: In  0: None
  */
-static inline void synthesize_template(const float *xh, int nh, int lag,
-    const float *x0, float *x, int n, const float *c, const int w, int fade)
+LC3_HOT static inline void synthesize_template(
+    const float *xh, int nh, int lag,
+    const float *x0, float *x, int n,
+    const float *c, const int w, int fade)
 {
     float g = (float)(fade <= 0);
     float g_incr = (float)((fade > 0) - (fade < 0)) / n;
@@ -742,25 +744,25 @@ static inline void synthesize_template(const float *xh, int nh, int lag,
  * Synthesis filter for each samplerates (width of filter)
  */
 
-static void synthesize_4(const float *xh, int nh, int lag,
+LC3_HOT static void synthesize_4(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
     synthesize_template(xh, nh, lag, x0, x, n, c, 4, fade);
 }
 
-static void synthesize_6(const float *xh, int nh, int lag,
+LC3_HOT static void synthesize_6(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
     synthesize_template(xh, nh, lag, x0, x, n, c, 6, fade);
 }
 
-static void synthesize_8(const float *xh, int nh, int lag,
+LC3_HOT static void synthesize_8(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
     synthesize_template(xh, nh, lag, x0, x, n, c, 8, fade);
 }
 
-static void synthesize_12(const float *xh, int nh, int lag,
+LC3_HOT static void synthesize_12(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
 {
     synthesize_template(xh, nh, lag, x0, x, n, c, 12, fade);

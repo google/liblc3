@@ -46,7 +46,7 @@ static int resolve_gain_offset(enum lc3_srate sr, int nbytes)
  * reset_off       Return True when the nbits_off must be reset
  * return          The quantized gain value
  */
-static int estimate_gain(
+LC3_HOT static int estimate_gain(
     enum lc3_dt dt, enum lc3_srate sr, const float *x,
     int nbits_budget, float nbits_off, int g_off, bool *reset_off)
 {
@@ -121,8 +121,8 @@ static int estimate_gain(
  * nbits_budget    Number of bits available for coding the spectrum
  * return          Gain adjust value (-1 to 2)
  */
-static int adjust_gain(enum lc3_srate sr,
-    int g_idx, int nbits, int nbits_budget)
+LC3_HOT static int adjust_gain(
+    enum lc3_srate sr, int g_idx, int nbits, int nbits_budget)
 {
     /* --- Compute delta threshold --- */
 
@@ -202,7 +202,7 @@ static float unquantize_gain(int g_int)
  * x               Spectral coefficients, scaled as output
  * xq, nq          Output spectral quantized coefficients, and count
  */
-static void quantize(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static void quantize(enum lc3_dt dt, enum lc3_srate sr,
     int g_int, float *x, int16_t *xq, int *nq)
 {
     float g_inv = 1 / unquantize_gain(g_int);
@@ -232,7 +232,7 @@ static void quantize(enum lc3_dt dt, enum lc3_srate sr,
  * x, nq           Spectral quantized, and count of significants
  * return          Unquantized gain value
  */
-static float unquantize(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static float unquantize(enum lc3_dt dt, enum lc3_srate sr,
     int g_int, float *x, int nq)
 {
     float g = unquantize_gain(g_int);
@@ -271,7 +271,7 @@ static int resolve_high_rate(enum lc3_srate sr, int nbytes)
  * p_lsb_mode      Return True when LSB's are not AC coded, or NULL
  * return          The number of bits coding the spectrum
  */
-static int compute_nbits(
+LC3_HOT static int compute_nbits(
     enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     const int16_t *x, int *n, int nbits_budget, bool *p_lsb_mode)
 {
@@ -367,7 +367,7 @@ static int compute_nbits(
  * x               Spectral quantized
  * nq, lsb_mode    Count of significants, and LSB discard indication
  */
-static void put_quantized(lc3_bits_t *bits,
+LC3_HOT static void put_quantized(lc3_bits_t *bits,
     enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     const int16_t *x, int nq, bool lsb_mode)
 {
@@ -443,7 +443,7 @@ static void put_quantized(lc3_bits_t *bits,
  * nf_seed         Return the noise factor seed associated
  * return          0: Ok  -1: Invalid bitstream data
  */
-static int get_quantized(lc3_bits_t *bits,
+LC3_HOT static int get_quantized(lc3_bits_t *bits,
     enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     int nq, bool lsb_mode, float *xq, uint16_t *nf_seed)
 {
@@ -518,8 +518,8 @@ static int get_quantized(lc3_bits_t *bits,
  * xq, n           Spectral quantized, and count of significants
  * xf              Scaled spectral coefficients
  */
-static void put_residual(lc3_bits_t *bits, int nbits,
-    const int16_t *xq, int n, const float *xf)
+LC3_HOT static void put_residual(
+    lc3_bits_t *bits, int nbits, const int16_t *xq, int n, const float *xf)
 {
     for (int i = 0; i < n && nbits > 0; i++) {
 
@@ -537,7 +537,8 @@ static void put_residual(lc3_bits_t *bits, int nbits,
  * nbits           Maximum number of bits to output
  * x, nq           Spectral quantized, and count of significants
  */
-static void get_residual(lc3_bits_t *bits, int nbits, float *x, int nq)
+LC3_HOT static void get_residual(
+    lc3_bits_t *bits, int nbits, float *x, int nq)
 {
     for (int i = 0; i < nq && nbits > 0; i++) {
 
@@ -559,7 +560,8 @@ static void get_residual(lc3_bits_t *bits, int nbits, float *x, int nq)
  * nbits           Maximum number of bits to output
  * x, n            Spectral quantized, and count of significants
  */
-static void put_lsb(lc3_bits_t *bits, int nbits, const int16_t *x, int n)
+LC3_HOT static void put_lsb(
+    lc3_bits_t *bits, int nbits, const int16_t *x, int n)
 {
     for (int i = 0; i < n && nbits > 0; i += 2) {
 
@@ -590,7 +592,7 @@ static void put_lsb(lc3_bits_t *bits, int nbits, const int16_t *x, int n)
  * x, nq           Spectral quantized, and count of significants
  * nf_seed         Update the noise factor seed according
  */
-static void get_lsb(lc3_bits_t *bits,
+LC3_HOT static void get_lsb(lc3_bits_t *bits,
     int nbits, float *x, int nq, uint16_t *nf_seed)
 {
     for (int i = 0; i < nq && nbits > 0; i += 2) {
@@ -634,7 +636,7 @@ static void get_lsb(lc3_bits_t *bits,
  * x               Quantization scaled spectrum coefficients
  * return          Noise factor (0 to 7)
  */
-static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
+LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     const int16_t *xq, int nq, const float *x)
 {
     int bw_stop = (dt == LC3_DT_7M5 ? 60 : 80) * (1 + bw);
@@ -665,7 +667,7 @@ static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
  * g               Quantization gain
  * x, nq           Spectral quantized, and count of significants
  */
-static void fill_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
+LC3_HOT static void fill_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     int nf, uint16_t nf_seed, float g, float *x, int nq)
 {
     int bw_stop = (dt == LC3_DT_7M5 ? 60 : 80) * (1 + bw);

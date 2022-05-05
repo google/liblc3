@@ -120,7 +120,7 @@ static const float dct16_m[16][16] = {
  * Forward DCT-16 transformation
  * x, y            Input and output 16 values
  */
-static void dct16_forward(const float *x, float *y)
+LC3_HOT static void dct16_forward(const float *x, float *y)
 {
     for (int i = 0, j; i < 16; i++)
         for (y[i] = 0, j = 0; j < 16; j++)
@@ -131,7 +131,7 @@ static void dct16_forward(const float *x, float *y)
  * Inverse DCT-16 transformation
  * x, y            Input and output 16 values
  */
-static void dct16_inverse(const float *x, float *y)
+LC3_HOT static void dct16_inverse(const float *x, float *y)
 {
     for (int i = 0, j; i < 16; i++)
         for (y[i] = 0, j = 0; j < 16; j++)
@@ -150,7 +150,8 @@ static void dct16_inverse(const float *x, float *y)
  * att             1: Attack detected  0: Otherwise
  * scf             Output 16 scale factors
  */
-static void compute_scale_factors(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static void compute_scale_factors(
+    enum lc3_dt dt, enum lc3_srate sr,
     const float *eb, bool att, float *scf)
 {
     /* Pre-emphasis gain table :
@@ -343,7 +344,8 @@ static void compute_scale_factors(enum lc3_dt dt, enum lc3_srate sr,
  * scf             Input 16 scale factors
  * lf/hfcb_idx     Output the low and high frequency codebooks index
  */
-static void resolve_codebooks(const float *scf, int *lfcb_idx, int *hfcb_idx)
+LC3_HOT static void resolve_codebooks(
+    const float *scf, int *lfcb_idx, int *hfcb_idx)
 {
     float dlfcb_max = 0, dhfcb_max = 0;
     *lfcb_idx = *hfcb_idx = 0;
@@ -371,7 +373,7 @@ static void resolve_codebooks(const float *scf, int *lfcb_idx, int *hfcb_idx)
  * c               Pulse configuration
  * cn              Normalized pulse configuration
  */
-static void normalize(const int *c, float *cn)
+LC3_HOT static void normalize(const int *c, float *cn)
 {
     int c2_sum = 0;
     for (int i = 0; i < 16; i++)
@@ -389,7 +391,7 @@ static void normalize(const int *c, float *cn)
  * start, end      Current number of pulses, limit to reach
  * corr, energy    Correlation (x,y) and y energy, updated at output
  */
-static void add_pulse(const float *x, int *y, int n,
+LC3_HOT static void add_pulse(const float *x, int *y, int n,
     int start, int end, float *corr, float *energy)
 {
     for (int k = start; k < end; k++) {
@@ -418,7 +420,7 @@ static void add_pulse(const float *x, int *y, int n,
  * c, cn           Output 4 pulse configurations candidates, normalized
  * shape/gain_idx  Output selected shape/gain indexes
  */
-static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
+LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
     int (*c)[16], float (*cn)[16], int *shape_idx, int *gain_idx)
 {
     /* --- Residual --- */
@@ -539,7 +541,7 @@ static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
  * shape/gain      Selected shape/gain indexes
  * scf             Return unquantized scale factors
  */
-static void unquantize(int lfcb_idx, int hfcb_idx,
+LC3_HOT static void unquantize(int lfcb_idx, int hfcb_idx,
     const float *c, int shape, int gain, float *scf)
 {
     const float *lfcb = lc3_sns_lfcb[lfcb_idx];
@@ -673,7 +675,7 @@ static void deenumerate(int shape,
  *
  * `x` and `y` can be the same buffer
  */
-static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
+LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     const float *scf_q, bool inv, const float *x, float *y)
 {
     /* --- Interpolate scale factors --- */
