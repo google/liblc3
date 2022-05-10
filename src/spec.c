@@ -77,28 +77,24 @@ LC3_HOT static int estimate_gain(
     int nbits = nbits_budget + nbits_off + 0.5f;
     int g_int = 255 - g_off;
 
-    for (int i = 128; i > 0; i >>= 1) {
-        const float *e_ptr = e + ne-1;
+    for (int i = 128, j, j0 = ne-1, j1 ; i > 0; i >>= 1) {
+        float gn = g_int - i;
         float v = 0;
 
-        g_int -= i;
+        for (j = j0; j >= 0 && e[j] < gn; j--);
 
-        for ( ; e_ptr >= e && *e_ptr < g_int; e_ptr--);
+        for (j1 = j; j >= 0; j--) {
+            float e_diff = e[j] - gn;
 
-        while (e_ptr >= e) {
-            float e_diff = *(e_ptr--) - g_int;
-
-            if (e_diff < 0) {
-                v += 2.7f * 28.f/20;
-            } else {
-                v += e_diff + 7 * 28.f/20;
-                if (e_diff > 43 * 28.f/20)
-                    v += e_diff - 43 * 28.f/20;
-            }
+            v += e_diff < 0            ?          2.7f * 28.f/20 :
+                 e_diff < 43 * 28.f/20 ?   e_diff +  7 * 28.f/20 :
+                                         2*e_diff - 36 * 28.f/20  ;
         }
 
         if (v > nbits * 1.4f * 28.f/20)
-            g_int += i;
+            j0 = j1;
+        else
+            g_int = g_int - i;
     }
 
     /* --- Limit gain index --- */
