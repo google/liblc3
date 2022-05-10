@@ -17,6 +17,7 @@
 test_neon_src += \
     $(TEST_DIR)/neon/test_neon.c \
     $(TEST_DIR)/neon/ltpf_neon.c \
+    $(TEST_DIR)/neon/mdct_neon.c \
     $(SRC_DIR)/tables.c
 
 test_neon_include += $(SRC_DIR)

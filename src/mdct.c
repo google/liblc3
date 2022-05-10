@@ -18,6 +18,8 @@
 
 #include "tables.h"
 
+#include "mdct_neon.h"
+
 
 /* ----------------------------------------------------------------------------
  *  FFT processing
@@ -26,8 +28,9 @@
 /**
  * FFT 5 Points
  * x, y            Input and output coefficients, of size 5xn
- * n               Number of interleaved transform to perform
+ * n               Number of interleaved transform to perform (n % 2 = 0)
  */
+#ifndef fft_5
 LC3_HOT static inline void fft_5(
     const struct lc3_complex *x, struct lc3_complex *y, int n)
 {
@@ -50,6 +53,7 @@ LC3_HOT static inline void fft_5(
             { x[2*n].re - x[3*n].re, x[2*n].im - x[3*n].im };
 
         y[0].re = x[0].re + s14.re + s23.re;
+
         y[0].im = x[0].im + s14.im + s23.im;
 
         y[1].re = x[0].re + s14.re * cos1 - d14.im * sin1
@@ -77,6 +81,7 @@ LC3_HOT static inline void fft_5(
                           + s23.im * cos2 - d23.re * sin2;
     }
 }
+#endif /* fft_5 */
 
 /**
  * FFT Butterfly 3 Points
@@ -84,6 +89,7 @@ LC3_HOT static inline void fft_5(
  * twiddles        Twiddles factors, determine size of transform
  * n               Number of interleaved transforms
  */
+#ifndef fft_bf3
 LC3_HOT static inline void fft_bf3(
     const struct lc3_fft_bf3_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
@@ -95,8 +101,7 @@ LC3_HOT static inline void fft_bf3(
     const struct lc3_complex *x0 = x, *x1 = x0 + n*n3, *x2 = x1 + n*n3;
     struct lc3_complex *y0 = y, *y1 = y0 + n3, *y2 = y1 + n3;
 
-    for (int i = 0; i < n; i++, y0 += 3*n3, y1 += 3*n3, y2 += 3*n3) {
-
+    for (int i = 0; i < n; i++, y0 += 3*n3, y1 += 3*n3, y2 += 3*n3)
         for (int j = 0; j < n3; j++, x0++, x1++, x2++) {
 
             y0[j].re = x0->re + x1->re * w0[j][0].re - x1->im * w0[j][0].im
@@ -117,8 +122,8 @@ LC3_HOT static inline void fft_bf3(
             y2[j].im = x0->im + x1->im * w2[j][0].re + x1->re * w2[j][0].im
                               + x2->im * w2[j][1].re + x2->re * w2[j][1].im;
         }
-    }
 }
+#endif /* fft_bf3 */
 
 /**
  * FFT Butterfly 2 Points
@@ -126,6 +131,7 @@ LC3_HOT static inline void fft_bf3(
  * x, y            Input and output coefficients
  * n               Number of interleaved transforms
  */
+#ifndef fft_bf2
 LC3_HOT static inline void fft_bf2(
     const struct lc3_fft_bf2_twiddles *twiddles,
     const struct lc3_complex *x, struct lc3_complex *y, int n)
@@ -148,6 +154,7 @@ LC3_HOT static inline void fft_bf2(
         }
     }
 }
+#endif /* fft_bf2 */
 
 /**
  * Perform FFT
