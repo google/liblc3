@@ -199,7 +199,7 @@ static void load_s24(
  * side, xq        Return frame data
  */
 static void analyze(struct lc3_encoder *encoder,
-    int nbytes, struct side_data *side, int16_t *xq)
+    int nbytes, struct side_data *side, uint16_t *xq)
 {
     enum lc3_dt dt = encoder->dt;
     enum lc3_srate sr = encoder->sr;
@@ -250,7 +250,7 @@ static void analyze(struct lc3_encoder *encoder,
  * buffer          Output bitstream buffer of `nbytes` size
  */
 static void encode(struct lc3_encoder *encoder,
-    const struct side_data *side, int16_t *xq, int nbytes, void *buffer)
+    const struct side_data *side, uint16_t *xq, int nbytes, void *buffer)
 {
     enum lc3_dt dt = encoder->dt;
     enum lc3_srate sr = encoder->sr;
@@ -348,7 +348,7 @@ int lc3_encode(struct lc3_encoder *encoder, enum lc3_pcm_format fmt,
     /* --- Processing --- */
 
     struct side_data side;
-    int16_t xq[LC3_NE(encoder->dt, encoder->sr)];
+    uint16_t xq[LC3_NE(encoder->dt, encoder->sr)];
 
     load[fmt](encoder, pcm, stride);
 

@@ -86,8 +86,12 @@ static PyObject *quantize_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
     xq_obj = new_1d_ptr(NPY_INT16, ne, &xq);
+    uint16_t __xq[ne];
 
-    quantize(dt, sr, g_int, x, xq, &nq);
+    quantize(dt, sr, g_int, x, __xq, &nq);
+
+    for (int i = 0; i < nq; i++)
+        xq[i] = __xq[i] & 1 ? -(__xq[i] >> 1) : (__xq[i] >> 1);
 
     return Py_BuildValue("ONi", x_obj, xq_obj, nq);
 }
@@ -111,8 +115,12 @@ static PyObject *compute_nbits_py(PyObject *m, PyObject *args)
 
     CTYPES_CHECK("xq", xq_obj = to_1d_ptr(xq_obj, NPY_INT16, ne, &xq));
 
+    uint16_t __xq[ne];
+    for (int i = 0; i < ne; i++)
+        __xq[i] = xq[i] < 0 ? (-xq[i] << 1) + 1 : (xq[i] << 1);
+
     int nbits = compute_nbits(
-        dt, sr, nbytes, xq, &nq, nbits_budget, &lsb_mode);
+        dt, sr, nbytes, __xq, &nq, nbits_budget, &lsb_mode);
 
     return Py_BuildValue("iii", nbits, nq, lsb_mode);
 }
@@ -140,9 +148,14 @@ static PyObject *analyze_py(PyObject *m, PyObject *args)
     CTYPES_CHECK(NULL, tns_obj = to_tns_data(tns_obj, &tns));
     CTYPES_CHECK(NULL, spec_obj = to_spec_analysis(spec_obj, &spec));
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
-    xq_obj = new_1d_ptr(NPY_INT16, ne, &xq);
 
-    lc3_spec_analyze(dt, sr, nbytes, pitch, &tns, &spec, x, xq, &side);
+    xq_obj = new_1d_ptr(NPY_INT16, ne, &xq);
+    uint16_t __xq[ne];
+
+    lc3_spec_analyze(dt, sr, nbytes, pitch, &tns, &spec, x, __xq, &side);
+
+    for (int i = 0; i < ne; i++)
+        xq[i] = __xq[i] & 1 ? -(__xq[i] >> 1) : (__xq[i] >> 1);
 
     from_spec_analysis(spec_obj, &spec);
     return Py_BuildValue("ONN", x_obj, xq_obj, new_spec_side(&side));
@@ -167,7 +180,11 @@ static PyObject *estimate_noise_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("xq", xq_obj = to_1d_ptr(xq_obj, NPY_INT16, ne, &xq));
     CTYPES_CHECK("x" , x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x ));
 
-    int noise_factor = estimate_noise(dt, bw, xq, nq, x);
+    uint16_t __xq[nq];
+    for (int i = 0; i < nq; i++)
+        __xq[i] = xq[i] < 0 ? (-xq[i] << 1) + 1 : (xq[i] << 1);
+
+    int noise_factor = estimate_noise(dt, bw, __xq, nq, x);
 
     return Py_BuildValue("i", noise_factor);
 }
