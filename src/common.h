@@ -57,24 +57,29 @@
  * Macros
  * MIN/MAX  Minimum and maximum between 2 values
  * CLIP     Clip a value between low and high limits
- * SATXX    Saturation on 'xx' bits
- * ABS      Return the absolute value
+ * SATXX    Signed saturation on 'xx' bits
+ * ABS      Return absolute value
  */
 
-#define LC3_MIN(a, b)  ( (a) < (b) ? (a) : (b) )
-#define LC3_MAX(a, b)  ( (a) > (b) ? (a) : (b) )
-#define LC3_CLIP(v, min, max)  LC3_MIN(LC3_MAX(v, min), max)
+#define LC3_MIN(a, b)  ( (a) < (b) ?  (a) : (b) )
+#define LC3_MAX(a, b)  ( (a) > (b) ?  (a) : (b) )
 
-#ifdef __ARM_FEATURE_SAT
-#define LC3_SAT16(v)  __ssat(v, 16)
-#define LC3_SAT24(v)  __ssat(v, 24)
-#else
+#define LC3_CLIP(v, min, max)  LC3_MIN(LC3_MAX(v, min), max)
 #define LC3_SAT16(v)  LC3_CLIP(v, -(1 << 15), (1 << 15) - 1)
 #define LC3_SAT24(v)  LC3_CLIP(v, -(1 << 23), (1 << 23) - 1)
-#endif
 
-#define LC3_ABS(n)  ( (n) < 0 ? -(n) : (n) )
+#define LC3_ABS(v)  ( (v) < 0 ? -(v) : (v) )
 
+
+#ifdef __ARM_FEATURE_SAT
+
+#undef  LC3_SAT16
+#define LC3_SAT16(v) __ssat(v, 16)
+
+#undef  LC3_SAT24
+#define LC3_SAT24(v) __ssat(v, 24)
+
+#endif /* __ARM_FEATURE_SAT */
 
 
 /**
