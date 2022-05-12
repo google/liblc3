@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#ifdef __ARM_FEATURE_SIMD32
+#if __ARM_FEATURE_SIMD32 && !__ARM_NEON
 
 /**
  * Configuration
