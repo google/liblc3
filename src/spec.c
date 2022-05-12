@@ -51,25 +51,24 @@ LC3_HOT static int estimate_gain(
     int nbits_budget, float nbits_off, int g_off, bool *reset_off)
 {
     int ne = LC3_NE(dt, sr) >> 2;
-    float e[ne];
+    int e[ne];
 
-    /* --- Energy (dB) by 4 NDCT blocks ---
-     * For the next steps, add energy offset 28/20 dB,
-     * and compute the maximum magnitude */
+    /* --- Energy (dB) by 4 MDCT blocks --- */
 
-    float x_max = 0;
+    float x2_max = 0;
 
     for (int i = 0; i < ne; i++, x += 4) {
-        float x0 = fabsf(x[0]), x1 = fabsf(x[1]);
-        float x2 = fabsf(x[2]), x3 = fabsf(x[3]);
+        float x0 = x[0] * x[0];
+        float x1 = x[1] * x[1];
+        float x2 = x[2] * x[2];
+        float x3 = x[3] * x[3];
 
-        x_max = fmaxf(x_max, x0);
-        x_max = fmaxf(x_max, x1);
-        x_max = fmaxf(x_max, x2);
-        x_max = fmaxf(x_max, x3);
+        x2_max = fmaxf(x2_max, x0);
+        x2_max = fmaxf(x2_max, x1);
+        x2_max = fmaxf(x2_max, x2);
+        x2_max = fmaxf(x2_max, x3);
 
-        float s2 = x0*x0 + x1*x1 + x2*x2 + x3*x3;
-        e[i] = 28.f/20 * 10 * (s2 > 0 ? fast_log10f(s2) : -10);
+        e[i] = fast_db_q16(fmaxf(x0 + x1 + x2 + x3, 1e-10f));
     }
 
     /* --- Determine gain index --- */
@@ -77,21 +76,25 @@ LC3_HOT static int estimate_gain(
     int nbits = nbits_budget + nbits_off + 0.5f;
     int g_int = 255 - g_off;
 
+    const int k_20_28 = 20.f/28 * 0x1p16f + 0.5f;
+    const int k_2u7 = 2.7f * 0x1p16f + 0.5f;
+    const int k_1u4 = 1.4f * 0x1p16f + 0.5f;
+
     for (int i = 128, j, j0 = ne-1, j1 ; i > 0; i >>= 1) {
-        float gn = g_int - i;
-        float v = 0;
+        int gn = (g_int - i) * k_20_28;
+        int v = 0;
 
         for (j = j0; j >= 0 && e[j] < gn; j--);
 
         for (j1 = j; j >= 0; j--) {
-            float e_diff = e[j] - gn;
+            int e_diff = e[j] - gn;
 
-            v += e_diff < 0            ?          2.7f * 28.f/20 :
-                 e_diff < 43 * 28.f/20 ?   e_diff +  7 * 28.f/20 :
-                                         2*e_diff - 36 * 28.f/20  ;
+            v += e_diff < 0 ? k_2u7 :
+                 e_diff < 43 << 16 ?   e_diff + ( 7 << 16)
+                                   : 2*e_diff - (36 << 16);
         }
 
-        if (v > nbits * 1.4f * 28.f/20)
+        if (v > nbits * k_1u4)
             j0 = j1;
         else
             g_int = g_int - i;
@@ -99,10 +102,10 @@ LC3_HOT static int estimate_gain(
 
     /* --- Limit gain index --- */
 
-    int g_min = x_max == 0 ? -g_off :
-        ceilf(28 * log10f(x_max / (32768 - 0.375f)));
+    int g_min = x2_max == 0 ? -g_off :
+        ceilf(28 * log10f(sqrtf(x2_max) / (32768 - 0.375f)));
 
-    *reset_off = g_int < g_min || x_max == 0;
+    *reset_off = g_int < g_min || x2_max == 0;
     if (*reset_off)
         g_int = g_min;
 

@@ -92,6 +92,22 @@ def approx_log2():
         plt.show()
 
 
+def table_db_q16():
+
+    k = 10 * np.log10(2);
+
+    for i in range(32):
+        a = k * np.log2(np.ldexp(32 + i  , -5)) - (i // 16) * (k/2);
+        b = k * np.log2(np.ldexp(32 + i+1, -5)) - (i // 16) * (k/2);
+
+        an = np.ldexp(a, 15) + 0.5
+        bn = np.ldexp(b - a, 15) + 0.5
+        print('{{ {:5d}, {:4d} }},'
+            .format(int(np.ldexp(a, 15) + 0.5),
+                    int(np.ldexp(b - a, 15) + 0.5)),
+            end = ' ' if i % 4 < 3 else '\n')
+
+
 if __name__ == '__main__':
 
     print('\n--- Approximation of 2^n ---')
@@ -99,5 +115,8 @@ if __name__ == '__main__':
 
     print('\n--- Approximation of log2(n) ---')
     approx_log2()
+
+    print('\n--- Table of fixed Q16 dB ---')
+    table_db_q16()
 
     print('')

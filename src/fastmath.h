@@ -23,6 +23,7 @@
 #ifndef __LC3_FASTMATH_H
 #define __LC3_FASTMATH_H
 
+#include <stdint.h>
 #include <math.h>
 
 
@@ -93,6 +94,64 @@ static inline float fast_log2f(float x)
 static inline float fast_log10f(float x)
 {
     return log10f(2) * fast_log2f(x);
+}
+
+/**
+ * Fast `10 * log10(x)` (or dB) approximation in fixed Q16
+ * x               Operand, in range 2^-63 to 2^63 (1e-19 to 1e19)
+ * return          10 * log10(x) in fixed Q16 (-190 to 192 dB)
+ *
+ * - The 0 value is accepted and return the minimum value ~ -191dB
+ * - This function assumed that float 32 bits is coded IEEE 754
+ */
+static inline int32_t fast_db_q16(float x)
+{
+    /* --- Table in Q15 --- */
+
+    static const uint16_t t[][2] = {
+
+        /* [n][0] = 10 * log10(2) * log2(1 + n/32), with n = [0..15]     */
+        /* [n][1] = [n+1][0] - [n][0] (while defining [16][0])           */
+
+        {     0, 4379 }, {  4379, 4248 }, {  8627, 4125 }, { 12753, 4009 },
+        { 16762, 3899 }, { 20661, 3795 }, { 24456, 3697 }, { 28153, 3603 },
+        { 31755, 3514 }, { 35269, 3429 }, { 38699, 3349 }, { 42047, 3272 },
+        { 45319, 3198 }, { 48517, 3128 }, { 51645, 3061 }, { 54705, 2996 },
+
+        /* [n][0] = 10 * log10(2) * log2(1 + n/32) - 10 * log10(2) / 2,  */
+        /*     with n = [16..31]                                         */
+        /* [n][1] = [n+1][0] - [n][0] (while defining [32][0])           */
+
+        {  8381, 2934 }, { 11315, 2875 }, { 14190, 2818 }, { 17008, 2763 },
+        { 19772, 2711 }, { 22482, 2660 }, { 25142, 2611 }, { 27754, 2564 },
+        { 30318, 2519 }, { 32837, 2475 }, { 35312, 2433 }, { 37744, 2392 },
+        { 40136, 2352 }, { 42489, 2314 }, { 44803, 2277 }, { 47080, 2241 },
+
+    };
+
+    /* --- Approximation ---
+     *
+     *   10 * log10(x^2) = 10 * log10(2) * log2(x^2)
+     *
+     *   And log2(x^2) = 2 * log2( (1 + m) * 2^e )
+     *                 = 2 * (e + log2(1 + m)) , with m in range [0..1]
+     *
+     * Split the float values in :
+     *   e2  Double value of the exponent (2 * e + k)
+     *   hi  High 5 bits of mantissa, for precalculated result `t[hi][0]`
+     *   lo  Low 16 bits of mantissa, for linear interpolation `t[hi][1]`
+     *
+     * Two cases, from the range of the mantissa :
+     *   0 to 0.5   `k = 0`, use 1st part of the table
+     *   0.5 to 1   `k = 1`, use 2nd part of the table  */
+
+    union { float f; uint32_t u; } x2 = { .f = x*x };
+
+    int e2 = (x2.u >> 22) - 2*127;
+    int hi = (x2.u >> 18) & 0x1f;
+    int lo = (x2.u >>  2) & 0xffff;
+
+    return e2 * 49321 + t[hi][0] + ((t[hi][1] * lo) >> 16);
 }
 
 
