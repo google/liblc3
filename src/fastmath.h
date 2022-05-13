@@ -147,7 +147,7 @@ static inline int32_t fast_db_q16(float x)
 
     union { float f; uint32_t u; } x2 = { .f = x*x };
 
-    int e2 = (x2.u >> 22) - 2*127;
+    int e2 = (int)(x2.u >> 22) - 2*127;
     int hi = (x2.u >> 18) & 0x1f;
     int lo = (x2.u >>  2) & 0xffff;
 
