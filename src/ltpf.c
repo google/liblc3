@@ -178,6 +178,8 @@ LC3_HOT static inline int32_t filter_hp50(
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 10, 20, 40 } - 1 for resampling factors 8, 4 and 2.
  */
+#if !defined(resample_8k_12k8) || !defined(resample_16k_12k8) \
+    || !defined(resample_32k_12k8)
 LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -207,6 +209,7 @@ LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+#endif
 
 /**
  * Resample from 24 / 48 KHz to 12.8 KHz Template
@@ -220,6 +223,7 @@ LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
  * The number of previous samples `d` accessed on `x` is :
  *   d: { 30, 60 } - 1 for resampling factors 8 and 4.
  */
+#if !defined(resample_24k_12k8) || !defined(resample_48k_12k8)
 LC3_HOT static inline void resample_x192k_12k8(const int p, const int16_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -254,6 +258,7 @@ LC3_HOT static inline void resample_x192k_12k8(const int p, const int16_t *h,
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+#endif
 
 /**
  * Resample from 8 Khz to 12.8 KHz

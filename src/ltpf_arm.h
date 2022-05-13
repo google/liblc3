@@ -16,23 +16,11 @@
  *
  ******************************************************************************/
 
-#if __ARM_FEATURE_SIMD32 && !__ARM_NEON
-
-/**
- * Configuration
- */
+#if __ARM_FEATURE_SIMD32
 
 #ifndef TEST_ARM
 
 #include <arm_acle.h>
-
-#define resample_8k_12k8  arm_resample_8k_12k8
-#define resample_16k_12k8 arm_resample_16k_12k8
-#define resample_24k_12k8 arm_resample_24k_12k8
-#define resample_32k_12k8 arm_resample_32k_12k8
-#define resample_48k_12k8 arm_resample_48k_12k8
-
-#define correlate arm_correlate
 
 static inline int16x2_t __pkhbt(int16x2_t a, int16x2_t b)
 {
@@ -55,6 +43,8 @@ static inline float dot(const int16_t *, const int16_t *, int);
 /**
  * Resample from 8 / 16 / 32 KHz to 12.8 KHz Template
  */
+#if !defined(resample_8k_12k8) || !defined(resample_16k_12k8) \
+    || !defined(resample_32k_12k8)
 static inline void arm_resample_x64k_12k8(const int p, const int16x2_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16x2_t *x, int16_t *y, int n)
 {
@@ -80,10 +70,12 @@ static inline void arm_resample_x64k_12k8(const int p, const int16x2_t *h,
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+#endif
 
 /**
  * Resample from 24 / 48 KHz to 12.8 KHz Template
  */
+#if !defined(resample_24k_12k8) || !defined(resample_48k_12k8)
 static inline void arm_resample_x192k_12k8(const int p, const int16x2_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16x2_t *x, int16_t *y, int n)
 {
@@ -119,10 +111,13 @@ static inline void arm_resample_x192k_12k8(const int p, const int16x2_t *h,
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+#endif
 
 /**
  * Resample from 8 Khz to 12.8 KHz
  */
+#ifndef resample_8k_12k8
+#define resample_8k_12k8 arm_resample_8k_12k8
 static void arm_resample_8k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -148,10 +143,13 @@ static void arm_resample_8k_12k8(
     arm_resample_x64k_12k8(
         8, (const int16x2_t *)h, hp50, (int16x2_t *)x, y, n);
 }
+#endif /* resample_8k_12k8 */
 
 /**
  * Resample from 16 Khz to 12.8 KHz
  */
+#ifndef resample_16k_12k8
+#define resample_16k_12k8 arm_resample_16k_12k8
 static void arm_resample_16k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -198,10 +196,13 @@ static void arm_resample_16k_12k8(
     arm_resample_x64k_12k8(
         4, (const int16x2_t *)h, hp50, (int16x2_t *)x, y, n);
 }
+#endif /* resample_16k_12k8 */
 
 /**
  * Resample from 32 Khz to 12.8 KHz
  */
+#ifndef resample_32k_12k8
+#define resample_32k_12k8 arm_resample_32k_12k8
 static void arm_resample_32k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -239,10 +240,13 @@ static void arm_resample_32k_12k8(
     arm_resample_x64k_12k8(
         2, (const int16x2_t *)h, hp50, (int16x2_t *)x, y, n);
 }
+#endif /* resample_32k_12k8 */
 
 /**
  * Resample from 24 Khz to 12.8 KHz
  */
+#ifndef resample_24k_12k8
+#define resample_24k_12k8 arm_resample_24k_12k8
 static void arm_resample_24k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -332,10 +336,13 @@ static void arm_resample_24k_12k8(
     arm_resample_x192k_12k8(
         8, (const int16x2_t *)h, hp50, (int16x2_t *)x, y, n);
 }
+#endif /* resample_24k_12k8 */
 
 /**
  * Resample from 48 Khz to 12.8 KHz
  */
+#ifndef resample_48k_12k8
+#define resample_48k_12k8 arm_resample_48k_12k8
 static void arm_resample_48k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -417,10 +424,13 @@ static void arm_resample_48k_12k8(
     arm_resample_x192k_12k8(
         4, (const int16x2_t *)h, hp50, (int16x2_t *)x, y, n);
 }
+#endif /* resample_48k_12k8 */
 
 /**
  * Return vector of correlations
  */
+#ifndef correlate
+#define correlate arm_correlate
 static void arm_correlate(
     const int16_t *a, const int16_t *b, int n, float *y, int nc)
 {
@@ -461,5 +471,6 @@ static void arm_correlate(
     if (nc > 0)
         *(y++) = dot(a, b, n);
 }
+#endif /* correlate */
 
 #endif /* __ARM_FEATURE_SIMD32 */
