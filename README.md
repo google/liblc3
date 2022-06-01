@@ -98,5 +98,5 @@ The proposed encoder and decoder implementation have been fully tested and
 validated.
 
 For more detail on conformance, refer to [_Bluetooth Conformance
-Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/)
+Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/).
 
