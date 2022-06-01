@@ -22,6 +22,7 @@
 
 #else
 #define __ARM_NEON 1
+#define __ARM_ARCH_ISA_A64 1
 
 #include <stdint.h>
 

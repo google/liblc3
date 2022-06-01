@@ -34,7 +34,7 @@ static inline int32_t filter_hp50(struct lc3_ltpf_hp50_state *, int32_t);
  * Resample from 16 Khz to 12.8 KHz
  */
 #ifndef resample_16k_12k8
-#define resample_16k_12k8 neon_resample_16k_12k8
+
 LC3_HOT static void neon_resample_16k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -71,13 +71,18 @@ LC3_HOT static void neon_resample_16k_12k8(
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+
+#ifndef TEST_NEON
+#define resample_16k_12k8 neon_resample_16k_12k8
+#endif
+
 #endif /* resample_16k_12k8 */
 
 /**
  * Resample from 32 Khz to 12.8 KHz
  */
 #ifndef resample_32k_12k8
-#define resample_32k_12k8 neon_resample_32k_12k8
+
 LC3_HOT static void neon_resample_32k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -111,13 +116,18 @@ LC3_HOT static void neon_resample_32k_12k8(
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+
+#ifndef TEST_NEON
+#define resample_32k_12k8 neon_resample_32k_12k8
+#endif
+
 #endif /* resample_32k_12k8 */
 
 /**
  * Resample from 48 Khz to 12.8 KHz
  */
 #ifndef resample_48k_12k8
-#define resample_48k_12k8 neon_resample_48k_12k8
+
 LC3_HOT static void neon_resample_48k_12k8(
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -169,13 +179,18 @@ LC3_HOT static void neon_resample_48k_12k8(
         *(y++) = (yn + (1 << 15)) >> 16;
     }
 }
+
+#ifndef TEST_NEON
+#define resample_48k_12k8 neon_resample_48k_12k8
+#endif
+
 #endif /* resample_48k_12k8 */
 
 /**
  * Return dot product of 2 vectors
  */
 #ifndef dot
-#define dot neon_dot
+
 LC3_HOT static inline float neon_dot(const int16_t *a, const int16_t *b, int n)
 {
     int64x2_t v = vmovq_n_s64(0);
@@ -195,13 +210,18 @@ LC3_HOT static inline float neon_dot(const int16_t *a, const int16_t *b, int n)
     int32_t v32 = (vaddvq_s64(v) + (1 << 5)) >> 6;
     return (float)v32;
 }
+
+#ifndef TEST_NEON
+#define dot neon_dot
+#endif
+
 #endif /* dot */
 
 /**
  * Return vector of correlations
  */
 #ifndef correlate
-#define correlate neon_correlate
+
 LC3_HOT static void neon_correlate(
     const int16_t *a, const int16_t *b, int n, float *y, int nc)
 {
@@ -252,5 +272,9 @@ LC3_HOT static void neon_correlate(
         *(y++) = neon_dot(a, b--, n);
 }
 #endif /* correlate */
+
+#ifndef TEST_NEON
+#define correlate neon_correlate
+#endif
 
 #endif /* __ARM_NEON && __ARM_ARCH_ISA_A64 */
