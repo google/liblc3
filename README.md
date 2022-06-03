@@ -100,3 +100,15 @@ validated.
 For more detail on conformance, refer to [_Bluetooth Conformance
 Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/)
 
+## Meson build system
+
+Meson build system is also available to build and install lc3 codec in Linux
+environment.
+
+```sh
+$ meson build
+$ cd build
+$ ninja
+$ sudo ninja install
+```
+
