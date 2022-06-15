@@ -91,7 +91,6 @@ $ pip3 install scipy numpy
 $ make test
 ```
 
-
 ## Conformance
 
 The proposed encoder and decoder implementation have been fully tested and
@@ -99,6 +98,11 @@ validated.
 
 For more detail on conformance, refer to [_Bluetooth Conformance
 Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/)
+
+## Listening Test
+
+The codec was [_here_](https://hydrogenaud.io/index.php/topic,122575.0.html)
+subjectively evaluated in a blind listening test.
 
 ## Meson build system
 
