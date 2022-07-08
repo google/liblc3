@@ -54,7 +54,7 @@ class Decoder:
 
         b = bitstream.BitstreamReader(data)
 
-        bw = self.bwdet.get_bw(b)
+        bw = self.bwdet.get(b)
         if bw > self.sr:
             raise ValueError('Invalid bandwidth indication')
 

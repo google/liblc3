@@ -42,14 +42,14 @@ class Encoder:
         self.ne = T.NE[dt][sr]
 
         self.attdet = attdet.AttackDetector(dt, sr)
-        self.ltpf = ltpf.Ltpf(dt, sr)
+        self.ltpf = ltpf.LtpfAnalysis(dt, sr)
 
-        self.mdct = mdct.Mdct(dt, sr)
-        self.energy = e_energy.EnergyBand(dt, sr)
+        self.mdct = mdct.MdctForward(dt, sr)
+        self.energy = energy.EnergyBand(dt, sr)
         self.bwdet = bwdet.BandwidthDetector(dt, sr)
         self.sns = sns.SnsAnalysis(dt, sr)
         self.tns = tns.TnsAnalysis(dt)
-        self.spec = spec.SpectrumEncoder(dt, sr)
+        self.spec = spec.SpectrumAnalysis(dt, sr)
 
     def analyse(self, x, nbytes):
 
@@ -57,7 +57,7 @@ class Encoder:
 
         pitch_present = self.ltpf.run(x)
 
-        x = self.mdct.forward(x)[:self.ne]
+        x = self.mdct.run(x)[:self.ne]
 
         (e, nn_flag) = self.energy.compute(x)
         if nn_flag:
@@ -69,7 +69,7 @@ class Encoder:
 
         x = self.tns.run(x, bw, nn_flag, nbytes)
 
-        (xq, lastnz, x) = self.spec.quantize(bw, nbytes,
+        (xq, lastnz, x) = self.spec.run(bw, nbytes,
             self.bwdet.get_nbits(), self.ltpf.get_nbits(),
             self.sns.get_nbits(), self.tns.get_nbits(), x)
 
@@ -90,7 +90,7 @@ class Encoder:
         self.sns.store(b)
 
         if pitch_present:
-            self.ltpf.store_data(b)
+            self.ltpf.store(b)
 
         self.spec.encode(b)
 
@@ -116,9 +116,6 @@ def check_appendix_c(dt):
 
         data = lc3.encode(enc_c, C.X_PCM[dt][i], C.NBYTES[dt])
         ok = ok and data == C.BYTES_AC[dt][i]
-        if not ok:
-            dump(data)
-            dump(C.BYTES_AC[dt][i])
 
     return ok
 

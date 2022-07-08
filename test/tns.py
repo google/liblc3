@@ -221,7 +221,7 @@ class TnsAnalysis(Tns):
     def store(self, b):
 
         for f in range(self.nfilters):
-            lpc_weighting = self.lpc_weighting[f]
+            lpc_weighting = self.lpc_weighting
             rc_order = self.rc_order[f]
             rc = self.rc[f]
 
