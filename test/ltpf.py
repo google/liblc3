@@ -17,7 +17,7 @@
 import numpy as np
 import scipy.signal as signal
 
-import build.lc3 as lc3
+import lc3
 import tables as T, appendix_c as C
 
 ### ------------------------------------------------------------------------ ###

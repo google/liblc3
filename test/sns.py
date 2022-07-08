@@ -17,7 +17,7 @@
 import numpy as np
 import scipy.fftpack as fftpack
 
-import build.lc3 as lc3
+import lc3
 import tables as T, appendix_c as C
 
 ### ------------------------------------------------------------------------ ###

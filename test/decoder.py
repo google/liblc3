@@ -21,7 +21,7 @@ import scipy.io.wavfile as wavfile
 import struct
 import argparse
 
-import build.lc3 as lc3
+import lc3
 import tables as T, appendix_c as C
 
 import mdct, energy, bwdet, sns, tns, spec, ltpf
