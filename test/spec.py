@@ -68,6 +68,9 @@ class SpectrumAnalysis(SpectrumQuantization):
 
         self.g_idx = None
 
+        (noise_factor, xq, lastnz, nbits_residual_max, xg) = \
+            (None, None, None, None, None)
+
     def estimate_gain(self, x, nbits_spec, nbits_off, g_off):
 
         nbits = int(nbits_spec + nbits_off + 0.5)
@@ -402,6 +405,9 @@ class SpectrumSynthesis(SpectrumQuantization):
 
         super().__init__(dt, sr)
 
+        (lastnz, lsb_mode, g_idx) = \
+            (None, None, None)
+
     def fill_noise(self, bw, x, lastnz, f_nf, nf_seed):
 
         (i_nf, nf_start, nf_stop) = self.get_noise_indices(bw, x, lastnz)
@@ -537,7 +543,7 @@ class SpectrumSynthesis(SpectrumQuantization):
         nf_seed = sum(abs(x.astype(np.int)) * range(len(x)))
 
         zero_frame = (self.lastnz <= 2 and x[0] == 0 and x[1] == 0
-                      and self.g_idx <= 0 and nf >= 7)
+                      and self.g_idx <= 0 and f_nf >= 7)
 
         if self.lsb_mode == 0:
 
