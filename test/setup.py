@@ -37,7 +37,7 @@ depends = [ 'ctypes.h' ] + \
 includes = [ SRC_DIR, INC_DIR ]
 
 extension = Extension('lc3',
-  extra_compile_args = ['-std=c11'],
+  extra_compile_args = [ '-std=c11', '-ffast-math' ],
   define_macros = [ ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION') ],
   sources = sources,
   depends = depends,
