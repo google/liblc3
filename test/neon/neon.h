@@ -16,13 +16,11 @@
  *
  ******************************************************************************/
 
-#if __ARM_NEON
+#if __ARM_NEON && __ARM_ARCH_ISA_A64
 
 #include <arm_neon.h>
 
 #else
-#define __ARM_NEON 1
-#define __ARM_ARCH_ISA_A64 1
 
 #include <stdint.h>
 

@@ -16,7 +16,8 @@
  *
  ******************************************************************************/
 
-#if __ARM_NEON && __ARM_ARCH_ISA_A64
+#if __ARM_NEON && __ARM_ARCH_ISA_A64 && \
+        !defined(TEST_ARM) || defined(TEST_NEON)
 
 #ifndef TEST_NEON
 #include <arm_neon.h>

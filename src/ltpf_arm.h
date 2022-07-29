@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#if __ARM_FEATURE_SIMD32
+#if __ARM_FEATURE_SIMD32 || defined(TEST_ARM)
 
 #ifndef TEST_ARM
 
