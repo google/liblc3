@@ -312,6 +312,7 @@ class SpectrumAnalysis(SpectrumQuantization):
 
         b.write_uint((self.lastnz >> 1) - 1, nbits_lastnz)
         b.write_uint(self.lsb_mode, 1)
+        b.write_uint(self.g_idx, 8)
 
     def encode(self, bits):
 

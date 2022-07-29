@@ -170,9 +170,6 @@ if __name__ == "__main__":
         if len(data) != 2:
             break
 
-        if nframes >= 1000:
-            break
-
         (frame_nbytes,) = struct.unpack('=H', data)
 
         print('Decoding frame %d' % nframes, end='\r')

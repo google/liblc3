@@ -159,6 +159,8 @@ if __name__ == "__main__":
     (sr_hz, pcm) = wavfile.read(args.wav_file.name)
     if sr_hz not in (8000, 16000, 24000, 320000, 48000):
         raise ValueError('Unsupported input samplerate: %d' % sr_hz)
+    if pcm.ndim != 1:
+        raise ValueError('Only single channel wav file supported')
 
     ### Setup ###
 
