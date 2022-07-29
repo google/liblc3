@@ -82,7 +82,17 @@ endef
 .PHONY: default
 default:
 
-include makefile.mk
+
+INCLUDE += include
+
+SRC_DIR = src
+include $(SRC_DIR)/makefile.mk
+
+TOOLS_DIR = tools
+-include $(TOOLS_DIR)/makefile.mk
+
+TEST_DIR := test
+-include $(TEST_DIR)/makefile.mk
 
 
 #

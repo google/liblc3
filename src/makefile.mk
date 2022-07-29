@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
-INCLUDE += include
-SRC_DIR := src
-
 liblc3_src += \
     $(SRC_DIR)/attdet.c \
     $(SRC_DIR)/bits.c \
@@ -36,6 +33,3 @@ liblc3_cflags += -ffast-math
 $(eval $(call add-lib,liblc3))
 
 default: liblc3
-
--include tools/makefile.mk
--include test/makefile.mk

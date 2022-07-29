@@ -14,9 +14,6 @@
 # limitations under the License.
 #
 
-TOOLS_DIR = tools
-
-
 elc3_src += \
     $(TOOLS_DIR)/elc3.c \
     $(TOOLS_DIR)/lc3bin.c \

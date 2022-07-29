@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-TEST_DIR := test
-
 test_py:
 	$(V)cd $(TEST_DIR) && python3 setup.py && PYTHONPATH=build python3 run.py
 
