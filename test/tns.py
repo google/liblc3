@@ -68,7 +68,7 @@ class Tns:
         self.dt = dt
 
         (self.nfilters, self.lpc_weighting, self.rc_order, self.rc) = \
-            (None, None, [ None, None ], [ None, None ])
+            (0, False, np.array([ 0, 0 ]), np.array([ 0, 0 ]))
 
     def get_data(self):
 
