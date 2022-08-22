@@ -1,4 +1,4 @@
-name: liblc3codec
+name: liblc3
 build:
   cmake-ext: True
   kconfig-ext: True
