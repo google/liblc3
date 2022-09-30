@@ -17,9 +17,11 @@ inc = include_directories('../include')
 executable('elc3', ['elc3.c', 'lc3bin.c', 'wave.c'],
     link_with : lc3lib,
     include_directories: inc,
-    dependencies: m_dep)
+    dependencies: m_dep,
+    install: true)
 
 executable('dlc3', ['dlc3.c', 'lc3bin.c', 'wave.c'],
     link_with : lc3lib,
     include_directories: inc,
-    dependencies: m_dep)
+    dependencies: m_dep,
+    install: true)
