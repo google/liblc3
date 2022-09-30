@@ -14,14 +14,18 @@
 
 inc = include_directories('../include')
 
-executable('elc3', ['elc3.c', 'lc3bin.c', 'wave.c'],
-    link_with : lc3lib,
-    include_directories: inc,
+lc3toolslib = static_library('lc3toolslib',
+    ['lc3bin.c', 'wave.c'],
+    link_with: lc3lib,
     dependencies: m_dep,
+)
+
+executable('elc3', ['elc3.c'],
+    link_with : lc3toolslib,
+    include_directories: inc,
     install: true)
 
-executable('dlc3', ['dlc3.c', 'lc3bin.c', 'wave.c'],
-    link_with : lc3lib,
+executable('dlc3', ['dlc3.c'],
+    link_with : lc3toolslib,
     include_directories: inc,
-    dependencies: m_dep,
     install: true)
