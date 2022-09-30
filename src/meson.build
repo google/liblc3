@@ -40,7 +40,6 @@ install_headers('../include/lc3.h', '../include/lc3_private.h')
 pkg_mod = import('pkgconfig')
 
 pkg_mod.generate(libraries : lc3lib,
-                 version : '1.0',
                  name : 'liblc3',
                  filebase : 'lc3',
                  description : 'LC3 codec library')
