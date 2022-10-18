@@ -33,6 +33,7 @@ lc3lib = library('lc3',
 		lc3_sources,
 		dependencies: m_dep,
 		include_directories: inc,
+		soversion: 1,
 		install: true)
 
 install_headers('../include/lc3.h', '../include/lc3_private.h')
