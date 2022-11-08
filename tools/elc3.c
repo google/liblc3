@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
 
         int nread = wave_read_pcm(fp_in, pcm_sbytes, nch, frame_samples, pcm);
 
-        memset(pcm + nread * nch, 0,
+        memset(pcm + nread * nch * pcm_sbytes, 0,
             nch * (frame_samples - nread) * pcm_sbytes);
 
         if (floorf(i * frame_us * 1e-6) > nsec) {
