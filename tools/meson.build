@@ -17,6 +17,7 @@ inc = include_directories('../include')
 lc3toolslib = static_library('lc3toolslib',
     ['lc3bin.c', 'wave.c'],
     link_with: lc3lib,
+    include_directories: inc,
     dependencies: m_dep,
 )
 
