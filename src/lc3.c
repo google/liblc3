@@ -336,7 +336,7 @@ unsigned lc3_encoder_size(int dt_us, int sr_hz)
         return 0;
 
     return sizeof(struct lc3_encoder) +
-        LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) * sizeof(float);
+        (LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
 }
 
 /**
@@ -622,7 +622,7 @@ unsigned lc3_decoder_size(int dt_us, int sr_hz)
         return 0;
 
     return sizeof(struct lc3_decoder) +
-        LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) * sizeof(float);
+        (LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
 }
 
 /**
