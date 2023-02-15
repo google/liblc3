@@ -88,7 +88,7 @@ static struct parameters parse_args(int argc, char *argv[])
                 error(EINVAL, "Option %s", arg);
 
             char opt = arg[1];
-            const char *optarg;
+            const char *optarg = NULL;
 
             switch (opt) {
                 case 'b': case 'm': case 'r':
