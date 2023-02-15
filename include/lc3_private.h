@@ -107,8 +107,8 @@ struct lc3_encoder {
     lc3_ltpf_analysis_t ltpf;
     lc3_spec_analysis_t spec;
 
-    int16_t *xt;
-    float *xs, *xd, s[1];
+    int xt_off, xs_off, xd_off;
+    float x[1];
 };
 
 #define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) \
@@ -118,7 +118,7 @@ struct lc3_encoder {
 #define LC3_ENCODER_MEM_T(dt_us, sr_hz) \
     struct { \
         struct lc3_encoder __e; \
-        float __s[LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
+        float __x[LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
     }
 
 
@@ -145,7 +145,8 @@ struct lc3_decoder {
     lc3_ltpf_synthesis_t ltpf;
     lc3_plc_state_t plc;
 
-    float *xh, *xs, *xd, *xg, s[1];
+    int xh_off, xs_off, xd_off, xg_off;
+    float x[1];
 };
 
 #define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) \
@@ -155,7 +156,7 @@ struct lc3_decoder {
 #define LC3_DECODER_MEM_T(dt_us, sr_hz) \
     struct { \
         struct lc3_decoder __d; \
-        float __s[LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
+        float __x[LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
     }
 
 
