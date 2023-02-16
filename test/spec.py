@@ -444,7 +444,7 @@ class SpectrumSynthesis(SpectrumQuantization):
         x = np.zeros(T.NE[self.dt][self.sr])
         rate = 512 if nbytes >  20 * (1 + self.sr) else 0
 
-        levs = np.zeros(len(x), dtype=np.int)
+        levs = np.zeros(len(x), dtype=np.intc)
         c = 0
 
         for n in range(0, self.lastnz, 2):
@@ -540,7 +540,7 @@ class SpectrumSynthesis(SpectrumQuantization):
 
         ### Set residual and noise
 
-        nf_seed = sum(abs(x.astype(np.int)) * range(len(x)))
+        nf_seed = sum(abs(x.astype(np.intc)) * range(len(x)))
 
         zero_frame = (self.lastnz <= 2 and x[0] == 0 and x[1] == 0
                       and self.g_idx <= 0 and f_nf >= 7)
@@ -766,7 +766,7 @@ def check_appendix_c(dt):
             'nfilters' : C.NUM_TNS_FILTERS[dt][i],
             'lpc_weighting' : [ True, True ],
             'rc_order' : [ C.RC_ORDER[dt][i][0], 0 ],
-            'rc' : [ C.RC_I_1[dt][i] - 8, np.zeros(8, dtype = np.int) ]
+            'rc' : [ C.RC_I_1[dt][i] - 8, np.zeros(8, dtype = np.intc) ]
         }
 
         (x, xq, side) = lc3.spec_analyze(dt, sr, C.NBYTES[dt],

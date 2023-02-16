@@ -345,7 +345,7 @@ class SnsSynthesis(Sns):
 
     def deenum_mpvq(self, index, ls, npulses, n):
 
-        y = np.zeros(n, dtype=np.int)
+        y = np.zeros(n, dtype=np.intc)
         pos = 0
 
         for i in range(len(y)-1, -1, -1):
@@ -374,14 +374,14 @@ class SnsSynthesis(Sns):
 
         ## 3.7.4.2.1-2  SNS VQ Decoding
 
-        y = np.empty(16, dtype=np.int)
+        y = np.empty(16, dtype=np.intc)
 
         if self.shape == 0:
             y[:10] = self.deenum_mpvq(self.idx_a, self.ls_a, 10, 10)
             y[10:] = self.deenum_mpvq(self.idx_b, self.ls_b,  1,  6)
         elif self.shape == 1:
             y[:10] = self.deenum_mpvq(self.idx_a, self.ls_a, 10, 10)
-            y[10:] = np.zeros(6, dtype=np.int)
+            y[10:] = np.zeros(6, dtype=np.intc)
         elif self.shape == 2:
             y = self.deenum_mpvq(self.idx_a, self.ls_a, 8, 16)
         elif self.shape == 3:

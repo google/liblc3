@@ -187,8 +187,8 @@ class TnsAnalysis(Tns):
 
         self.nfilters = len(Tns.SUB_LIM[self.dt][bw])
         self.lpc_weighting = nbytes * 8 < 48 * T.DT_MS[self.dt]
-        self.rc_order = np.zeros(2, dtype=np.int)
-        self.rc = np.zeros((2, 8), dtype=np.int)
+        self.rc_order = np.zeros(2, dtype=np.intc)
+        self.rc = np.zeros((2, 8), dtype=np.intc)
 
         for f in range(self.nfilters):
 
@@ -259,8 +259,8 @@ class TnsSynthesis(Tns):
 
         self.nfilters = len(Tns.SUB_LIM[self.dt][bw])
         self.lpc_weighting = nbytes * 8 < 48 * T.DT_MS[self.dt]
-        self.rc_order = np.zeros(2, dtype=np.int)
-        self.rc = 8 * np.ones((2, 8), dtype=np.int)
+        self.rc_order = np.zeros(2, dtype=np.intc)
+        self.rc = 8 * np.ones((2, 8), dtype=np.intc)
 
         for f in range(self.nfilters):
 
