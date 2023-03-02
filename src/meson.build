@@ -44,3 +44,12 @@ pkg_mod.generate(libraries : lc3lib,
                  name : 'liblc3',
                  filebase : 'lc3',
                  description : 'LC3 codec library')
+
+#Declare dependency
+liblc3_dep = declare_dependency(
+	link_with : lc3lib,
+	include_directories : inc)
+
+if meson.version().version_compare('>= 0.54.0')
+	meson.override_dependency('liblc3', liblc3_dep)
+endif
