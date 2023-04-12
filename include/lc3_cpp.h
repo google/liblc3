@@ -20,8 +20,8 @@
  * Low Complexity Communication Codec (LC3) - C++ interface
  */
 
-#ifndef __LC3CPP_H
-#define __LC3CPP_H
+#ifndef __LC3_CPP_H
+#define __LC3_CPP_H
 
 #include <cassert>
 #include <memory>
@@ -282,4 +282,4 @@ class Decoder : public Base<struct lc3_decoder> {
 
 }  // namespace lc3
 
-#endif /* __LC3CPP_H */
+#endif /* __LC3_CPP_H */
