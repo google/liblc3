@@ -28,27 +28,52 @@ def fast_exp2(x, p):
 
     return np.power(y.astype(np.float32), 16)
 
+def fast_exp2_fxp(x, p):
+    c = np.array([ p[0] * 2**59, p[1] * 2**52, p[2] * 2**45,
+                   p[3] * 2**38, p[4] * 2**31 ], dtype=np.int32)
+
+    x = (x * 2**24).astype(np.int32)
+
+    y = ((x.astype(np.int64) * (    c[0]) + (1 << 30)) >> 31).astype(np.int32)
+    y = ((x.astype(np.int64) * (y + c[1]) + (1 << 30)) >> 31).astype(np.int32)
+    y = ((x.astype(np.int64) * (y + c[2]) + (1 << 30)) >> 31).astype(np.int32)
+    y = ((x.astype(np.int64) * (y + c[3]) + (1 << 30)) >> 31).astype(np.int32)
+    y = ((x.astype(np.int64) * (y + c[4]) + (1 << 30)) >> 31).astype(np.int32)
+    y = y + (1 << 24)
+
+    y = (((y.astype(np.int64) * y) + (1 << 23)) >> 24).astype(np.int32)
+    y = (((y.astype(np.int64) * y) + (1 << 23)) >> 24).astype(np.int32)
+    y = (((y.astype(np.int64) * y) + (1 << 23)) >> 24).astype(np.int32)
+    y = (((y.astype(np.int64) * y) + (1 << 24)) >> 25).astype(np.int32)
+
+    return y.astype(np.float32) * 2**-23
+
+
 def approx_exp2():
 
     x = np.arange(-8, 8, step=1e-3)
 
-    p = np.polyfit(x, ((2 ** (x/16)) - 1) / x, 4)
-    y = [ fast_exp2(x[i], p) for i in range(len(x)) ]
-    e = np.abs(y - 2**x) / (2 ** x)
+    p  = np.polyfit(x, ((2 ** (x/16)) - 1) / x, 4)
+    y0 = [ fast_exp2(x[i], p) for i in range(len(x)) ]
+    y1 = [ fast_exp2_fxp(x[i], p) for i in range(len(x)) ]
+    e0  = np.abs(y0 - 2**x) / (2 ** x)
+    e1  = np.abs(y1 - 2**x) / (2 ** x)
 
     print('{{ {:14.8e}, {:14.8e}, {:14.8e}, {:14.8e}, {:14.8e} }}'
                 .format(p[0], p[1], p[2], p[3], p[4]))
-    print('Max relative error: ', np.max(e))
-    print('Max RMS error: ', np.sqrt(np.mean(e ** 2)))
+    print('Max relative error: ', np.max(e0))
+    print('Max RMS error: ', np.sqrt(np.mean(e0 ** 2)))
 
     if False:
         fig, (ax1, ax2) = plt.subplots(2)
 
         ax1.plot(x, 2**x, label='Reference')
-        ax1.plot(x, y, label='Approximation')
+        ax1.plot(x, y0, label='Floating point Approximation')
+        ax1.plot(x, y1, label='Fixed point Approximation')
         ax1.legend()
 
-        ax2.plot(x, e, label='Relative Error')
+        ax2.plot(x, e0, label='Floating point Relative Error')
+        ax2.plot(x, e1, label='Fixed point Relative Error')
         ax2.legend()
 
         plt.show()

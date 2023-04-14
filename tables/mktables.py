@@ -104,8 +104,8 @@ def mdct_fft_twiddles():
 
         kv = -2 * np.pi * np.arange(n // 2) / n
         for (i, k) in enumerate(kv):
-            print('{{ {:14.7e}, {:14.7e} }},'.format(np.cos(k), np.sin(k)),
-                  end = '\n' if i%2 == 1 else ' ')
+            print('{{ {:14.7e}, {:14.7e} }},'.format(
+                  np.cos(k) / np.sqrt(2), np.sin(k) / np.sqrt(2)))
 
     for n in (15, 45):
 
@@ -115,7 +115,8 @@ def mdct_fft_twiddles():
         for k in kv:
             print(('{{ {{ {:14.7e}, {:14.7e} }},' +
                      ' {{ {:14.7e}, {:14.7e} }} }},').format(
-                np.cos(k), np.sin(k), np.cos(2*k), np.sin(2*k)))
+                np.cos(  k) / np.sqrt(3), np.sin(  k) / np.sqrt(3),
+                np.cos(2*k) / np.sqrt(3), np.sin(2*k) / np.sqrt(3)))
 
 
 def mdct_rot_twiddles():
@@ -126,8 +127,7 @@ def mdct_rot_twiddles():
 
         kv = 2 * np.pi * (np.arange(n // 4) + 1/8) / n
         for (i, k) in enumerate(kv):
-            print('{{ {:14.7e}, {:14.7e} }},'.format(np.cos(k), np.sin(k)),
-                  end = '\n' if i%2 == 1 else ' ')
+            print('{{ {:14.7e}, {:14.7e} }},'.format(np.cos(k), np.sin(k)))
 
 
 def mdct_scaling():

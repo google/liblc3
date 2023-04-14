@@ -271,7 +271,21 @@ static void analyze(struct lc3_encoder *encoder,
 
     float e[LC3_NUM_BANDS];
 
+#ifdef CONFIG_FIXED_POINT
+{
+    int nd = LC3_ND(dt, sr);
+    int32_t __xs[ns], __xf[ns], __xd[nd];
+    for (int i = 0; i < ns; i++) __xs[i] = ldexpf(xs[i], 8);
+    for (int i = 0; i < nd; i++) __xd[i] = ldexpf(xd[i], 8);
+
+    lc3_mdct_forward(dt, sr_pcm, sr, __xs, __xd, __xf);
+
+    for (int i = 0; i < nd; i++) xd[i] = ldexpf(__xd[i], -8);
+    for (int i = 0; i < ns; i++) xf[i] = ldexpf(__xf[i], -8);
+}
+#else
     lc3_mdct_forward(dt, sr_pcm, sr, xs, xd, xf);
+#endif
 
     bool nn_flag = lc3_energy_compute(dt, sr, xf, e);
     if (nn_flag)
@@ -583,16 +597,49 @@ static void synthesize(struct lc3_decoder *decoder,
 
         lc3_tns_synthesize(dt, bw, &side->tns, xf);
 
+#ifdef CONFIG_FIXED_POINT
+{
+        int nd = LC3_ND(dt, sr);
+        int32_t __xf[ns], __xg[ns], __xs[ns],  __xd[nd];
+
+        for (int i = 0; i < ns; i++) __xf[i] = ldexpf(xf[i], 8);
+        for (int i = 0; i < ns; i++) __xg[i] = ldexpf(xg[i], 8);
+        for (int i = 0; i < nd; i++) __xd[i] = ldexpf(xd[i], 8);
+
+        lc3_sns_synthesize(dt, sr, &side->sns, __xf, __xg);
+
+        lc3_mdct_inverse(dt, sr_pcm, sr, __xg, __xd, __xs);
+
+        for (int i = 0; i < nd; i++) xd[i] = ldexpf(__xd[i], -8);
+        for (int i = 0; i < ns; i++) xs[i] = ldexpf(__xs[i], -8);
+        for (int i = 0; i < ns; i++) xg[i] = ldexpf(__xg[i], -8);
+}
+#else
         lc3_sns_synthesize(dt, sr, &side->sns, xf, xg);
 
         lc3_mdct_inverse(dt, sr_pcm, sr, xg, xd, xs);
+#endif
 
     } else {
         lc3_plc_synthesize(dt, sr, &decoder->plc, xg, xf);
 
-        memset(xf + ne, 0, (ns - ne) * sizeof(float));
+        memset(xf + ne, 0, (ns - ne) * sizeof(lc3_intfloat_t));
 
+#ifdef CONFIG_FIXED_POINT
+{
+        int nd = LC3_ND(dt, sr);
+        lc3_intfloat_t __xf[ns], __xs[ns], __xd[nd];
+        for (int i = 0; i < ns; i++) __xf[i] = ldexpf(xf[i], 8);
+        for (int i = 0; i < nd; i++) __xd[i] = ldexpf(xd[i], 8);
+
+        lc3_mdct_inverse(dt, sr_pcm, sr, __xf, __xd, __xs);
+
+        for (int i = 0; i < nd; i++) xd[i] = ldexpf(__xd[i], -8);
+        for (int i = 0; i < ns; i++) xs[i] = ldexpf(__xs[i], -8);
+}
+#else
         lc3_mdct_inverse(dt, sr_pcm, sr, xf, xd, xs);
+#endif
     }
 
     lc3_ltpf_synthesize(dt, sr_pcm, nbytes, &decoder->ltpf,

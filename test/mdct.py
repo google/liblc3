@@ -97,7 +97,7 @@ def check_forward_unit(rng, dt, sr):
     nd = T.ND[dt][sr]
     ok = True
 
-    x = (2 * rng.random(ns)) - 1
+    x = ( (2 * rng.random(ns)) - 1 ) * 2**15
 
     y   = [ None ] * 2
     y_c = [ None ] * 2
@@ -109,8 +109,8 @@ def check_forward_unit(rng, dt, sr):
     (y_c[0], d_c) = lc3.mdct_forward(dt, sr, x, np.zeros(nd))
     y_c[1] = lc3.mdct_forward(dt, sr, x, d_c)[0]
 
-    ok = ok and np.amax(np.abs(y[0] - y_c[0])) < 1e-5
-    ok = ok and np.amax(np.abs(y[1] - y_c[1])) < 1e-5
+    ok = ok and np.amax(np.abs(y[0] - y_c[0])) < 1e-1
+    ok = ok and np.amax(np.abs(y[1] - y_c[1])) < 1e-1
 
     return ok
 
@@ -137,7 +137,7 @@ def check_inverse_unit(rng, dt, sr):
     nd = [ (23 * ns) // 30, (5 * ns) // 8 ][dt]
     ok = True
 
-    x  = (2 * rng.random(ns)) - 1
+    x = ( (2 * rng.random(ns)) - 1 ) * 2**15
 
     y   = [ None ] * 2
     y_c = [ None ] * 2
@@ -149,8 +149,8 @@ def check_inverse_unit(rng, dt, sr):
     (y_c[0], d_c) = lc3.mdct_inverse(dt, sr, x, np.zeros(nd))
     y_c[1] = lc3.mdct_inverse(dt, sr, x, d_c)[0]
 
-    ok = ok and np.amax(np.abs(y[0] - y_c[0])) < 1e-5
-    ok = ok and np.amax(np.abs(y[1] - y_c[1])) < 1e-5
+    ok = ok and np.amax(np.abs(y[0] - y_c[0])) < 1e-1
+    ok = ok and np.amax(np.abs(y[1] - y_c[1])) < 1e-1
 
     return ok
 

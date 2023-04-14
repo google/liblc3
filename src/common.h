@@ -24,7 +24,6 @@
 #define __LC3_COMMON_H
 
 #include <lc3.h>
-#include "fastmath.h"
 
 #include <stdalign.h>
 #include <limits.h>
@@ -139,9 +138,12 @@ enum lc3_bandwidth {
  * Complex floating point number
  */
 
+// TODO
+#include "fastmath.h"
+
 struct lc3_complex
 {
-    float re, im;
+    lc3_intfloat_t re, im;
 };
 
 

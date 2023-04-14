@@ -535,7 +535,7 @@ def check_analysis_appendix_c(dt):
         ok = ok and np.amax(np.abs(scf_q - C.SCF_Q[dt][i])) < 1e-5
 
         x = lc3.sns_spectral_shaping(dt, sr, C.SCF_Q[dt][i], False, C.X[dt][i])
-        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-5
+        ok = ok and np.amax(np.abs(x - C.X_S[dt][i])) < 1e-1
 
         (x, data) = lc3.sns_analyze(dt, sr, C.E_B[dt][i], False, C.X[dt][i])
         ok = ok and data['lfcb'] == C.IND_LF[dt][i]
@@ -549,7 +549,7 @@ def check_analysis_appendix_c(dt):
             data['idx_b'] == C.IDX_B[dt][i])
         ok = ok and (C.LS_IND_B[dt][i] is None or
             data['ls_b'] == C.LS_IND_B[dt][i])
-        ok = ok and np.amax(np.abs(1 - x/C.X_S[dt][i])) < 1e-5
+        ok = ok and np.amax(np.abs(x - C.X_S[dt][i])) < 1e-1
 
     return ok
 

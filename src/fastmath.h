@@ -26,34 +26,40 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "fixmath.h"
+
 
 /**
  * Fast 2^n approximation
  * x               Operand, range -8 to 8
- * return          2^x approximation (max relative error ~ 7e-6)
+ * return          2^x approximation (9.23)
  */
-static inline float fast_exp2f(float x)
+static inline lc3_intfloat_t fast_exp2f(lc3_intfloat_t x)
 {
-    float y;
+    lc3_intfloat_t y;
 
     /* --- Polynomial approx in range -0.5 to 0.5 --- */
 
-    static const float c[] = { 1.27191277e-09, 1.47415221e-07,
-        1.35510312e-05, 9.38375815e-04, 4.33216946e-02 };
+    static const lc3_intfloat_t c[] = {
+        LC3_INTFLOAT_C(1.27191277e-09, 59),
+        LC3_INTFLOAT_C(1.47415221e-07, 52),
+        LC3_INTFLOAT_C(1.35510312e-05, 45),
+        LC3_INTFLOAT_C(9.38375815e-04, 38),
+        LC3_INTFLOAT_C(4.33216946e-02, 31) };
 
-    y = (    c[0]) * x;
-    y = (y + c[1]) * x;
-    y = (y + c[2]) * x;
-    y = (y + c[3]) * x;
-    y = (y + c[4]) * x;
-    y = (y + 1.f);
+    y = lc3_shr( lc3_mul(x,     c[0]), 31 );
+    y = lc3_shr( lc3_mul(x, y + c[1]), 31 );
+    y = lc3_shr( lc3_mul(x, y + c[2]), 31 );
+    y = lc3_shr( lc3_mul(x, y + c[3]), 31 );
+    y = lc3_shr( lc3_mul(x, y + c[4]), 31 );
+    y = LC3_INTFLOAT_C(1.f, 24) + y;
 
     /* --- Raise to the power of 16  --- */
 
-    y = y*y;
-    y = y*y;
-    y = y*y;
-    y = y*y;
+    y = lc3_shr( lc3_mul(y, y), 24 );
+    y = lc3_shr( lc3_mul(y, y), 24 );
+    y = lc3_shr( lc3_mul(y, y), 24 );
+    y = lc3_shr( lc3_mul(y, y), 25 );
 
     return y;
 }

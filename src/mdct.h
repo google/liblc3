@@ -38,8 +38,9 @@
  *
  * `x` and `y` can be the same buffer
  */
-void lc3_mdct_forward(enum lc3_dt dt, enum lc3_srate sr,
-    enum lc3_srate sr_dst, const float *x, float *d, float *y);
+void lc3_mdct_forward(
+    enum lc3_dt dt, enum lc3_srate sr, enum lc3_srate sr_dst,
+    const lc3_intfloat_t *x, lc3_intfloat_t *d, lc3_intfloat_t *y);
 
 /**
  * Inverse MDCT transformation
@@ -50,8 +51,9 @@ void lc3_mdct_forward(enum lc3_dt dt, enum lc3_srate sr,
  *
  * `x` and `y` can be the same buffer
  */
-void lc3_mdct_inverse(enum lc3_dt dt, enum lc3_srate sr,
-    enum lc3_srate sr_src, const float *x, float *d, float *y);
+void lc3_mdct_inverse(
+    enum lc3_dt dt, enum lc3_srate sr, enum lc3_srate sr_src,
+    const lc3_intfloat_t *x, lc3_intfloat_t *d, lc3_intfloat_t *y);
 
 
 #endif /* __LC3_MDCT_H */

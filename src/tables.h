@@ -35,7 +35,7 @@ extern const struct lc3_fft_bf3_twiddles *lc3_fft_twiddles_bf3[];
 extern const struct lc3_fft_bf2_twiddles *lc3_fft_twiddles_bf2[][3];
 extern const struct lc3_mdct_rot_def *lc3_mdct_rot[LC3_NUM_DT][LC3_NUM_SRATE];
 
-extern const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
+extern const lc3_intfloat_t *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
 
 
 /**
@@ -51,11 +51,11 @@ extern const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
  * SNS Quantization
  */
 
-extern const float lc3_sns_lfcb[32][8];
-extern const float lc3_sns_hfcb[32][8];
+extern const lc3_intfloat_t lc3_sns_lfcb[32][8];
+extern const lc3_intfloat_t lc3_sns_hfcb[32][8];
 
 struct lc3_sns_vq_gains {
-    int count; const float *v;
+    int count; const lc3_intfloat_t *v;
 };
 
 extern const struct lc3_sns_vq_gains lc3_sns_vq_gains[4];

@@ -92,7 +92,7 @@ static PyObject *unquantize_py(PyObject *m, PyObject *args)
     PyObject *y_obj, *scf_obj;
     int lfcb_idx, hfcb_idx;
     int shape, gain;
-    float *y, *scf;
+    lc3_intfloat_t *y, *scf;
 
     if (!PyArg_ParseTuple(args, "iiOii",
                 &lfcb_idx, &hfcb_idx, &y_obj, &shape, &gain))
@@ -107,7 +107,15 @@ static PyObject *unquantize_py(PyObject *m, PyObject *args)
 
     scf_obj = new_1d_ptr(NPY_FLOAT, 16, &scf);
 
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < 16; i++) y[i] = ldexpf(((float *)y)[i], 24);
+#endif
+
     unquantize(lfcb_idx, hfcb_idx, y, shape, gain, scf);
+
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < 16; i++) ((float *)scf)[i] = ldexpf(scf[i], -24);
+#endif
 
     return Py_BuildValue("N", scf_obj);
 }
@@ -116,7 +124,7 @@ static PyObject *spectral_shaping_py(PyObject *m, PyObject *args)
 {
     PyObject *scf_q_obj, *x_obj;
     unsigned dt, sr;
-    float *scf_q, *x;
+    lc3_intfloat_t *scf_q, *x;
     int inv;
 
     if (!PyArg_ParseTuple(args, "IIOpO", &dt, &sr, &scf_q_obj, &inv, &x_obj))
@@ -130,7 +138,16 @@ static PyObject *spectral_shaping_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("scf_q", to_1d_ptr(scf_q_obj, NPY_FLOAT, 16, &scf_q));
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < 16; i++) scf_q[i] = ldexpf(((float *)scf_q)[i], 24);
+    for (int i = 0; i < ne; i++) x[i] = ldexpf(((float *)x)[i], 8);
+#endif
+
     spectral_shaping(dt, sr, scf_q, inv, x, x);
+
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < ne; i++) ((float *)x)[i] = ldexpf(x[i], -8);
+#endif
 
     return Py_BuildValue("O", x_obj);
 }
@@ -165,7 +182,7 @@ static PyObject *synthesize_py(PyObject *m, PyObject *args)
     PyObject *data_obj, *x_obj;
     struct lc3_sns_data data;
     unsigned dt, sr;
-    float *x;
+    lc3_intfloat_t *x;
 
     if (!PyArg_ParseTuple(args, "IIOO", &dt, &sr, &data_obj, &x_obj))
         return NULL;
@@ -178,7 +195,15 @@ static PyObject *synthesize_py(PyObject *m, PyObject *args)
 
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < ne; i++) x[i] = ldexpf(((float *)x)[i], 8);
+#endif
+
     lc3_sns_synthesize(dt, sr, &data, x, x);
+
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < ne; i++) ((float *)x)[i] = ldexpf(x[i], -8);
+#endif
 
     return Py_BuildValue("O", x_obj);
 }

@@ -34,85 +34,91 @@
  */
 static const float dct16_m[16][16] = {
 
-    {  2.50000000e-01,  3.51850934e-01,  3.46759961e-01,  3.38329500e-01,
-       3.26640741e-01,  3.11806253e-01,  2.93968901e-01,  2.73300467e-01,
-       2.50000000e-01,  2.24291897e-01,  1.96423740e-01,  1.66663915e-01,
-       1.35299025e-01,  1.02631132e-01,  6.89748448e-02,  3.46542923e-02 },
+#define __C4(a, b, c, d) \
+  LC3_INTFLOAT_C(a, 31), LC3_INTFLOAT_C(b, 31), \
+  LC3_INTFLOAT_C(c, 31), LC3_INTFLOAT_C(d, 31)
 
-    {  2.50000000e-01,  3.38329500e-01,  2.93968901e-01,  2.24291897e-01,
-       1.35299025e-01,  3.46542923e-02, -6.89748448e-02, -1.66663915e-01,
-      -2.50000000e-01, -3.11806253e-01, -3.46759961e-01, -3.51850934e-01,
-      -3.26640741e-01, -2.73300467e-01, -1.96423740e-01, -1.02631132e-01 },
+  { __C4( 2.50000000e-01,  3.51850934e-01,  3.46759961e-01,  3.38329500e-01),
+    __C4( 3.26640741e-01,  3.11806253e-01,  2.93968901e-01,  2.73300467e-01),
+    __C4( 2.50000000e-01,  2.24291897e-01,  1.96423740e-01,  1.66663915e-01),
+    __C4( 1.35299025e-01,  1.02631132e-01,  6.89748448e-02,  3.46542923e-02) },
 
-     { 2.50000000e-01,  3.11806253e-01,  1.96423740e-01,  3.46542923e-02,
-      -1.35299025e-01, -2.73300467e-01, -3.46759961e-01, -3.38329500e-01,
-      -2.50000000e-01, -1.02631132e-01,  6.89748448e-02,  2.24291897e-01,
-       3.26640741e-01,  3.51850934e-01,  2.93968901e-01,  1.66663915e-01 },
+  { __C4( 2.50000000e-01,  3.38329500e-01,  2.93968901e-01,  2.24291897e-01),
+    __C4( 1.35299025e-01,  3.46542923e-02, -6.89748448e-02, -1.66663915e-01),
+    __C4(-2.50000000e-01, -3.11806253e-01, -3.46759961e-01, -3.51850934e-01),
+    __C4(-3.26640741e-01, -2.73300467e-01, -1.96423740e-01, -1.02631132e-01) },
 
-     { 2.50000000e-01,  2.73300467e-01,  6.89748448e-02, -1.66663915e-01,
-      -3.26640741e-01, -3.38329500e-01, -1.96423740e-01,  3.46542923e-02,
-       2.50000000e-01,  3.51850934e-01,  2.93968901e-01,  1.02631132e-01,
-      -1.35299025e-01, -3.11806253e-01, -3.46759961e-01, -2.24291897e-01 },
+  { __C4( 2.50000000e-01,  3.11806253e-01,  1.96423740e-01,  3.46542923e-02),
+    __C4(-1.35299025e-01, -2.73300467e-01, -3.46759961e-01, -3.38329500e-01),
+    __C4(-2.50000000e-01, -1.02631132e-01,  6.89748448e-02,  2.24291897e-01),
+    __C4( 3.26640741e-01,  3.51850934e-01,  2.93968901e-01,  1.66663915e-01) },
 
-    {  2.50000000e-01,  2.24291897e-01, -6.89748448e-02, -3.11806253e-01,
-      -3.26640741e-01, -1.02631132e-01,  1.96423740e-01,  3.51850934e-01,
-       2.50000000e-01, -3.46542923e-02, -2.93968901e-01, -3.38329500e-01,
-      -1.35299025e-01,  1.66663915e-01,  3.46759961e-01,  2.73300467e-01 },
+  { __C4( 2.50000000e-01,  2.73300467e-01,  6.89748448e-02, -1.66663915e-01),
+    __C4(-3.26640741e-01, -3.38329500e-01, -1.96423740e-01,  3.46542923e-02),
+    __C4( 2.50000000e-01,  3.51850934e-01,  2.93968901e-01,  1.02631132e-01),
+    __C4(-1.35299025e-01, -3.11806253e-01, -3.46759961e-01, -2.24291897e-01) },
 
-    {  2.50000000e-01,  1.66663915e-01, -1.96423740e-01, -3.51850934e-01,
-      -1.35299025e-01,  2.24291897e-01,  3.46759961e-01,  1.02631132e-01,
-      -2.50000000e-01, -3.38329500e-01, -6.89748448e-02,  2.73300467e-01,
-       3.26640741e-01,  3.46542923e-02, -2.93968901e-01, -3.11806253e-01 },
+  { __C4( 2.50000000e-01,  2.24291897e-01, -6.89748448e-02, -3.11806253e-01),
+    __C4(-3.26640741e-01, -1.02631132e-01,  1.96423740e-01,  3.51850934e-01),
+    __C4( 2.50000000e-01, -3.46542923e-02, -2.93968901e-01, -3.38329500e-01),
+    __C4(-1.35299025e-01,  1.66663915e-01,  3.46759961e-01,  2.73300467e-01) },
 
-    {  2.50000000e-01,  1.02631132e-01, -2.93968901e-01, -2.73300467e-01,
-       1.35299025e-01,  3.51850934e-01,  6.89748448e-02, -3.11806253e-01,
-      -2.50000000e-01,  1.66663915e-01,  3.46759961e-01,  3.46542923e-02,
-      -3.26640741e-01, -2.24291897e-01,  1.96423740e-01,  3.38329500e-01 },
+  { __C4( 2.50000000e-01,  1.66663915e-01, -1.96423740e-01, -3.51850934e-01),
+    __C4(-1.35299025e-01,  2.24291897e-01,  3.46759961e-01,  1.02631132e-01),
+    __C4(-2.50000000e-01, -3.38329500e-01, -6.89748448e-02,  2.73300467e-01),
+    __C4( 3.26640741e-01,  3.46542923e-02, -2.93968901e-01, -3.11806253e-01) },
 
-    {  2.50000000e-01,  3.46542923e-02, -3.46759961e-01, -1.02631132e-01,
-       3.26640741e-01,  1.66663915e-01, -2.93968901e-01, -2.24291897e-01,
-       2.50000000e-01,  2.73300467e-01, -1.96423740e-01, -3.11806253e-01,
-       1.35299025e-01,  3.38329500e-01, -6.89748448e-02, -3.51850934e-01 },
+  { __C4( 2.50000000e-01,  1.02631132e-01, -2.93968901e-01, -2.73300467e-01),
+    __C4( 1.35299025e-01,  3.51850934e-01,  6.89748448e-02, -3.11806253e-01),
+    __C4(-2.50000000e-01,  1.66663915e-01,  3.46759961e-01,  3.46542923e-02),
+    __C4(-3.26640741e-01, -2.24291897e-01,  1.96423740e-01,  3.38329500e-01) },
 
-    {  2.50000000e-01, -3.46542923e-02, -3.46759961e-01,  1.02631132e-01,
-       3.26640741e-01, -1.66663915e-01, -2.93968901e-01,  2.24291897e-01,
-       2.50000000e-01, -2.73300467e-01, -1.96423740e-01,  3.11806253e-01,
-       1.35299025e-01, -3.38329500e-01, -6.89748448e-02,  3.51850934e-01 },
+  { __C4( 2.50000000e-01,  3.46542923e-02, -3.46759961e-01, -1.02631132e-01),
+    __C4( 3.26640741e-01,  1.66663915e-01, -2.93968901e-01, -2.24291897e-01),
+    __C4( 2.50000000e-01,  2.73300467e-01, -1.96423740e-01, -3.11806253e-01),
+    __C4( 1.35299025e-01,  3.38329500e-01, -6.89748448e-02, -3.51850934e-01) },
 
-    {  2.50000000e-01, -1.02631132e-01, -2.93968901e-01,  2.73300467e-01,
-       1.35299025e-01, -3.51850934e-01,  6.89748448e-02,  3.11806253e-01,
-      -2.50000000e-01, -1.66663915e-01,  3.46759961e-01, -3.46542923e-02,
-      -3.26640741e-01,  2.24291897e-01,  1.96423740e-01, -3.38329500e-01 },
+  { __C4( 2.50000000e-01, -3.46542923e-02, -3.46759961e-01,  1.02631132e-01),
+    __C4( 3.26640741e-01, -1.66663915e-01, -2.93968901e-01,  2.24291897e-01),
+    __C4( 2.50000000e-01, -2.73300467e-01, -1.96423740e-01,  3.11806253e-01),
+    __C4( 1.35299025e-01, -3.38329500e-01, -6.89748448e-02,  3.51850934e-01) },
 
-    {  2.50000000e-01, -1.66663915e-01, -1.96423740e-01,  3.51850934e-01,
-      -1.35299025e-01, -2.24291897e-01,  3.46759961e-01, -1.02631132e-01,
-      -2.50000000e-01,  3.38329500e-01, -6.89748448e-02, -2.73300467e-01,
-       3.26640741e-01, -3.46542923e-02, -2.93968901e-01,  3.11806253e-01 },
+  { __C4( 2.50000000e-01, -1.02631132e-01, -2.93968901e-01,  2.73300467e-01),
+    __C4( 1.35299025e-01, -3.51850934e-01,  6.89748448e-02,  3.11806253e-01),
+    __C4(-2.50000000e-01, -1.66663915e-01,  3.46759961e-01, -3.46542923e-02),
+    __C4(-3.26640741e-01,  2.24291897e-01,  1.96423740e-01, -3.38329500e-01) },
 
-    {  2.50000000e-01, -2.24291897e-01, -6.89748448e-02,  3.11806253e-01,
-      -3.26640741e-01,  1.02631132e-01,  1.96423740e-01, -3.51850934e-01,
-       2.50000000e-01,  3.46542923e-02, -2.93968901e-01,  3.38329500e-01,
-      -1.35299025e-01, -1.66663915e-01,  3.46759961e-01, -2.73300467e-01 },
+  { __C4( 2.50000000e-01, -1.66663915e-01, -1.96423740e-01,  3.51850934e-01),
+    __C4(-1.35299025e-01, -2.24291897e-01,  3.46759961e-01, -1.02631132e-01),
+    __C4(-2.50000000e-01,  3.38329500e-01, -6.89748448e-02, -2.73300467e-01),
+    __C4( 3.26640741e-01, -3.46542923e-02, -2.93968901e-01,  3.11806253e-01) },
 
-    {  2.50000000e-01, -2.73300467e-01,  6.89748448e-02,  1.66663915e-01,
-      -3.26640741e-01,  3.38329500e-01, -1.96423740e-01, -3.46542923e-02,
-       2.50000000e-01, -3.51850934e-01,  2.93968901e-01, -1.02631132e-01,
-      -1.35299025e-01,  3.11806253e-01, -3.46759961e-01,  2.24291897e-01 },
+  { __C4( 2.50000000e-01, -2.24291897e-01, -6.89748448e-02,  3.11806253e-01),
+    __C4(-3.26640741e-01,  1.02631132e-01,  1.96423740e-01, -3.51850934e-01),
+    __C4( 2.50000000e-01,  3.46542923e-02, -2.93968901e-01,  3.38329500e-01),
+    __C4(-1.35299025e-01, -1.66663915e-01,  3.46759961e-01, -2.73300467e-01) },
 
-    {  2.50000000e-01, -3.11806253e-01,  1.96423740e-01, -3.46542923e-02,
-      -1.35299025e-01,  2.73300467e-01, -3.46759961e-01,  3.38329500e-01,
-      -2.50000000e-01,  1.02631132e-01,  6.89748448e-02, -2.24291897e-01,
-       3.26640741e-01, -3.51850934e-01,  2.93968901e-01, -1.66663915e-01 },
+  { __C4( 2.50000000e-01, -2.73300467e-01,  6.89748448e-02,  1.66663915e-01),
+    __C4(-3.26640741e-01,  3.38329500e-01, -1.96423740e-01, -3.46542923e-02),
+    __C4( 2.50000000e-01, -3.51850934e-01,  2.93968901e-01, -1.02631132e-01),
+    __C4(-1.35299025e-01,  3.11806253e-01, -3.46759961e-01,  2.24291897e-01) },
 
-    {  2.50000000e-01, -3.38329500e-01,  2.93968901e-01, -2.24291897e-01,
-       1.35299025e-01, -3.46542923e-02, -6.89748448e-02,  1.66663915e-01,
-      -2.50000000e-01,  3.11806253e-01, -3.46759961e-01,  3.51850934e-01,
-      -3.26640741e-01,  2.73300467e-01, -1.96423740e-01,  1.02631132e-01 },
+  { __C4( 2.50000000e-01, -3.11806253e-01,  1.96423740e-01, -3.46542923e-02),
+    __C4(-1.35299025e-01,  2.73300467e-01, -3.46759961e-01,  3.38329500e-01),
+    __C4(-2.50000000e-01,  1.02631132e-01,  6.89748448e-02, -2.24291897e-01),
+    __C4( 3.26640741e-01, -3.51850934e-01,  2.93968901e-01, -1.66663915e-01) },
 
-    {  2.50000000e-01, -3.51850934e-01,  3.46759961e-01, -3.38329500e-01,
-       3.26640741e-01, -3.11806253e-01,  2.93968901e-01, -2.73300467e-01,
-       2.50000000e-01, -2.24291897e-01,  1.96423740e-01, -1.66663915e-01,
-       1.35299025e-01, -1.02631132e-01,  6.89748448e-02, -3.46542923e-02 },
+  { __C4( 2.50000000e-01, -3.38329500e-01,  2.93968901e-01, -2.24291897e-01),
+    __C4( 1.35299025e-01, -3.46542923e-02, -6.89748448e-02,  1.66663915e-01),
+    __C4(-2.50000000e-01,  3.11806253e-01, -3.46759961e-01,  3.51850934e-01),
+    __C4(-3.26640741e-01,  2.73300467e-01, -1.96423740e-01,  1.02631132e-01) },
+
+  { __C4( 2.50000000e-01, -3.51850934e-01,  3.46759961e-01, -3.38329500e-01),
+    __C4( 3.26640741e-01, -3.11806253e-01,  2.93968901e-01, -2.73300467e-01),
+    __C4( 2.50000000e-01, -2.24291897e-01,  1.96423740e-01, -1.66663915e-01),
+    __C4( 1.35299025e-01, -1.02631132e-01,  6.89748448e-02, -3.46542923e-02) },
+
+#undef __C4
 
 };
 
@@ -124,18 +130,31 @@ LC3_HOT static void dct16_forward(const float *x, float *y)
 {
     for (int i = 0, j; i < 16; i++)
         for (y[i] = 0, j = 0; j < 16; j++)
+#ifdef CONFIG_FIXED_POINT
+y[i] += x[j] * ldexpf(dct16_m[j][i], -31);
+#else
             y[i] += x[j] * dct16_m[j][i];
+#endif
 }
 
 /**
  * Inverse DCT-16 transformation
  * x, y            Input and output 16 values
  */
-LC3_HOT static void dct16_inverse(const float *x, float *y)
+LC3_HOT static void dct16_inverse(const lc3_intfloat_t *x, lc3_intfloat_t *y)
 {
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0, j; i < 16; i++) {
+        int64_t yi = 0;
+        for (j = 0; j < 16; j++)
+            yi += x[j] * dct16_m[i][j];
+        y[i] = lc3_shr(yi, 31);
+    }
+#else
     for (int i = 0, j; i < 16; i++)
         for (y[i] = 0, j = 0; j < 16; j++)
             y[i] += x[j] * dct16_m[i][j];
+#endif
 }
 
 
@@ -351,13 +370,18 @@ LC3_HOT static void resolve_codebooks(
     *lfcb_idx = *hfcb_idx = 0;
 
     for (int icb = 0; icb < 32; icb++) {
-        const float *lfcb = lc3_sns_lfcb[icb];
-        const float *hfcb = lc3_sns_hfcb[icb];
+        const lc3_intfloat_t *lfcb = lc3_sns_lfcb[icb];
+        const lc3_intfloat_t *hfcb = lc3_sns_hfcb[icb];
         float dlfcb = 0, dhfcb = 0;
 
         for (int i = 0; i < 8; i++) {
+#ifdef CONFIG_FIXED_POINT
+dlfcb += (scf[  i] - ldexpf(lfcb[i], -24)) * (scf[  i] - ldexpf(lfcb[i], -24));
+dhfcb += (scf[8+i] - ldexpf(hfcb[i], -24)) * (scf[8+i] - ldexpf(hfcb[i], -24));
+#else
             dlfcb += (scf[  i] - lfcb[i]) * (scf[  i] - lfcb[i]);
             dhfcb += (scf[8+i] - hfcb[i]) * (scf[8+i] - hfcb[i]);
+#endif
         }
 
         if (icb == 0 || dlfcb < dlfcb_max)
@@ -371,15 +395,15 @@ LC3_HOT static void resolve_codebooks(
 /**
  * Unit energy normalize pulse configuration
  * c               Pulse configuration
- * cn              Normalized pulse configuration
+ * cn              Normalized pulse configuration (8.24)
  */
-LC3_HOT static void normalize(const int *c, float *cn)
+LC3_HOT static void normalize(const int *c, lc3_intfloat_t *cn)
 {
     int c2_sum = 0;
     for (int i = 0; i < 16; i++)
         c2_sum += c[i] * c[i];
 
-    float c_norm = 1.f / sqrtf(c2_sum);
+    lc3_intfloat_t c_norm = lc3_rsqrt(c2_sum, 24);
 
     for (int i = 0; i < 16; i++)
         cn[i] = c[i] * c_norm;
@@ -425,13 +449,18 @@ LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
 {
     /* --- Residual --- */
 
-    const float *lfcb = lc3_sns_lfcb[lfcb_idx];
-    const float *hfcb = lc3_sns_hfcb[hfcb_idx];
+    const lc3_intfloat_t *lfcb = lc3_sns_lfcb[lfcb_idx];
+    const lc3_intfloat_t *hfcb = lc3_sns_hfcb[hfcb_idx];
     float r[16], x[16];
 
     for (int i = 0; i < 8; i++) {
+#ifdef CONFIG_FIXED_POINT
+r[  i] = scf[  i] - ldexpf(lfcb[i], -24);
+r[8+i] = scf[8+i] - ldexpf(hfcb[i], -24);
+#else
         r[  i] = scf[  i] - lfcb[i];
         r[8+i] = scf[8+i] - hfcb[i];
+#endif
     }
 
     dct16_forward(r, x);
@@ -500,8 +529,21 @@ LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
         for (int i = 0; i < 4; i++)
             c[i][j] = x[j] < 0 ? -c[i][j] : c[i][j];
 
+
+#ifdef CONFIG_FIXED_POINT
+lc3_intfloat_t __cn[4][16];
+
+    for (int i = 0; i < 4; i++)
+        normalize(c[i], __cn[i]);
+
+for (int j = 0; j < 16; j++)
+for (int i = 0; i < 4; i++)
+cn[i][j] = ldexpf(__cn[i][j], -24);
+#else
     for (int i = 0; i < 4; i++)
         normalize(c[i], cn[i]);
+#endif
+
 
     /* --- Determe shape & gain index ---
      * Search the Mean Square Error, within (shape, gain) combinations */
@@ -515,7 +557,11 @@ LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
         int cgain_idx = 0;
 
         for (int ig = 0; ig < cgains->count; ig++) {
+#ifdef CONFIG_FIXED_POINT
+float g = ldexpf(cgains->v[ig], -12);
+#else
             float g = cgains->v[ig];
+#endif
 
             float mse = 0;
             for (int i = 0; i < 16; i++)
@@ -542,19 +588,19 @@ LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
  * scf             Return unquantized scale factors
  */
 LC3_HOT static void unquantize(int lfcb_idx, int hfcb_idx,
-    const float *c, int shape, int gain, float *scf)
+    const lc3_intfloat_t *c, int shape, int gain, lc3_intfloat_t *scf)
 {
-    const float *lfcb = lc3_sns_lfcb[lfcb_idx];
-    const float *hfcb = lc3_sns_hfcb[hfcb_idx];
-    float g = lc3_sns_vq_gains[shape].v[gain];
+    const lc3_intfloat_t *lfcb = lc3_sns_lfcb[lfcb_idx];
+    const lc3_intfloat_t *hfcb = lc3_sns_hfcb[hfcb_idx];
+    lc3_intfloat_t g = lc3_sns_vq_gains[shape].v[gain];
 
     dct16_inverse(c, scf);
 
     for (int i = 0; i < 8; i++)
-        scf[i] = lfcb[i] + g * scf[i];
+        scf[i] = lfcb[i] + lc3_shr(lc3_mul(g, scf[i]), 12);
 
     for (int i = 8; i < 16; i++)
-        scf[i] = hfcb[i-8] + g * scf[i];
+        scf[i] = hfcb[i-8] + lc3_shr(lc3_mul(g, scf[i]), 12);
 }
 
 /**
@@ -675,17 +721,27 @@ static void deenumerate(int shape,
  *
  * `x` and `y` can be the same buffer
  */
-LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
-    const float *scf_q, bool inv, const float *x, float *y)
+LC3_HOT static void spectral_shaping(
+    enum lc3_dt dt, enum lc3_srate sr, const lc3_intfloat_t *scf_q, bool inv,
+    const lc3_intfloat_t *x, lc3_intfloat_t *y)
 {
     /* --- Interpolate scale factors --- */
 
-    float scf[LC3_NUM_BANDS];
-    float s0, s1 = inv ? -scf_q[0] : scf_q[0];
+    lc3_intfloat_t scf[LC3_NUM_BANDS];
+    lc3_intfloat_t s0, s1 = inv ? -scf_q[0] : scf_q[0];
 
     scf[0] = scf[1] = s1;
     for (int i = 0; i < 15; i++) {
         s0 = s1, s1 = inv ? -scf_q[i+1] : scf_q[i+1];
+#ifdef CONFIG_FIXED_POINT
+        scf[4*i+2] = s0 + lc3_shr(1 * (s1 - s0), 3);
+        scf[4*i+3] = s0 + lc3_shr(3 * (s1 - s0), 3);
+        scf[4*i+4] = s0 + lc3_shr(5 * (s1 - s0), 3);
+        scf[4*i+5] = s0 + lc3_shr(7 * (s1 - s0), 3);
+    }
+    scf[62] = s1 + lc3_shr(1 * (s1 - s0), 3);
+    scf[63] = s1 + lc3_shr(3 * (s1 - s0), 3);
+#else
         scf[4*i+2] = s0 + 0.125f * (s1 - s0);
         scf[4*i+3] = s0 + 0.375f * (s1 - s0);
         scf[4*i+4] = s0 + 0.625f * (s1 - s0);
@@ -693,25 +749,30 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     }
     scf[62] = s1 + 0.125f * (s1 - s0);
     scf[63] = s1 + 0.375f * (s1 - s0);
+#endif
 
     int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
     int n2 = LC3_NUM_BANDS - nb;
 
     for (int i2 = 0; i2 < n2; i2++)
+#ifdef CONFIG_FIXED_POINT
+        scf[i2] = lc3_shr(scf[2*i2] + scf[2*i2+1], 1);
+#else
         scf[i2] = 0.5f * (scf[2*i2] + scf[2*i2+1]);
+#endif
 
     if (n2 > 0)
-        memmove(scf + n2, scf + 2*n2, (nb - n2) * sizeof(float));
+        memmove(scf + n2, scf + 2*n2, (nb - n2) * sizeof(lc3_intfloat_t));
 
     /* --- Spectral shaping --- */
 
     const int *lim = lc3_band_lim[dt][sr];
 
     for (int i = 0, ib = 0; ib < nb; ib++) {
-        float g_sns = fast_exp2f(-scf[ib]);
+        lc3_intfloat_t g_sns = fast_exp2f(-scf[ib]);
 
         for ( ; i < lim[ib+1]; i++)
-            y[i] = x[i] * g_sns;
+            y[i] = lc3_shr(lc3_mul(x[i], g_sns), 23);
     }
 }
 
@@ -744,22 +805,44 @@ void lc3_sns_analyze(enum lc3_dt dt, enum lc3_srate sr,
     quantize(scf, data->lfcb, data->hfcb,
         c, cn, &data->shape, &data->gain);
 
+#ifdef CONFIG_FIXED_POINT
+int32_t __scf[16], __cn[16];
+for (int i = 0; i < 16; i++) __cn[i] = ldexpf(cn[data->shape][i], 24);
+
+    unquantize(data->lfcb, data->hfcb,
+        __cn, data->shape, data->gain, __scf);
+
+for (int i = 0; i < 16; i++) scf[i] = ldexpf(__scf[i], -24);
+#else
     unquantize(data->lfcb, data->hfcb,
         cn[data->shape], data->shape, data->gain, scf);
+#endif
 
     enumerate(data->shape, c[data->shape],
         &data->idx_a, &data->ls_a, &data->idx_b, &data->ls_b);
 
+#ifdef CONFIG_FIXED_POINT
+int ne = LC3_NE(dt, sr);
+int32_t __x[ne], __y[ne];
+
+for (int i = 0; i < 16; i++) __scf[i] = ldexpf(scf[i], 24);
+for (int i = 0; i < ne; i++) __x[i] = ldexpf(x[i], 8);
+
+    spectral_shaping(dt, sr, __scf, false, __x, __y);
+
+for (int i = 0; i < ne; i++) y[i] = ldexpf(__y[i], -8);
+#else
     spectral_shaping(dt, sr, scf, false, x, y);
+#endif
 }
 
 /**
  * SNS synthesis
  */
 void lc3_sns_synthesize(enum lc3_dt dt, enum lc3_srate sr,
-    const lc3_sns_data_t *data, const float *x, float *y)
+    const lc3_sns_data_t *data, const lc3_intfloat_t *x, lc3_intfloat_t *y)
 {
-    float scf[16], cn[16];
+    lc3_intfloat_t scf[16], cn[16];
     int c[16];
 
     deenumerate(data->shape,

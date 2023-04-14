@@ -28,7 +28,7 @@ static PyObject *mdct_forward_py(PyObject *m, PyObject *args)
     PyObject *x_obj, *xd_obj, *y_obj, *d_obj;
     enum lc3_dt dt;
     enum lc3_srate sr;
-    float *x, *xd, *y, *d;
+    lc3_intfloat_t *x, *xd, *y, *d;
 
     if (!PyArg_ParseTuple(args, "iiOO", &dt, &sr, &x_obj, &xd_obj))
         return NULL;
@@ -45,7 +45,17 @@ static PyObject *mdct_forward_py(PyObject *m, PyObject *args)
 
     memcpy(d, xd, nd * sizeof(float));
 
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < ns; i++) x[i] = ldexpf(((float *)x)[i], 8);
+    for (int i = 0; i < nd; i++) d[i] = ldexpf(((float *)d)[i], 8);
+#endif
+
     lc3_mdct_forward(dt, sr, sr, x, d, y);
+
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < nd; i++) ((float *)d)[i] = ldexpf(d[i], -8);
+    for (int i = 0; i < ns; i++) ((float *)y)[i] = ldexpf(y[i], -8);
+#endif
 
     return Py_BuildValue("NN", y_obj, d_obj);
 }
@@ -55,7 +65,7 @@ static PyObject *mdct_inverse_py(PyObject *m, PyObject *args)
     PyObject *x_obj, *xd_obj, *d_obj, *y_obj;
     enum lc3_dt dt;
     enum lc3_srate sr;
-    float *x, *xd, *d, *y;
+    lc3_intfloat_t *x, *xd, *d, *y;
 
     if (!PyArg_ParseTuple(args, "iiOO", &dt, &sr, &x_obj, &xd_obj))
         return NULL;
@@ -72,7 +82,17 @@ static PyObject *mdct_inverse_py(PyObject *m, PyObject *args)
 
     memcpy(d, xd, nd * sizeof(float));
 
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < ns; i++) x[i] = ldexpf(((float *)x)[i], 8);
+    for (int i = 0; i < nd; i++) d[i] = ldexpf(((float *)d)[i], 8);
+#endif
+
     lc3_mdct_inverse(dt, sr, sr, x, d, y);
+
+#ifdef CONFIG_FIXED_POINT
+    for (int i = 0; i < nd; i++) ((float *)d)[i] = ldexpf(d[i], -8);
+    for (int i = 0; i < ns; i++) ((float *)y)[i] = ldexpf(y[i], -8);
+#endif
 
     return Py_BuildValue("NN", y_obj, d_obj);
 }
