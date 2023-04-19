@@ -49,12 +49,11 @@ enum class PcmFormat {
 template <typename T>
 class Base {
  protected:
-  Base(int dt_us, int sr_hz, int sr_pcm_hz, size_t nchannels, size_t stride)
+  Base(int dt_us, int sr_hz, int sr_pcm_hz, size_t nchannels)
       : dt_us_(dt_us),
         sr_hz_(sr_hz),
         sr_pcm_hz_(sr_pcm_hz == 0 ? sr_hz : sr_pcm_hz),
-        nchannels_(nchannels),
-        stride_(stride == 0 ? nchannels : stride) {
+        nchannels_(nchannels) {
     states.reserve(nchannels_);
   }
 
@@ -62,7 +61,7 @@ class Base {
 
   int dt_us_, sr_hz_;
   int sr_pcm_hz_;
-  size_t nchannels_, stride_;
+  size_t nchannels_;
 
   using state_ptr = std::unique_ptr<T, decltype(&free)>;
   std::vector<state_ptr> states;
@@ -92,8 +91,8 @@ class Encoder : public Base<struct lc3_encoder> {
     int ret = 0;
 
     for (size_t ich = 0; ich < nchannels_; ich++)
-      ret |= lc3_encode(states[ich].get(), cfmt, pcm + ich, stride_, frame_size,
-                        out + ich * frame_size);
+      ret |= lc3_encode(states[ich].get(), cfmt, pcm + ich, nchannels_,
+                        frame_size, out + ich * frame_size);
 
     return ret;
   }
@@ -109,9 +108,8 @@ class Encoder : public Base<struct lc3_encoder> {
   // When used, `sr_pcm_hz` is intended to be higher or equal to the encoder
   // samplerate `sr_hz`.
 
-  Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1,
-          size_t stride = 0)
-      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, stride) {
+  Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1)
+      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels) {
     for (size_t ich = 0; ich < nchannels_; ich++) {
       auto s = state_ptr(
           (lc3_encoder_t)malloc(lc3_encoder_size(dt_us_, sr_pcm_hz_)), free);
@@ -192,7 +190,7 @@ class Decoder : public Base<struct lc3_decoder> {
 
     for (size_t ich = 0; ich < nchannels_; ich++)
       ret |= lc3_decode(states[ich].get(), in + ich * frame_size, frame_size,
-                        cfmt, pcm + ich, stride_);
+                        cfmt, pcm + ich, nchannels_);
 
     return ret;
   }
@@ -208,9 +206,8 @@ class Decoder : public Base<struct lc3_decoder> {
   // When used, `sr_pcm_hz` is intended to be higher or equal to the decoder
   // samplerate `sr_hz`.
 
-  Decoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1,
-          size_t stride = 0)
-      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, stride) {
+  Decoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1)
+      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels) {
     for (size_t i = 0; i < nchannels_; i++) {
       auto s = state_ptr(
           (lc3_decoder_t)malloc(lc3_decoder_size(dt_us_, sr_pcm_hz_)), free);
