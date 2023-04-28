@@ -126,13 +126,17 @@ extern "C" {
  * Limitations
  * - On the bitrate, in bps, of a stream
  * - On the size of the frames in bytes
+ * - On the number of samples by frames
  */
 
-#define LC3_MIN_BITRATE    16000
-#define LC3_MAX_BITRATE   320000
+#define LC3_MIN_BITRATE         16000
+#define LC3_MAX_BITRATE        320000
 
-#define LC3_MIN_FRAME_BYTES   20
-#define LC3_MAX_FRAME_BYTES  400
+#define LC3_MIN_FRAME_BYTES        20
+#define LC3_MAX_FRAME_BYTES       400
+
+#define LC3_MIN_FRAME_SAMPLES  __LC3_NS( 7500,  8000)
+#define LC3_MAX_FRAME_SAMPLES  __LC3_NS(10000, 48000)
 
 
 /**

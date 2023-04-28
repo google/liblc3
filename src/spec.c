@@ -51,7 +51,7 @@ LC3_HOT static int estimate_gain(
     int nbits_budget, float nbits_off, int g_off, bool *reset_off)
 {
     int ne = LC3_NE(dt, sr) >> 2;
-    int e[ne];
+    int e[LC3_MAX_NE];
 
     /* --- Energy (dB) by 4 MDCT blocks --- */
 

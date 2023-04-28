@@ -110,6 +110,9 @@
 #define LC3_NE(dt, sr) \
     ( 20 * (3 + (dt)) * (1 + (sr)) )
 
+#define LC3_MAX_NS \
+    LC3_NS(LC3_DT_10M, LC3_SRATE_48K)
+
 #define LC3_MAX_NE \
     LC3_NE(LC3_DT_10M, LC3_SRATE_48K)
 

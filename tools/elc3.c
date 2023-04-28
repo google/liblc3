@@ -193,16 +193,16 @@ int main(int argc, char *argv[])
 
     /* --- Setup encoding --- */
 
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
+    uint8_t out[2 * LC3_MAX_FRAME_BYTES];
+    lc3_encoder_t enc[2];
+
     int frame_bytes = lc3_frame_bytes(frame_us, p.bitrate / nch);
     int frame_samples = lc3_frame_samples(frame_us, srate_hz);
     int encode_samples = nsamples + lc3_delay_samples(frame_us, srate_hz);
-
-    lc3_encoder_t enc[nch];
-    int8_t alignas(int32_t) pcm[nch * frame_samples * pcm_sbytes];
     enum lc3_pcm_format pcm_fmt =
         pcm_sbytes == 32/8 ? LC3_PCM_FORMAT_S24 :
         pcm_sbytes == 24/8 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
-    uint8_t out[nch][frame_bytes];
 
     for (int ich = 0; ich < nch; ich++)
         enc[ich] = lc3_setup_encoder(frame_us, enc_srate_hz, srate_hz,
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
         for (int ich = 0; ich < nch; ich++)
             lc3_encode(enc[ich],
                 pcm_fmt, pcm + ich * pcm_sbytes, nch,
-                frame_bytes, out[ich]);
+                frame_bytes, out + ich * frame_bytes);
 
         lc3bin_write_data(fp_out, out, nch, frame_bytes);
     }

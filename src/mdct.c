@@ -419,7 +419,7 @@ void lc3_mdct_forward(enum lc3_dt dt, enum lc3_srate sr,
     int nf = LC3_NS(dt, sr_dst);
     int ns = LC3_NS(dt, sr);
 
-    struct lc3_complex buffer[ns/2];
+    struct lc3_complex buffer[LC3_MAX_NS / 2];
     struct lc3_complex *z = (struct lc3_complex *)y;
     union { float *f; struct lc3_complex *z; } u = { .z = buffer };
 
@@ -440,7 +440,7 @@ void lc3_mdct_inverse(enum lc3_dt dt, enum lc3_srate sr,
     int nf = LC3_NS(dt, sr_src);
     int ns = LC3_NS(dt, sr);
 
-    struct lc3_complex buffer[ns/2];
+    struct lc3_complex buffer[LC3_MAX_NS / 2];
     struct lc3_complex *z = (struct lc3_complex *)y;
     union { float *f; struct lc3_complex *z; } u = { .z = buffer };
 

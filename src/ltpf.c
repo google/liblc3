@@ -646,7 +646,7 @@ bool lc3_ltpf_analyse(
     bool pitch_present = detect_pitch(ltpf, x_6k4, n_6k4, &tc);
 
     if (pitch_present) {
-        int16_t u[n_12k8], v[n_12k8];
+        int16_t u[128], v[128];
 
         data->pitch_index = refine_pitch(x_12k8, n_12k8, tc, &pitch);
 
@@ -686,6 +686,17 @@ bool lc3_ltpf_analyse(
  * -------------------------------------------------------------------------- */
 
 /**
+ * Width of synthesis filter
+ */
+
+#define FILTER_WIDTH(sr) \
+  LC3_MAX(4, LC3_SRATE_KHZ(sr) / 4)
+
+#define MAX_FILTER_WIDTH \
+  FILTER_WIDTH(LC3_NUM_SRATE)
+
+
+/**
  * Synthesis filter template
  * xh, nh          History ring buffer of filtered samples
  * lag             Lag parameter in the ring buffer
@@ -701,7 +712,7 @@ LC3_HOT static inline void synthesize_template(
 {
     float g = (float)(fade <= 0);
     float g_incr = (float)((fade > 0) - (fade < 0)) / n;
-    float u[w];
+    float u[MAX_FILTER_WIDTH];
 
     /* --- Load previous samples --- */
 
@@ -748,6 +759,7 @@ LC3_HOT static inline void synthesize_template(
 /**
  * Synthesis filter for each samplerates (width of filter)
  */
+
 
 LC3_HOT static void synthesize_4(const float *xh, int nh, int lag,
     const float *x0, float *x, int n, const float *c, int fade)
@@ -808,8 +820,8 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     int g_idx = LC3_MAX(nbits / 80, 3 + (int)sr) - (3 + sr);
     bool active = data && data->active && g_idx < 4;
 
-    int w = LC3_MAX(4, LC3_SRATE_KHZ(sr) / 4);
-    float c[2*w];
+    int w = FILTER_WIDTH(sr);
+    float c[2 * MAX_FILTER_WIDTH];
 
     for (int i = 0; i < w; i++) {
         float g = active ? 0.4f - 0.05f * g_idx : 0;
@@ -821,7 +833,7 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
 
     int ns = LC3_NS(dt, sr);
     int nt = ns / (3 + dt);
-    float x0[w];
+    float x0[MAX_FILTER_WIDTH];
 
     if (active)
         memcpy(x0, x + nt-(w-1), (w-1) * sizeof(float));

@@ -187,13 +187,13 @@ int main(int argc, char *argv[])
 
     /* --- Setup decoding --- */
 
+    uint8_t in[2 * LC3_MAX_FRAME_BYTES];
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
+    lc3_decoder_t dec[2];
+
     int frame_samples = lc3_frame_samples(frame_us, pcm_srate_hz);
     int encode_samples = pcm_samples +
         lc3_delay_samples(frame_us, pcm_srate_hz);
-
-    lc3_decoder_t dec[nch];
-    uint8_t in[nch * LC3_MAX_FRAME_BYTES];
-    int8_t alignas(int32_t) pcm[nch * frame_samples * pcm_sbytes];
     enum lc3_pcm_format pcm_fmt =
         pcm_sbits == 24 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 

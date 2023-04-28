@@ -29,7 +29,7 @@ AS := $(if $(AS)=as,$(CC),$(AS))
 LD := $(if $(LD)=ld,$(CC),$(LD))
 
 CFLAGS := $(if $(DEBUG),-O0 -g,-O3)
-CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion
+CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla
 
 
 #
