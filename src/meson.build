@@ -36,7 +36,13 @@ lc3lib = library('lc3',
 		soversion: 1,
 		install: true)
 
-install_headers('../include/lc3.h', '../include/lc3_private.h')
+lc3_install_headers = [
+	'../include/lc3_private.h',
+	'../include/lc3.h',
+	'../include/lc3_cpp.h'
+]
+
+install_headers(lc3_install_headers)
 
 pkg_mod = import('pkgconfig')
 
