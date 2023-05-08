@@ -125,8 +125,10 @@ def mdct_rot_twiddles():
         print('\n--- mdct rot twiddles {:3d} ---'.format(n))
 
         kv = 2 * np.pi * (np.arange(n // 4) + 1/8) / n
+        scale = np.sqrt( np.sqrt( 4 / n ) )
         for (i, k) in enumerate(kv):
-            print('{{ {:14.7e}, {:14.7e} }},'.format(np.cos(k), np.sin(k)),
+            print('{{ {:14.7e}, {:14.7e} }},'.format(
+                np.cos(k) * scale, np.sin(k) * scale),
                   end = '\n' if i%2 == 1 else ' ')
 
 
