@@ -254,7 +254,7 @@ static void unquantize_rc(const int *rc_q, int rc_order, float rc[8])
  */
 LC3_HOT static void forward_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
-    const int rc_order[2], const float rc[2][8], float *x)
+    const int rc_order[2], float (* const rc)[8], float *x)
 {
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
@@ -295,7 +295,7 @@ LC3_HOT static void forward_filtering(
  */
 LC3_HOT static void inverse_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
-    const int rc_order[2], const float rc[2][8], float *x)
+    const int rc_order[2], float (* const rc)[8], float *x)
 {
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
