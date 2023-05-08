@@ -18,9 +18,12 @@ project('lc3', 'c',
 	meson_version: '>= 0.47.0',
 	default_options: ['b_lto=true'])
 
-add_project_arguments('-ffast-math', language: 'c')
-
 cc = meson.get_compiler('c')
+
+if cc.get_id() != 'msvc'
+    add_project_arguments('-ffast-math', language: 'c')
+endif
+
 
 m_dep = cc.find_library('m', required: false)
 

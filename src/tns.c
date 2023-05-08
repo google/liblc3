@@ -378,7 +378,7 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
 void lc3_tns_synthesize(enum lc3_dt dt, enum lc3_bandwidth bw,
     const struct lc3_tns_data *data, float *x)
 {
-    float rc[2][8] = { };
+    float rc[2][8] = { 0 };
 
     for (int f = 0; f < data->nfilters; f++)
         if (data->rc_order[f])
