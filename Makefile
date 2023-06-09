@@ -23,8 +23,8 @@ BIN_DIR := bin
 #
 # Set `gcc` as default compiler
 #
-
-CC := $(if $(CC)=cc,gcc,$(CC))
+CC ?= gcc
+CXX ?= g++
 AS := $(if $(AS)=as,$(CC),$(AS))
 LD := $(if $(LD)=ld,$(CC),$(LD))
 
@@ -61,6 +61,7 @@ endef
 
 define set-target
     $(eval $(1)_obj ?= $(patsubst %.c,%.o,$(filter %.c,$($(1)_src))) \
+                       $(patsubst %.cc,%.o,$(filter %.cc,$($(1)_src))) \
                        $(patsubst %.s,%.o,$(filter %.s,$($(1)_src))))
     $(eval $(1)_obj := $(addprefix $(BUILD_DIR)/,$($(1)_obj)))
     $(eval $(1)_lib := $(foreach lib, $($(1)_lib), $($(lib)_bin)))
@@ -94,6 +95,8 @@ TOOLS_DIR = tools
 TEST_DIR := test
 -include $(TEST_DIR)/makefile.mk
 
+FUZZ_DIR := fuzz
+-include $(FUZZ_DIR)/makefile.mk
 
 #
 # Rules
@@ -108,6 +111,14 @@ $(BUILD_DIR)/%.o: %.c $(MAKEFILE_DEPS)
 	@echo "  CC      $(notdir $<)"
 	$(V)mkdir -p $(dir $@)
 	$(V)$(CC) $< -c $(CFLAGS) \
+	    $(addprefix -I,$(INCLUDE)) \
+	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
+
+
+$(BUILD_DIR)/%.o: %.cc $(MAKEFILE_DEPS)
+	@echo "  CXX      $(notdir $<)"
+	$(V)mkdir -p $(dir $@)
+	$(V)$(CXX) $< -c $(CXXFLAGS) \
 	    $(addprefix -I,$(INCLUDE)) \
 	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
 
