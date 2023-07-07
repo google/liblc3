@@ -106,10 +106,9 @@ $ make dfuzz    # Run decoder fuzzer for 1M iteration
 $ make fuzz -j  # Run encoder and decoder fuzzers in parallel
 ```
 
-## Conformance
+## Qualification / Conformance
 
-The proposed encoder and decoder implementation have been fully tested and
-validated.
+The implementation is qualified under the [_QDID 194161_](https://launchstudio.bluetooth.com/ListingDetails/160904) as part of Google Fluoride 1.5.
 
 For more detail on conformance, refer to [_Bluetooth Conformance
 Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/)
