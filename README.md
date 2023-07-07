@@ -11,6 +11,7 @@ The directory layout is as follows :
 - src:          Source files
 - tools:        Standalone encoder/decoder tools
 - test:         Python implentation, used as reference for unit testing
+- fuzz:         Roundtrip fuzz testing harness
 - build:        Building outputs
 - bin:          Compilation output
 
@@ -89,6 +90,20 @@ $ pip3 install scipy numpy
 
 ```sh
 $ make test
+```
+
+## Fuzzing
+
+Roundtrip fuzz testing harness is available in `fuzz` directory.
+LLVM `clang` and `clang++` compilers are needed to run fuzzing.
+
+The encoder and decoder fuzzers can be run, for 1 million iterations, using
+target respectively `dfuzz` and `efuzz`. The `fuzz` target runs both.
+
+```sh
+$ make efuzz    # Run encoder fuzzer for 1M iteration
+$ make dfuzz    # Run decoder fuzzer for 1M iteration
+$ make fuzz -j  # Run encoder and decoder fuzzers in parallel
 ```
 
 ## Conformance
