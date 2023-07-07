@@ -26,6 +26,7 @@
 #include <cassert>
 #include <memory>
 #include <vector>
+#include <stdlib.h>
 
 #include "lc3.h"
 

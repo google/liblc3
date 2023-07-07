@@ -61,13 +61,15 @@ endef
 
 define set-target
     $(eval $(1)_obj ?= $(patsubst %.c,%.o,$(filter %.c,$($(1)_src))) \
-                       $(patsubst %.s,%.o,$(filter %.s,$($(1)_src))))
+                       $(patsubst %.s,%.o,$(filter %.s,$($(1)_src))) \
+                       $(patsubst %.cc,%.o,$(filter %.cc,$($(1)_src))))
     $(eval $(1)_obj := $(addprefix $(BUILD_DIR)/,$($(1)_obj)))
     $(eval $(1)_lib := $(foreach lib, $($(1)_lib), $($(lib)_bin)))
 
-    $($(1)_obj): INCLUDE += $($(1)_include)
-    $($(1)_obj): DEFINE  += $($(1)_define)
-    $($(1)_obj): CFLAGS  += $($(1)_cflags)
+    $($(1)_obj): INCLUDE  += $($(1)_include)
+    $($(1)_obj): DEFINE   += $($(1)_define)
+    $($(1)_obj): CFLAGS   += $($(1)_cflags)
+    $($(1)_obj): CXXFLAGS += $($(1)_cxxflags)
 
     -include $($(1)_obj:.o=.d)
 
@@ -94,6 +96,9 @@ TOOLS_DIR = tools
 TEST_DIR := test
 -include $(TEST_DIR)/makefile.mk
 
+FUZZ_DIR := fuzz
+-include $(FUZZ_DIR)/makefile.mk
+
 
 #
 # Rules
@@ -115,6 +120,13 @@ $(BUILD_DIR)/%.o: %.s $(MAKEFILE_DEPS)
 	@echo "  AS      $(notdir $<)"
 	$(V)mkdir -p $(dir $@)
 	$(V)$(AS) $< -c $(CFLAGS) \
+	    $(addprefix -I,$(INCLUDE)) \
+	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
+
+$(BUILD_DIR)/%.o: %.cc $(MAKEFILE_DEPS)
+	@echo "  CXX     $(notdir $<)"
+	$(V)mkdir -p $(dir $@)
+	$(V)$(CXX) $< -c $(CXXFLAGS) \
 	    $(addprefix -I,$(INCLUDE)) \
 	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
 
