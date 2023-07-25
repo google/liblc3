@@ -589,7 +589,7 @@ def check_estimate_gain(rng, dt, sr):
         (g_int, reset_off) = \
             analysis.estimate_gain(x, nbits_budget, nbits_off, g_off)
 
-        (g_int_c, reset_off_c) = lc3.spec_estimate_gain(
+        (g_int_c, reset_off_c, _) = lc3.spec_estimate_gain(
             dt, sr, x, nbits_budget, nbits_off, -g_off)
 
         ok = ok and g_int_c == g_int
@@ -664,7 +664,7 @@ def check_adjust_gain(rng, dt, sr):
 
             g_adj = analysis.adjust_gain(g_idx, nbits, nbits_budget)
 
-            g_adj_c = lc3.spec_adjust_gain(sr, g_idx, nbits, nbits_budget)
+            g_adj_c = lc3.spec_adjust_gain(sr, g_idx, nbits, nbits_budget, 0)
 
             ok = ok and g_adj_c == g_adj
 
@@ -752,7 +752,7 @@ def check_appendix_c(dt):
         ok = ok and nbits == C.NBITS_EST[dt][i]
 
         g_adj = lc3.spec_adjust_gain(sr,
-            C.GG_IND[dt][i], C.NBITS_EST[dt][i], C.NBITS_SPEC[dt][i])
+            C.GG_IND[dt][i], C.NBITS_EST[dt][i], C.NBITS_SPEC[dt][i], 0)
         ok = ok and g_adj == C.GG_IND_ADJ[dt][i] - C.GG_IND[dt][i]
 
         if C.GG_IND_ADJ[dt][i] != C.GG_IND[dt][i]:

@@ -30,7 +30,7 @@ static PyObject *estimate_gain_py(PyObject *m, PyObject *args)
     float *x;
     int nbits_budget;
     float nbits_off;
-    int g_off;
+    int g_off, g_min;
     bool reset_off;
 
     if (!PyArg_ParseTuple(args, "IIOifi", &dt, &sr,
@@ -45,23 +45,24 @@ static PyObject *estimate_gain_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
     int g_int = estimate_gain(dt, sr,
-        x, nbits_budget, nbits_off, g_off, &reset_off);
+        x, nbits_budget, nbits_off, g_off, &reset_off, &g_min);
 
-    return Py_BuildValue("ii", g_int, reset_off);
+    return Py_BuildValue("iii", g_int, reset_off, g_min);
 }
 
 static PyObject *adjust_gain_py(PyObject *m, PyObject *args)
 {
     unsigned sr;
-    int g_idx, nbits, nbits_budget;
+    int g_idx, nbits, nbits_budget, g_idx_min;
 
-    if (!PyArg_ParseTuple(args, "Iiii", &sr, &g_idx, &nbits, &nbits_budget))
+    if (!PyArg_ParseTuple(args, "Iiiii", &sr, &g_idx,
+                &nbits, &nbits_budget, &g_idx_min))
         return NULL;
 
     CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
     CTYPES_CHECK("g_idx", g_idx >= 0 && g_idx <= 255);
 
-    g_idx = adjust_gain(sr, g_idx, nbits, nbits_budget);
+    g_idx = adjust_gain(sr, g_idx, nbits, nbits_budget, g_idx_min);
 
     return Py_BuildValue("i", g_idx);
 }

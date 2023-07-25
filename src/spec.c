@@ -44,11 +44,12 @@ static int resolve_gain_offset(enum lc3_srate sr, int nbytes)
  * nbits_off       Offset on the available bits, temporarily smoothed
  * g_off           Gain index offset
  * reset_off       Return True when the nbits_off must be reset
+ * g_min           Return lower bound of quantized gain value
  * return          The quantized gain value
  */
 LC3_HOT static int estimate_gain(
     enum lc3_dt dt, enum lc3_srate sr, const float *x,
-    int nbits_budget, float nbits_off, int g_off, bool *reset_off)
+    int nbits_budget, float nbits_off, int g_off, bool *reset_off, int *g_min)
 {
     int ne = LC3_NE(dt, sr) >> 2;
     int e[LC3_MAX_NE];
@@ -102,12 +103,12 @@ LC3_HOT static int estimate_gain(
 
     /* --- Limit gain index --- */
 
-    int g_min = x2_max == 0 ? -g_off :
+    *g_min = x2_max == 0 ? -g_off :
         ceilf(28 * log10f(sqrtf(x2_max) / (32768 - 0.375f)));
 
-    *reset_off = g_int < g_min || x2_max == 0;
+    *reset_off = g_int < *g_min || x2_max == 0;
     if (*reset_off)
-        g_int = g_min;
+        g_int = *g_min;
 
     return g_int;
 }
@@ -118,10 +119,11 @@ LC3_HOT static int estimate_gain(
  * g_idx           The estimated quantized gain index
  * nbits           Computed number of bits coding the spectrum
  * nbits_budget    Number of bits available for coding the spectrum
+ * g_idx_min       Minimum gain index value
  * return          Gain adjust value (-1 to 2)
  */
-LC3_HOT static int adjust_gain(
-    enum lc3_srate sr, int g_idx, int nbits, int nbits_budget)
+LC3_HOT static int adjust_gain(enum lc3_srate sr, int g_idx,
+    int nbits, int nbits_budget, int g_idx_min)
 {
     /* --- Compute delta threshold --- */
 
@@ -149,7 +151,7 @@ LC3_HOT static int adjust_gain(
     /* --- Adjust gain --- */
 
     if (nbits < nbits_budget - (delta + 2))
-        return -(g_idx > 0);
+        return -(g_idx > g_idx_min);
 
     if (nbits > nbits_budget)
         return (g_idx < 255) + (g_idx < 254 && nbits >= nbits_budget + delta);
@@ -789,8 +791,8 @@ void lc3_spec_analyze(enum lc3_dt dt, enum lc3_srate sr,
 
     int g_off = resolve_gain_offset(sr, nbytes);
 
-    int g_int = estimate_gain(dt, sr,
-        x, nbits_budget, nbits_off, g_off, &reset_off);
+    int g_min, g_int = estimate_gain(dt, sr,
+        x, nbits_budget, nbits_off, g_off, &reset_off, &g_min);
 
     /* --- Quantization --- */
 
@@ -803,7 +805,8 @@ void lc3_spec_analyze(enum lc3_dt dt, enum lc3_srate sr,
 
     /* --- Adjust gain and requantize --- */
 
-    int g_adj = adjust_gain(sr, g_int + g_off, nbits, nbits_budget);
+    int g_adj = adjust_gain(sr, g_off + g_int,
+        nbits, nbits_budget, g_off + g_min);
 
     if (g_adj)
         quantize(dt, sr, g_adj, x, xq, &side->nq);
