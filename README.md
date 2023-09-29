@@ -110,8 +110,7 @@ $ make fuzz -j  # Run encoder and decoder fuzzers in parallel
 
 The implementation is qualified under the [_QDID 194161_](https://launchstudio.bluetooth.com/ListingDetails/160904) as part of Google Fluoride 1.5.
 
-For more detail on conformance, refer to [_Bluetooth Conformance
-Documents and scripts_](https://www.bluetooth.com/specifications/specs/low-complexity-communication-codec-1-0/)
+The conformance reports can be found [here](conformance/README.md)
 
 ## Listening Test
 
