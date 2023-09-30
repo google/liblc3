@@ -57,7 +57,9 @@ struct side_data {
  */
 static enum lc3_dt resolve_dt(int us)
 {
-    return us ==  7500 ? LC3_DT_7M5 :
+    return us ==  2500 ? LC3_DT_10M :
+           us ==  5000 ? LC3_DT_05M :
+           us ==  7500 ? LC3_DT_7M5 :
            us == 10000 ? LC3_DT_10M : LC3_NUM_DT;
 }
 

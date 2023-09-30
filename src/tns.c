@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include "tns.h"
+#include "lc3_private.h"
 #include "tables.h"
 
 
@@ -31,7 +32,9 @@
  */
 static bool resolve_lpc_weighting(enum lc3_dt dt, int nbytes)
 {
-    return nbytes < (dt == LC3_DT_7M5 ? 360/8 : 480/8);
+    return nbytes < (dt == LC3_DT_7M5 ? 360/8 :
+                    (dt == LC3_DT_2M5 ? 120/8 :
+                    (dt == LC3_DT_05M ? 240/8 : 480/8)));
 }
 
 /**
@@ -59,6 +62,18 @@ LC3_HOT static void compute_lpc_coeffs(
     enum lc3_dt dt, enum lc3_bandwidth bw,
     const float *x, float *gain, float (*a)[9])
 {
+    static const int sub_2m5_nb[]   = {  3, 10,  20 };
+    static const int sub_2m5_wb[]   = {  3, 20,  40 };
+    static const int sub_2m5_sswb[] = {  3, 30,  60 };
+    static const int sub_2m5_swb[]  = {  3, 40,  80 };
+    static const int sub_2m5_fb[]   = {  3, 50, 100 };
+
+    static const int sub_5m_nb[]    = {  6, 23,  40 };
+    static const int sub_5m_wb[]    = {  6, 43,  80 };
+    static const int sub_5m_sswb[]  = {  6, 63, 120 };
+    static const int sub_5m_swb[]   = {  6, 43,  80, 120, 160 };
+    static const int sub_5m_fb[]    = {  6, 53, 100, 150, 200 };
+
     static const int sub_7m5_nb[]   = {  9, 26,  43,  60 };
     static const int sub_7m5_wb[]   = {  9, 46,  83, 120 };
     static const int sub_7m5_sswb[] = {  9, 66, 123, 180 };
@@ -80,11 +95,14 @@ LC3_HOT static void compute_lpc_coeffs(
     };
 
     const int *sub = (const int * const [LC3_NUM_DT][LC3_NUM_SRATE]){
+        { sub_2m5_nb, sub_2m5_wb, sub_2m5_sswb, sub_2m5_swb, sub_2m5_fb },
+        { sub_5m_nb,  sub_5m_wb,  sub_5m_sswb,  sub_5m_swb,  sub_5m_fb },
         { sub_7m5_nb, sub_7m5_wb, sub_7m5_sswb, sub_7m5_swb, sub_7m5_fb },
         { sub_10m_nb, sub_10m_wb, sub_10m_sswb, sub_10m_swb, sub_10m_fb },
     }[dt][bw];
 
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
+    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
+    int nsubdivisions = dt >= LC3_DT_7M5 ? 3 : 2;
 
     const float *xs, *xe = x + *sub;
     float r[2][9];
@@ -92,7 +110,7 @@ LC3_HOT static void compute_lpc_coeffs(
     for (int f = 0; f < nfilters; f++) {
         float c[9][3];
 
-        for (int s = 0; s < 3; s++) {
+        for (int s = 0; s < nsubdivisions; s++) {
             xs = xe, xe = x + *(++sub);
 
             for (int k = 0; k < 9; k++)
@@ -256,9 +274,9 @@ LC3_HOT static void forward_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
     const int rc_order[2], float (* const rc)[8], float *x)
 {
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
+    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
-    int i0, ie = 3*(3 + dt);
+    int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };
 
@@ -297,7 +315,7 @@ LC3_HOT static void inverse_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
     const int rc_order[2], float (* const rc)[8], float *x)
 {
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
+    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
     int i0, ie = 3*(3 + dt);
 
@@ -349,7 +367,7 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
     float pred_gain[2], a[2][9];
     float rc[2][8];
 
-    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
+    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
     data->lpc_weighting = resolve_lpc_weighting(dt, nbytes);
 
     compute_lpc_coeffs(dt, bw, x, pred_gain, a);
@@ -438,7 +456,7 @@ void lc3_tns_put_data(lc3_bits_t *bits, const struct lc3_tns_data *data)
 void lc3_tns_get_data(lc3_bits_t *bits,
     enum lc3_dt dt, enum lc3_bandwidth bw, int nbytes, lc3_tns_data_t *data)
 {
-    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
+    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
     data->lpc_weighting = resolve_lpc_weighting(dt, nbytes);
 
     for (int f = 0; f < data->nfilters; f++) {

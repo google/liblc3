@@ -18,6 +18,7 @@
 
 #include "sns.h"
 #include "tables.h"
+#include <string.h>
 
 
 /* ----------------------------------------------------------------------------
@@ -253,14 +254,33 @@ LC3_HOT static void compute_scale_factors(
     float e[LC3_NUM_BANDS];
 
     /* --- Copy and padding --- */
+    int nb = lc3_bands_number[dt][sr];
 
-    int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
-    int n2 = LC3_NUM_BANDS - nb;
+    if (nb < 32) {
+        int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
+        int n2 = nb - n4;
+        for (int i = 0; i < n4; i++) {
+            for (int i2 = 0; i2 < 4; i2++) {
+                e[4*i+i2] = eb[i];
+            }
+        }
+        for (int i = 0; i < n2; i++) {
+            for (int i2 = 0; i2 < 2; i2++) {
+                e[2*(n4-1)+2*i+i2] = eb[(n4-1)+i];
+            }
+        }
+    } else if (nb < LC3_NUM_BANDS) {
+        int n2 = LC3_NUM_BANDS - nb;
+        for (int i = 0; i < n2; i++) {
+            for (int i2 = 0; i2 < 2; i2++) {
+                e[2*i+i2] = eb[i];
+            }
+        }
 
-    for (int i2 = 0; i2 < n2; i2++)
-        e[2*i2 + 0] = e[2*i2 + 1] = eb[i2];
-
-    memcpy(e + 2*n2, eb + n2, (nb - n2) * sizeof(float));
+        for (int i = 0; i <= nb; i++) {
+            e[2*(n2-1)+i] = eb[(n2-1)+i];
+        }
+    }
 
     /* --- Smoothing, pre-emphasis and logarithm --- */
 
@@ -694,14 +714,42 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     scf[62] = s1 + 0.125f * (s1 - s0);
     scf[63] = s1 + 0.375f * (s1 - s0);
 
-    int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
-    int n2 = LC3_NUM_BANDS - nb;
+    int nb = lc3_bands_number[dt][sr];
+    float tmp[LC3_NUM_BANDS];
 
-    for (int i2 = 0; i2 < n2; i2++)
-        scf[i2] = 0.5f * (scf[2*i2] + scf[2*i2+1]);
+    if (nb < 32) {
+        int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
+        int n2 = nb - n4;
+        for (int i = 0; i < n4; i++) {
+            float sum = 0;
+            for (int i2 = 0; i2 < 4; i2++) {
+                sum += scf[4*i+i2];
+            }
+            tmp[i] = sum / 4;
+        }
+        for (int i = 0; i < n2; i++) {
+            float sum = 0;
+            for (int i2 = 0; i2 < 2; i2++) {
+                sum += scf[4*n4+2*i+i2];
+            }
+            tmp[n4+i] = sum / 2;
+        }
+        memcpy(scf, tmp, sizeof(scf));
+    } else if (nb < LC3_NUM_BANDS) {
+        int n2 = LC3_NUM_BANDS - nb;
+        for (int i = 0; i < n2; i++) {
+            float sum = 0;
+            for (int i2 = 0; i2 < 2; i2++) {
+                sum += scf[2*i+i2];
+            }
+            tmp[i] = sum / 2;
+        }
 
-    if (n2 > 0)
-        memmove(scf + n2, scf + 2*n2, (nb - n2) * sizeof(float));
+        for (int i = n2; i < nb; i++) {
+            tmp[i] = scf[n2+i];
+        }
+        memcpy(scf, tmp, sizeof(scf));
+    }
 
     /* --- Spectral shaping --- */
 

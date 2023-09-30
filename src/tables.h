@@ -21,6 +21,7 @@
 
 #include "common.h"
 #include "bits.h"
+#include "lc3_private.h"
 
 
 /**
@@ -46,6 +47,8 @@ extern const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
 
 extern const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
 
+
+extern const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE];
 
 /**
  * SNS Quantization

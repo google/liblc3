@@ -120,7 +120,7 @@ def mdct_fft_twiddles():
 
 def mdct_rot_twiddles():
 
-    for n in (120, 160, 240, 320, 360, 480, 640, 720, 960):
+    for n in (40, 80, 120, 160, 240, 320, 360, 480, 640, 720, 960):
 
         print('\n--- mdct rot twiddles {:3d} ---'.format(n))
 

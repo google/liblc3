@@ -18,6 +18,7 @@
 
 #include "spec.h"
 #include "bits.h"
+#include "lc3_private.h"
 #include "tables.h"
 
 
@@ -666,13 +667,15 @@ LC3_HOT static void get_lsb(lc3_bits_t *bits,
 LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     const uint16_t *xq, int nq, const float *x)
 {
-    int bw_stop = (dt == LC3_DT_7M5 ? 60 : 80) * (1 + bw);
-    int w = 2 + dt;
+    int bw_stop = (dt == LC3_DT_7M5 ? 60 :
+                  (dt == LC3_DT_2M5 ? 20 :
+                  (dt == LC3_DT_05M ? 40 : 80))) * (1 + bw);
+    int w = dt + (dt == LC3_DT_2M5);
 
     float sum = 0;
     int i, n = 0, z = 0;
 
-    for (i = 6*(3 + dt) - w; i < LC3_MIN(nq, bw_stop); i++) {
+    for (i = 6*(1 + dt) - w; i < LC3_MIN(nq, bw_stop); i++) {
         z = xq[i] ? 0 : z + 1;
         if (z > 2*w)
             sum += fabsf(x[i - w]), n++;
@@ -697,13 +700,15 @@ LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
 LC3_HOT static void fill_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     int nf, uint16_t nf_seed, float g, float *x, int nq)
 {
-    int bw_stop = (dt == LC3_DT_7M5 ? 60 : 80) * (1 + bw);
-    int w = 2 + dt;
+    int bw_stop = (dt == LC3_DT_7M5 ? 60 :
+                  (dt == LC3_DT_2M5 ? 20 :
+                  (dt == LC3_DT_05M ? 40 : 80))) * (1 + bw);
+    int w = dt + (dt == LC3_DT_2M5);
 
     float s = g * (float)(8 - nf) / 16;
     int i, z = 0;
 
-    for (i = 6*(3 + dt) - w; i < LC3_MIN(nq, bw_stop); i++) {
+    for (i = 6*(1 + dt) - w; i < LC3_MIN(nq, bw_stop); i++) {
         z = x[i] ? 0 : z + 1;
         if (z > 2*w) {
             nf_seed = (13849 + nf_seed*31821) & 0xffff;

@@ -34,21 +34,26 @@
     ( (dt_us * sr_hz) / 1000 / 1000 )
 
 #define __LC3_ND(dt_us, sr_hz) \
-    ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 \
-                      :  5 * __LC3_NS(dt_us, sr_hz) /  8 )
+    ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 : \
+     ((dt_us) == 5000 ?  3 * __LC3_NS(dt_us, sr_hz) / 4  : \
+     ((dt_us) == 2500 ?      __LC3_NS(dt_us, sr_hz)        \
+                      :  5 * __LC3_NS(dt_us, sr_hz) / 8))  \
+    )
 
 #define __LC3_NT(sr_hz) \
     ( (5 * sr_hz) / 4000 )
 
 #define __LC3_NH(dt_us, sr_hz) \
-    ( ((3 - ((dt_us) >= 10000)) + 1) * __LC3_NS(dt_us, sr_hz) )
+    ( ((dt_us) == 5000 ? 6 : ((dt_us) == 2500 ? 12 : ((3 - ((dt_us) >= 10000)) + 1))) * __LC3_NS(dt_us, sr_hz) )
 
 
 /**
- * Frame duration 7.5ms or 10ms
+ * Frame duration 2.5ms, 5ms, 7.5ms or 10ms
  */
 
 enum lc3_dt {
+    LC3_DT_2M5,
+    LC3_DT_05M,
     LC3_DT_7M5,
     LC3_DT_10M,
 

@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include "ltpf.h"
+#include "lc3_private.h"
 #include "tables.h"
 
 #include "ltpf_neon.h"
@@ -615,7 +616,7 @@ bool lc3_ltpf_analyse(
     /* --- Resampling to 12.8 KHz --- */
 
     int z_12k8 = sizeof(ltpf->x_12k8) / sizeof(*ltpf->x_12k8);
-    int n_12k8 = dt == LC3_DT_7M5 ? 96 : 128;
+    int n_12k8 = (1 + dt) * 32;
 
     memmove(ltpf->x_12k8, ltpf->x_12k8 + n_12k8,
         (z_12k8 - n_12k8) * sizeof(*ltpf->x_12k8));
@@ -817,6 +818,15 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     pitch = (pitch * LC3_SRATE_KHZ(sr) * 10 + 64) / 128;
 
     int nbits = (nbytes*8 * 10000 + (dt_us/2)) / dt_us;
+
+    /* --- Correction table for smaller frame sizes --- */
+
+    if (dt == LC3_DT_2M5) {
+        nbits = 6 * nbits / 10;
+    } else if (dt == LC3_DT_05M) {
+        nbits -= 160;
+    }
+
     int g_idx = LC3_MAX(nbits / 80, 3 + (int)sr) - (3 + sr);
     bool active = data && data->active && g_idx < 4;
 
@@ -832,7 +842,7 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     /* --- Transition handling --- */
 
     int ns = LC3_NS(dt, sr);
-    int nt = ns / (3 + dt);
+    int nt = ns / (1 + dt);
     float x0[MAX_FILTER_WIDTH];
 
     if (active)
