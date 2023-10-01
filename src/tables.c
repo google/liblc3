@@ -440,7 +440,7 @@ const struct lc3_fft_bf2_twiddles *lc3_fft_twiddles_bf2[][3] = {
  *   W[n] = e                   * sqrt( sqrt( 4/N ) ), n = [0..N/4-1]
  */
 
-
+#ifdef INCLUDE_2M5
 static const struct lc3_mdct_rot_def mdct_rot_40 = {
     .n4 = 40/4, .w = (const struct lc3_complex []){
         { 5.6223293e-01, 1.1040837e-02 }, { 5.5358374e-01, 9.8857513e-02 },
@@ -450,7 +450,9 @@ static const struct lc3_mdct_rot_def mdct_rot_40 = {
         { 1.6323907e-01, 5.3812710e-01 }, { 7.7047702e-02, 5.5703808e-01 },
     }
 };
+#endif
 
+#if defined (INCLUDE_2M5) || defined(INCLUDE_05M)
 static const struct lc3_mdct_rot_def mdct_rot_80 = {
     .n4 = 80/4, .w = (const struct lc3_complex []){
         { 4.7284802e-01, 4.6423237e-03 }, { 4.7102615e-01, 4.1727241e-02 },
@@ -465,6 +467,7 @@ static const struct lc3_mdct_rot_def mdct_rot_80 = {
         { 6.9384558e-02, 4.6775269e-01 }, { 3.2471215e-02, 4.7175462e-01 },
     }
 };
+#endif
 
 static const struct lc3_mdct_rot_def mdct_rot_120 = {
     .n4 = 120/4, .w = (const struct lc3_complex []){
@@ -1012,10 +1015,14 @@ static const struct lc3_mdct_rot_def mdct_rot_960 = {
 };
 
 const struct lc3_mdct_rot_def * lc3_mdct_rot[LC3_NUM_DT][LC3_NUM_SRATE] = {
+#ifdef INCLUDE_2M5
     [LC3_DT_2M5] = { &mdct_rot_40,  &mdct_rot_80,  &mdct_rot_120,
                      &mdct_rot_160, &mdct_rot_240                },
+#endif
+#ifdef INCLUDE_05M
     [LC3_DT_05M] = { &mdct_rot_80 , &mdct_rot_160, &mdct_rot_240,
                      &mdct_rot_320, &mdct_rot_480                },
+#endif
     [LC3_DT_7M5] = { &mdct_rot_120, &mdct_rot_240, &mdct_rot_360,
                      &mdct_rot_480, &mdct_rot_720                },
     [LC3_DT_10M] = { &mdct_rot_160, &mdct_rot_320, &mdct_rot_480,
@@ -2003,6 +2010,7 @@ static const float mdct_win_7m5_360[360+276] = {
      5.82657334e-03,  4.87838525e-03,  4.02351119e-03,  3.15418663e-03,
 };
 
+#ifdef INCLUDE_05M
 static const float mdct_win_5m_40[40+30] = {
      9.95908659e-04,  3.81905679e-03,  9.54083261e-03,  1.92165980e-02,
      3.38271908e-02,  5.42483167e-02,  8.12077767e-02,  1.15217189e-01,
@@ -2298,7 +2306,9 @@ static const float mdct_win_5m_240[240+180] = {
      2.28668041e-02,  1.93823634e-02,  1.62231272e-02,  1.33800502e-02,
      1.08421860e-02,  8.59675398e-03,  6.64050653e-03,  5.17270311e-03,
 };
+#endif
 
+#ifdef INCLUDE_2M5
 static const float mdct_win_2m5_20[40] = {
      6.73791429e-03,  2.73228962e-02,  6.16356096e-02,  1.11912504e-01,
      1.78705346e-01,  2.60752514e-01,  3.54977650e-01,  4.56769672e-01,
@@ -2469,9 +2479,10 @@ static const float mdct_win_2m5_120[240] = {
      2.25415434e-02,  1.87626677e-02,  1.53355947e-02,  1.22441576e-02,
      9.47011816e-03,  6.99126548e-03,  4.77524515e-03,  2.75074638e-03,
 };
+#endif
 
 const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE] = {
-
+#ifdef INCLUDE_2M5
     [LC3_DT_2M5] = {
         [LC3_SRATE_8K ] = mdct_win_2m5_20,
         [LC3_SRATE_16K] = mdct_win_2m5_40,
@@ -2479,7 +2490,8 @@ const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE] = {
         [LC3_SRATE_32K] = mdct_win_2m5_80,
         [LC3_SRATE_48K] = mdct_win_2m5_120,
     },
-
+#endif
+#ifdef INCLUDE_05M
     [LC3_DT_05M] = {
         [LC3_SRATE_8K ] = mdct_win_5m_40,
         [LC3_SRATE_16K] = mdct_win_5m_80,
@@ -2487,7 +2499,7 @@ const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE] = {
         [LC3_SRATE_32K] = mdct_win_5m_160,
         [LC3_SRATE_48K] = mdct_win_5m_240,
     },
-
+#endif
     [LC3_DT_7M5] = {
         [LC3_SRATE_8K ] = mdct_win_7m5_60,
         [LC3_SRATE_16K] = mdct_win_7m5_120,
@@ -2506,6 +2518,7 @@ const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE] = {
 };
 
 const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE] = {
+#ifdef INCLUDE_2M5
     [LC3_DT_2M5] = {
         [LC3_SRATE_8K ] = 20,
         [LC3_SRATE_16K] = 35,
@@ -2513,6 +2526,8 @@ const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE] = {
         [LC3_SRATE_32K] = 43,
         [LC3_SRATE_48K] = 44,
     },
+#endif
+#ifdef INCLUDE_05M
     [LC3_DT_05M] = {
         [LC3_SRATE_8K ] = 39,
         [LC3_SRATE_16K] = 50,
@@ -2520,6 +2535,7 @@ const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE] = {
         [LC3_SRATE_32K] = 54,
         [LC3_SRATE_48K] = 55,
     },
+#endif
     [LC3_DT_7M5] = {
         [LC3_SRATE_8K ] = LC3_NUM_BANDS,
         [LC3_SRATE_16K] = LC3_NUM_BANDS,
@@ -2541,7 +2557,7 @@ const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE] = {
  */
 
 const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1] = {
-
+#ifdef INCLUDE_2M5
     [LC3_DT_2M5] = {
         [LC3_SRATE_8K ] = {
               0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
@@ -2575,7 +2591,8 @@ const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1] = {
              40,  43,  46,  49,  52,  56,  60,  64,  68,  72,
              77,  82,  87,  93, 100                          },
     },
-
+#endif
+#ifdef INCLUDE_05M
     [LC3_DT_05M] = {
         [LC3_SRATE_8K ] = {
               0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
@@ -2615,6 +2632,7 @@ const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1] = {
              77,  82,  87,  93,  99, 105, 112, 120, 128, 136,
             145, 155, 165, 176, 187, 200                     },
     },
+#endif
 
     [LC3_DT_7M5] = {
 

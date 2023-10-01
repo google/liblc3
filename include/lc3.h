@@ -145,8 +145,17 @@ extern "C" {
  *   LC3_CHECK_SR_HZ(sr)  True when samplerate in Hz is suitable
  */
 
+#if defined (INCLUDE_2M5) || defined(INCLUDE_05M)
+
 #define LC3_CHECK_DT_US(us) \
     ( ((us) == 2500) || ((us) == 5000) || ((us) == 7500) || ((us) == 10000) )
+
+#else
+
+#define LC3_CHECK_DT_US(us) \
+    ( ((us) == 7500) || ((us) == 10000) )
+
+#endif
 
 #define LC3_CHECK_SR_HZ(sr) \
     ( ((sr) ==  8000) || ((sr) == 16000) || ((sr) == 24000) || \

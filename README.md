@@ -23,6 +23,12 @@ The default toolchain used is GCC. Invoke `make` to build the library.
 $ make -j
 ```
 
+Alternatively, for building with support for 2.5 and 5 ms frame sizes, set `LC3_SUPERSET=1`.
+
+```sh
+$ make -j LC3_SUPERSET=1
+```
+
 Compiled library `liblc3.a` will be found in `bin` directory.
 
 #### Cross compilation

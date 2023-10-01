@@ -32,21 +32,22 @@ enum lc3_bandwidth lc3_bwdet_run(
 
     static const struct region bws_table[LC3_NUM_DT]
             [LC3_NUM_BANDWIDTH-1][LC3_NUM_BANDWIDTH-1] = {
-
+#ifdef INCLUDE_2M5
         [LC3_DT_2M5] = {
             { { 24, 34+1 } },
             { { 24, 32+1 }, { 35, 39+1 } },
             { { 24, 31+1 }, { 33, 38+1 }, { 39, 42+1 } },
             { { 22, 29+1 }, { 31, 35+1 }, { 37, 40+1 }, { 41, 43+1 } },
         },
-
+#endif
+#ifdef INCLUDE_05M
         [LC3_DT_05M] = {
             { { 39, 49+1 } },
             { { 35, 44+1 }, { 47, 51+1 } },
             { { 34, 42+1 }, { 44, 49+1 }, { 50, 53+1 } },
             { { 32, 40+1 }, { 42, 46+1 }, { 48, 51+1 }, { 52, 54+1 } },
         },
-
+#endif
         [LC3_DT_7M5] = {
             { { 51, 63+1 } },
             { { 45, 55+1 }, { 58, 63+1 } },
@@ -63,8 +64,12 @@ enum lc3_bandwidth lc3_bwdet_run(
     };
 
     static const int l_table[LC3_NUM_DT][LC3_NUM_BANDWIDTH-1] = {
+#ifdef INCLUDE_2M5
         [LC3_DT_2M5] = { 4, 4, 3, 1 },
+#endif
+#ifdef INCLUDE_05M
         [LC3_DT_05M] = { 4, 4, 3, 1 },
+#endif
         [LC3_DT_7M5] = { 4, 4, 3, 2 },
         [LC3_DT_10M] = { 4, 4, 3, 1 },
     };

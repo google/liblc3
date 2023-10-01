@@ -820,12 +820,16 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     int nbits = (nbytes*8 * 10000 + (dt_us/2)) / dt_us;
 
     /* --- Correction table for smaller frame sizes --- */
-
+#ifdef INCLUDE_2M5
     if (dt == LC3_DT_2M5) {
         nbits = 6 * nbits / 10;
-    } else if (dt == LC3_DT_05M) {
+    }
+#endif
+#ifdef INCLUDE_05M
+    if (dt == LC3_DT_05M) {
         nbits -= 160;
     }
+#endif
 
     int g_idx = LC3_MAX(nbits / 80, 3 + (int)sr) - (3 + sr);
     bool active = data && data->active && g_idx < 4;

@@ -31,6 +31,7 @@ LD := $(if $(LD)=ld,$(CC),$(LD))
 CFLAGS := $(if $(DEBUG),-O0 -g,-O3)
 CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 
+DEFINE += $(if $(filter $(LC3_SUPERSET),1), INCLUDE_05M INCLUDE_2M5,)
 
 #
 # Declarations

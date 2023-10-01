@@ -57,10 +57,17 @@ struct side_data {
  */
 static enum lc3_dt resolve_dt(int us)
 {
-    return us ==  2500 ? LC3_DT_10M :
-           us ==  5000 ? LC3_DT_05M :
-           us ==  7500 ? LC3_DT_7M5 :
-           us == 10000 ? LC3_DT_10M : LC3_NUM_DT;
+    switch (us) {
+#ifdef INCLUDE_2M5
+        case 2500 : return LC3_DT_2M5;
+#endif
+#ifdef INCLUDE_05M
+        case 5000 : return LC3_DT_05M;
+#endif
+        case 7500 : return LC3_DT_7M5;
+        case 10000: return LC3_DT_10M;
+        default:    return LC3_NUM_DT;
+    }
 }
 
 /**

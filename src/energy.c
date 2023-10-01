@@ -28,8 +28,12 @@ bool lc3_energy_compute(
     enum lc3_dt dt, enum lc3_srate sr, const float *x, float *e)
 {
     static const int n1_table[LC3_NUM_DT][LC3_NUM_SRATE] = {
+#ifdef INCLUDE_2M5
         [LC3_DT_2M5] = { 20, 30, 26, 24, 23 },
+#endif
+#ifdef INCLUDE_05M
         [LC3_DT_05M] = { 38, 30, 24, 22, 21 },
+#endif
         [LC3_DT_7M5] = { 56, 34, 27, 24, 22 },
         [LC3_DT_10M] = { 49, 28, 23, 20, 18 },
     };
