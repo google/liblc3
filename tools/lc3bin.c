@@ -36,6 +36,7 @@ struct lc3bin_header {
     uint16_t rfu;
     uint16_t nsamples_low;
     uint16_t nsamples_high;
+    uint16_t hrmode;
 };
 
 
@@ -93,6 +94,7 @@ void lc3bin_write_header(FILE *fp,
         .frame_10us = frame_us / 10,
         .nsamples_low = nsamples & 0xffff,
         .nsamples_high = nsamples >> 16,
+        .hrmode = 0, // TODO: Change to actual value once hrmode is supported
     };
 
     fwrite(&hdr, sizeof(hdr), 1, fp);

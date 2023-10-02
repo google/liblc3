@@ -18,7 +18,6 @@
 
 #include "spec.h"
 #include "bits.h"
-#include "lc3_private.h"
 #include "tables.h"
 
 

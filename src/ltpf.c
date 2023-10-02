@@ -17,7 +17,6 @@
  ******************************************************************************/
 
 #include "ltpf.h"
-#include "lc3_private.h"
 #include "tables.h"
 
 #include "ltpf_neon.h"

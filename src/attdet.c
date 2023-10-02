@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 #include "attdet.h"
-#include <lc3_private.h>
+
 
 /**
  * Time domain attack detector
