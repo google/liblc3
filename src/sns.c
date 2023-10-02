@@ -251,7 +251,7 @@ LC3_HOT static void compute_scale_factors(
             7.19685673e+02, 8.03085722e+02, 8.96150502e+02, 1.00000000e+03 },
     };
 
-    float e[LC3_NUM_BANDS];
+    float e[LC3_NUM_BANDS] = {0};
 
     /* --- Copy and padding --- */
     int nb = lc3_bands_number[dt][sr];
@@ -269,9 +269,10 @@ LC3_HOT static void compute_scale_factors(
                 e[2*(n4-1)+2*i+i2] = eb[(n4-1)+i];
             }
         }
-    } else
-#endif
+    } else if (nb < LC3_NUM_BANDS) {
+#else
     if (nb < LC3_NUM_BANDS) {
+#endif
         int n2 = LC3_NUM_BANDS - nb;
         for (int i = 0; i < n2; i++) {
             for (int i2 = 0; i2 < 2; i2++) {
@@ -279,8 +280,8 @@ LC3_HOT static void compute_scale_factors(
             }
         }
 
-        for (int i = 0; i <= nb; i++) {
-            e[2*(n2-1)+i] = eb[(n2-1)+i];
+        for (int i = 0; i < nb - n2; i++) {
+            e[2*n2+i] = eb[n2+i];
         }
     }
 
@@ -717,7 +718,7 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     scf[63] = s1 + 0.375f * (s1 - s0);
 
     int nb = lc3_bands_number[dt][sr];
-    float tmp[LC3_NUM_BANDS];
+    float tmp[LC3_NUM_BANDS] = {0};
 #if defined (INCLUDE_2M5) || defined(INCLUDE_05M)
     if (nb < 32) {
         int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
@@ -737,9 +738,10 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
             tmp[n4+i] = sum / 2;
         }
         memcpy(scf, tmp, sizeof(scf));
-    } else
-#endif
+    } else if (nb < LC3_NUM_BANDS) {
+#elif
     if (nb < LC3_NUM_BANDS) {
+#endif
         int n2 = LC3_NUM_BANDS - nb;
         for (int i = 0; i < n2; i++) {
             float sum = 0;
