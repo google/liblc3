@@ -343,7 +343,7 @@ LC3_HOT static void inverse_filtering(
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
 #endif
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
-    int i0, ie = 3*(3 + dt);
+    int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };
 
