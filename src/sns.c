@@ -272,13 +272,15 @@ LC3_HOT static void compute_scale_factors(
 #else
     if (nb < LC3_NUM_BANDS) {
 #endif
-        int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
+        nb = LC3_MIN(lc3_band_lim[dt][sr][nb], LC3_NUM_BANDS);
         int n2 = LC3_NUM_BANDS - nb;
 
         for (int i2 = 0; i2 < n2; i2++)
             e[2*i2 + 0] = e[2*i2 + 1] = eb[i2];
 
         memcpy(e + 2*n2, eb + n2, (nb - n2) * sizeof(float));
+    } else {
+        memcpy(e, eb, nb * sizeof(float));
     }
 
     /* --- Smoothing, pre-emphasis and logarithm --- */
