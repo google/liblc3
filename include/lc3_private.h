@@ -33,8 +33,6 @@
 #define __LC3_NS(dt_us, sr_hz) \
     ( (dt_us * sr_hz) / 1000 / 1000 )
 
-#if defined (INCLUDE_2M5) || defined(INCLUDE_05M)
-
 #define __LC3_ND(dt_us, sr_hz) \
     ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 :  \
      ((dt_us) == 5000 ?  3 * __LC3_NS(dt_us, sr_hz) / 4  :  \
@@ -44,19 +42,9 @@
 #define __LC3_NH(dt_us, sr_hz) \
     ( ((dt_us) == 5000 ? 6 : ((dt_us) == 2500 ? 12 : ((3 - ((dt_us) >= 10000)) + 1))) * __LC3_NS(dt_us, sr_hz) )
 
-#else
-
-#define __LC3_ND(dt_us, sr_hz) \
-    ( (dt_us) == 7500 ? 23 * __LC3_NS(dt_us, sr_hz) / 30 \
-                      :  5 * __LC3_NS(dt_us, sr_hz) /  8 )
-
-#define __LC3_NH(dt_us, sr_hz) \
-    ( ((3 - ((dt_us) >= 10000)) + 1) * __LC3_NS(dt_us, sr_hz) )
-
-#endif
-
 #define __LC3_NT(sr_hz) \
     ( (5 * sr_hz) / 4000 )
+
 
 /**
  * Frame duration 2.5ms, 5ms, 7.5ms or 10ms
