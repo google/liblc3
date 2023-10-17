@@ -667,11 +667,7 @@ LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     const uint16_t *xq, int nq, const float *x)
 {
     int bw_stop = 20 * (1 + dt) * (1 + bw);
-#ifdef INCLUDE_2M5
     int w = dt + (dt == LC3_DT_2M5);
-#else
-    int w = dt;
-#endif
 
     float sum = 0;
     int i, n = 0, z = 0;
@@ -702,11 +698,7 @@ LC3_HOT static void fill_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     int nf, uint16_t nf_seed, float g, float *x, int nq)
 {
     int bw_stop = 20 * (1 + dt) * (1 + bw);
-#ifdef INCLUDE_2M5
     int w = dt + (dt == LC3_DT_2M5);
-#else
-    int w = dt;
-#endif
 
     float s = g * (float)(8 - nf) / 16;
     int i, z = 0;

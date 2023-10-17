@@ -51,12 +51,8 @@
  */
 
 enum lc3_dt {
-#ifdef INCLUDE_2M5
     LC3_DT_2M5 = 0,
-#endif
-#ifdef INCLUDE_05M
     LC3_DT_05M = 1,
-#endif
     LC3_DT_7M5 = 2,
     LC3_DT_10M = 3,
 

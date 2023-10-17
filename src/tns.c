@@ -104,11 +104,8 @@ LC3_HOT static void compute_lpc_coeffs(
         { sub_7m5_nb, sub_7m5_wb, sub_7m5_sswb, sub_7m5_swb, sub_7m5_fb },
         { sub_10m_nb, sub_10m_wb, sub_10m_sswb, sub_10m_swb, sub_10m_fb },
     }[dt][bw];
-#ifdef INCLUDE_2M5
+
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-#else
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
-#endif
 
     int nsubdivisions = dt >= LC3_DT_7M5 ? 3 : 2;
 
@@ -292,11 +289,7 @@ LC3_HOT static void forward_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
     const int rc_order[2], float (* const rc)[8], float *x)
 {
-#ifdef INCLUDE_2M5
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-#else
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
-#endif
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
@@ -337,11 +330,7 @@ LC3_HOT static void inverse_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
     const int rc_order[2], float (* const rc)[8], float *x)
 {
-#ifdef INCLUDE_2M5
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-#else
-    int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
-#endif
     int nf = LC3_NE(dt, bw) >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
@@ -393,11 +382,7 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
     float pred_gain[2], a[2][9];
     float rc[2][8];
 
-#ifdef INCLUDE_2M5
     data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-#else
-    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
-#endif
     data->lpc_weighting = resolve_lpc_weighting(dt, nbytes);
     int maxorder = dt >= LC3_DT_7M5 ? 8 : 4;
 
@@ -487,11 +472,7 @@ void lc3_tns_put_data(lc3_bits_t *bits, const struct lc3_tns_data *data)
 void lc3_tns_get_data(lc3_bits_t *bits,
     enum lc3_dt dt, enum lc3_bandwidth bw, int nbytes, lc3_tns_data_t *data)
 {
-#ifdef INCLUDE_2M5
     data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-#else
-    data->nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB);
-#endif
     data->lpc_weighting = resolve_lpc_weighting(dt, nbytes);
 
     for (int f = 0; f < data->nfilters; f++) {

@@ -103,8 +103,6 @@
 #define LC3_NS(dt, sr) \
     ( 20 * (1 + (dt)) * (1 + (sr) + ((sr) == LC3_SRATE_48K)) )
 
-#if defined (INCLUDE_2M5) && defined(INCLUDE_05M)
-
 #define LC3_ND(dt, sr) \
     ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 :  \
      ((dt) == LC3_DT_05M ?  3 * LC3_NS(dt, sr) / 4  :  \
@@ -112,37 +110,6 @@
                          :  5 * LC3_NS(dt, sr) / 8)) )
 #define LC3_NH(dt, sr) \
     ( ((3 - dt) + 3 + ((dt) == LC3_DT_05M)) * (((dt) == LC3_DT_2M5) + 1) * LC3_NS(dt, sr) )
-
-#elif defined(INCLUDE_05M)
-
-#define LC3_ND(dt, sr) \
-    ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 :  \
-     ((dt) == LC3_DT_05M ?  3 * LC3_NS(dt, sr) / 4     \
-                         :  5 * LC3_NS(dt, sr) / 8) )
-
-#define LC3_NH(dt, sr) \
-    ( ((3 - dt) + 3 + ((dt) == LC3_DT_05M)) * LC3_NS(dt, sr) )
-
-#elif defined(INCLUDE_2M5)
-
-#define LC3_ND(dt, sr) \
-    ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 :  \
-     ((dt) == LC3_DT_2M5 ?      LC3_NS(dt, sr)         \
-                         :  5 * LC3_NS(dt, sr) / 8) )
-#define LC3_NH(dt, sr) \
-    ( ((3 - dt) + 3) * (((dt) == LC3_DT_2M5) + 1) * LC3_NS(dt, sr) )
-
-
-#else
-
-#define LC3_ND(dt, sr) \
-    ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 \
-                         :  5 * LC3_NS(dt, sr) /  8 )
-
-#define LC3_NH(dt, sr) \
-    ( ((3 - (dt)) + 3) * LC3_NS(dt, sr) )
-
-#endif
 
 #define LC3_NE(dt, sr) \
     ( 20 * (1 + (dt)) * (1 + (sr)) )
