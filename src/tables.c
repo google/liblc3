@@ -450,7 +450,7 @@ static const struct lc3_mdct_rot_def mdct_rot_40 = {
 };
 #endif
 
-#if defined (INCLUDE_2M5) || defined(INCLUDE_05M)
+#if defined(INCLUDE_2M5) || defined(INCLUDE_05M)
 static const struct lc3_mdct_rot_def mdct_rot_80 = {
     .n4 = 80/4, .w = (const struct lc3_complex []){
         { 4.7284802e-01, 4.6423237e-03 }, { 4.7102615e-01, 4.1727241e-02 },
