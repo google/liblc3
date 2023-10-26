@@ -272,7 +272,7 @@ LC3_HOT static void compute_scale_factors(
 #else
     if (nb < LC3_NUM_BANDS) {
 #endif
-        nb = LC3_MIN(lc3_band_lim[dt][sr][nb], LC3_NUM_BANDS);
+        nb = LC3_MIN(lc3_band_lim[dt][sr][nb], nb);
         int n2 = LC3_NUM_BANDS - nb;
 
         for (int i2 = 0; i2 < n2; i2++)
