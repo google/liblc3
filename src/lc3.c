@@ -23,6 +23,7 @@
 
 #include "attdet.h"
 #include "bwdet.h"
+#include "lc3_private.h"
 #include "ltpf.h"
 #include "mdct.h"
 #include "energy.h"
@@ -58,10 +59,10 @@ struct side_data {
 static enum lc3_dt resolve_dt(int us)
 {
     switch (us) {
-#ifdef INCLUDE_2M5
+#if defined(INCLUDE_2M5) || defined(INCLUDE_HRMODE)
         case 2500 : return LC3_DT_2M5;
 #endif
-#ifdef INCLUDE_05M
+#if defined(INCLUDE_05M) || defined(INCLUDE_HRMODE)
         case 5000 : return LC3_DT_05M;
 #endif
         case 7500 : return LC3_DT_7M5;
@@ -79,7 +80,12 @@ static enum lc3_srate resolve_sr(int hz)
 {
     return hz ==  8000 ? LC3_SRATE_8K  : hz == 16000 ? LC3_SRATE_16K :
            hz == 24000 ? LC3_SRATE_24K : hz == 32000 ? LC3_SRATE_32K :
-           hz == 48000 ? LC3_SRATE_48K : LC3_NUM_SRATE;
+           hz == 48000 ? LC3_SRATE_48K : hz != 96000 ? LC3_NUM_SRATE :
+#ifdef INCLUDE_HRMODE
+           LC3_SRATE_96K;
+#else
+           LC3_NUM_SRATE;
+#endif
 }
 
 /**
@@ -99,39 +105,82 @@ int lc3_frame_samples(int dt_us, int sr_hz)
 /**
  * Return the size of frames, from bitrate
  */
-int lc3_frame_bytes(int dt_us, int bitrate)
+int lc3_frame_bytes(int dt_us, int sr_hz, int bitrate, bool hrmode)
 {
-    if (resolve_dt(dt_us) >= LC3_NUM_DT)
+    enum lc3_dt dt = resolve_dt(dt_us);
+    enum lc3_srate sr = resolve_sr(sr_hz);
+    if (dt >= LC3_NUM_DT)
         return -1;
 
-    if (bitrate < LC3_MIN_BITRATE)
-        return LC3_MIN_FRAME_BYTES;
+    if (sr >= LC3_NUM_SRATE || (sr == LC3_SRATE_96K && !hrmode) || (hrmode && sr < LC3_SRATE_48K))
+        return -1;
 
-    if (bitrate > LC3_MAX_BITRATE)
-        return LC3_MAX_FRAME_BYTES;
+
+    if (hrmode) {
+#ifndef INCLUDE_HRMODE
+        return -1;
+#else
+
+        if (dt == LC3_DT_7M5)
+            return -1;
+
+        const struct bitrate_limit limit = bitrate_limits[dt][sr];
+
+        if (bitrate < limit.min_bitrate)
+            return limit.min_nbytes;
+
+        if (bitrate > limit.max_bitrate)
+            return limit.max_nbytes;
+#endif
+    } else {
+        if (bitrate < LC3_MIN_BITRATE)
+            return LC3_MIN_FRAME_BYTES;
+
+        if (bitrate > LC3_MAX_BITRATE)
+            return LC3_MAX_FRAME_BYTES;
+    }
 
     int nbytes = ((unsigned)bitrate * dt_us) / (1000*1000*8);
 
-    return LC3_CLIP(nbytes, LC3_MIN_FRAME_BYTES, LC3_MAX_FRAME_BYTES);
+    return hrmode ? nbytes : LC3_CLIP(nbytes, LC3_MIN_FRAME_BYTES, LC3_MAX_FRAME_BYTES);
 }
 
 /**
  * Resolve the bitrate, from the size of frames
  */
-int lc3_resolve_bitrate(int dt_us, int nbytes)
+int lc3_resolve_bitrate(int dt_us, int nbytes, bool hrmode)
 {
-    if (resolve_dt(dt_us) >= LC3_NUM_DT)
+    enum lc3_dt dt = resolve_dt(dt_us);
+    if (dt >= LC3_NUM_DT)
         return -1;
 
-    if (nbytes < LC3_MIN_FRAME_BYTES)
-        return LC3_MIN_BITRATE;
 
-    if (nbytes > LC3_MAX_FRAME_BYTES)
-        return LC3_MAX_BITRATE;
+    if (hrmode) {
+#ifndef INCLUDE_HRMODE
+        return -1;
+#else
+        if (dt == LC3_DT_7M5)
+            return -1;
+
+        // Only upper limit matters here and it's same for all supported rates
+
+        if (nbytes < LC3_MIN_HR_FRAME_BYTES)
+            nbytes = LC3_MIN_HR_FRAME_BYTES;
+
+        if (nbytes > bitrate_limits[dt][LC3_SRATE_48K].max_nbytes)
+            return bitrate_limits[dt][LC3_SRATE_48K].max_bitrate;
+#endif
+    } else {
+        if (nbytes < LC3_MIN_FRAME_BYTES)
+            return LC3_MIN_BITRATE;
+
+        if (nbytes > LC3_MAX_FRAME_BYTES)
+            return LC3_MAX_BITRATE;
+    }
 
     int bitrate = ((unsigned)nbytes * (1000*1000*8) + dt_us/2) / dt_us;
 
-    return LC3_CLIP(bitrate, LC3_MIN_BITRATE, LC3_MAX_BITRATE);
+    return hrmode ? bitrate : LC3_CLIP(bitrate, LC3_MIN_BITRATE, LC3_MAX_BITRATE);
 }
 
 /**
@@ -254,7 +303,7 @@ static void load_float(
  * side, xq        Return frame data
  */
 static void analyze(struct lc3_encoder *encoder,
-    int nbytes, struct side_data *side, uint16_t *xq)
+    int nbytes, struct side_data *side, uint32_t *xq)
 {
     enum lc3_dt dt = encoder->dt;
     enum lc3_srate sr = encoder->sr;
@@ -269,7 +318,7 @@ static void analyze(struct lc3_encoder *encoder,
 
     /* --- Temporal --- */
 
-    bool att = lc3_attdet_run(dt, sr_pcm, nbytes, &encoder->attdet, xt);
+    bool att = encoder->hrmode ? false : lc3_attdet_run(dt, sr_pcm, nbytes, &encoder->attdet, xt);
 
     side->pitch_present =
         lc3_ltpf_analyse(dt, sr_pcm, &encoder->ltpf, xt, &side->ltpf);
@@ -280,21 +329,41 @@ static void analyze(struct lc3_encoder *encoder,
 
     float e[LC3_NUM_BANDS];
 
-    lc3_mdct_forward(dt, sr_pcm, sr, xs, xd, xf);
+    lc3_mdct_forward(dt, sr_pcm, sr, xs, xd, xf, encoder->hrmode);
 
-    bool nn_flag = lc3_energy_compute(dt, sr, xf, e);
-    if (nn_flag)
+    bool nn_flag = lc3_energy_compute(dt, sr, encoder->hrmode, xf, e);
+    if (nn_flag || encoder->hrmode)
         lc3_ltpf_disable(&side->ltpf);
 
-    side->bw = lc3_bwdet_run(dt, sr, e);
+    if (encoder->hrmode)
+        side->bw = (enum lc3_bandwidth) sr;
+    else
+        side->bw = lc3_bwdet_run(dt, sr, e);
 
-    lc3_sns_analyze(dt, sr, e, att, &side->sns, xf, xf);
+#ifdef INCLUDE_HRMODE
+    const float cfs[LC3_NUM_DT] = {
+        [LC3_DT_2M5] = 0.6 * 0.25,
+        [LC3_DT_05M] = 0.6 * 0.25,
+        [LC3_DT_10M] = 0.6 * 0.35,
+    };
+    const short limits[LC3_NUM_DT] = {
+        [LC3_DT_2M5] = (1150 + 7) / 8,
+        [LC3_DT_05M] = (2300 + 7) / 8,
+        [LC3_DT_10M] = (4400 + 7) / 8,
+    };
+    const float cf_hr = (nbytes > limits[dt] ? cfs[dt] : 0.6f);
+    const float cf = encoder->hrmode ? cf_hr : 0.85f;
+#else
+    const float cf = 0.85f;
+#endif
 
-    lc3_tns_analyze(dt, side->bw, nn_flag, nbytes, &side->tns, xf);
+    lc3_sns_analyze(dt, sr, e, att, cf, &side->sns, xf, xf, encoder->hrmode);
+
+    lc3_tns_analyze(dt, side->bw, nn_flag, nbytes, &side->tns, xf, encoder->hrmode);
 
     lc3_spec_analyze(dt, sr,
         nbytes, side->pitch_present, &side->tns,
-        &encoder->spec, xf, xq, &side->spec);
+        &encoder->spec, xf, xq, &side->spec, encoder->hrmode);
 }
 
 /**
@@ -305,7 +374,7 @@ static void analyze(struct lc3_encoder *encoder,
  * buffer          Output bitstream buffer of `nbytes` size
  */
 static void encode(struct lc3_encoder *encoder,
-    const struct side_data *side, uint16_t *xq, int nbytes, void *buffer)
+    const struct side_data *side, uint32_t *xq, int nbytes, void *buffer)
 {
     enum lc3_dt dt = encoder->dt;
     enum lc3_srate sr = encoder->sr;
@@ -314,7 +383,7 @@ static void encode(struct lc3_encoder *encoder,
 
     lc3_bits_t bits;
 
-    lc3_setup_bits(&bits, LC3_BITS_MODE_WRITE, buffer, nbytes);
+    lc3_setup_bits(&bits, LC3_BITS_MODE_WRITE, buffer, nbytes, encoder->hrmode);
 
     lc3_bwdet_put_bw(&bits, sr, bw);
 
@@ -338,21 +407,28 @@ static void encode(struct lc3_encoder *encoder,
 /**
  * Return size needed for an encoder
  */
-unsigned lc3_encoder_size(int dt_us, int sr_hz)
+unsigned lc3_encoder_size(int dt_us, int sr_hz, bool hrmode)
 {
     if (resolve_dt(dt_us) >= LC3_NUM_DT ||
-        resolve_sr(sr_hz) >= LC3_NUM_SRATE)
+        resolve_sr(sr_hz) >= LC3_NUM_SRATE ||
+        (sr_hz == 96000 && !hrmode) ||
+        (hrmode && (sr_hz < 48000 || dt_us == 7500)))
         return 0;
 
+#ifndef INCLUDE_HRMODE
+    if (hrmode)
+        return 0;
+#endif
+
     return sizeof(struct lc3_encoder) +
-        (LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
+        (LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz, hrmode)-1) * sizeof(float);
 }
 
 /**
  * Setup encoder
  */
 struct lc3_encoder *lc3_setup_encoder(
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
+    int dt_us, int sr_hz, int sr_pcm_hz, void *mem, bool hrmode)
 {
     if (sr_pcm_hz <= 0)
         sr_pcm_hz = sr_hz;
@@ -364,6 +440,14 @@ struct lc3_encoder *lc3_setup_encoder(
     if (dt >= LC3_NUM_DT || sr_pcm >= LC3_NUM_SRATE || sr > sr_pcm || !mem)
         return NULL;
 
+#ifndef INCLUDE_HRMODE
+    if (hrmode)
+        return 0;
+#else
+    if ((sr == LC3_SRATE_96K && !hrmode) || (hrmode && (sr < LC3_SRATE_48K || dt == LC3_DT_7M5)))
+        return NULL;
+#endif
+
     struct lc3_encoder *encoder = mem;
     int ns = LC3_NS(dt, sr_pcm);
     int nt = LC3_NT(sr_pcm);
@@ -371,6 +455,7 @@ struct lc3_encoder *lc3_setup_encoder(
     *encoder = (struct lc3_encoder){
         .dt = dt, .sr = sr,
         .sr_pcm = sr_pcm,
+        .hrmode = hrmode,
 
         .xt_off = nt,
         .xs_off = (nt + ns) / 2,
@@ -378,7 +463,7 @@ struct lc3_encoder *lc3_setup_encoder(
     };
 
     memset(encoder->x, 0,
-        LC3_ENCODER_BUFFER_COUNT(dt_us, sr_pcm_hz) * sizeof(float));
+        LC3_ENCODER_BUFFER_COUNT(dt_us, sr_pcm_hz, hrmode) * sizeof(float));
 
     return encoder;
 }
@@ -398,14 +483,17 @@ int lc3_encode(struct lc3_encoder *encoder, enum lc3_pcm_format fmt,
 
     /* --- Check parameters --- */
 
-    if (!encoder || nbytes < LC3_MIN_FRAME_BYTES
-                 || nbytes > LC3_MAX_FRAME_BYTES)
+    if (!encoder)
+        return -1;
+
+    if ((!encoder->hrmode && nbytes > LC3_MAX_FRAME_BYTES) ||
+                             nbytes < LC3_MIN_FRAME_BYTES)
         return -1;
 
     /* --- Processing --- */
 
     struct side_data side;
-    uint16_t xq[LC3_MAX_NE];
+    uint32_t xq[LC3_MAX_NE];
 
     load[fmt](encoder, pcm, stride);
 
@@ -530,15 +618,15 @@ static int decode(struct lc3_decoder *decoder,
 
     float *xf = decoder->x + decoder->xs_off;
     int ns = LC3_NS(dt, sr);
-    int ne = LC3_NE(dt, sr);
+    int ne = decoder->hrmode ? LC3_NS(dt, sr) : LC3_NE(dt, sr);
 
     lc3_bits_t bits;
     int ret = 0;
 
-    lc3_setup_bits(&bits, LC3_BITS_MODE_READ, (void *)data, nbytes);
+    lc3_setup_bits(&bits, LC3_BITS_MODE_READ, (void *)data, nbytes, decoder->hrmode);
 
     if ((ret = lc3_bwdet_get_bw(&bits, sr, &side->bw)) < 0)
-        return ret;
+            return ret;
 
     if ((ret = lc3_spec_get_side(&bits, dt, sr, &side->spec)) < 0)
         return ret;
@@ -577,7 +665,7 @@ static void synthesize(struct lc3_decoder *decoder,
 
     float *xf = decoder->x + decoder->xs_off;
     int ns = LC3_NS(dt, sr_pcm);
-    int ne = LC3_NE(dt, sr);
+    int ne = decoder->hrmode ? LC3_NS(dt, sr) : LC3_NE(dt, sr);
 
     float *xg = decoder->x + decoder->xg_off;
     float *xs = xf;
@@ -590,18 +678,18 @@ static void synthesize(struct lc3_decoder *decoder,
 
         lc3_plc_suspend(&decoder->plc);
 
-        lc3_tns_synthesize(dt, bw, &side->tns, xf);
+        lc3_tns_synthesize(dt, bw, &side->tns, xf, decoder->hrmode);
 
-        lc3_sns_synthesize(dt, sr, &side->sns, xf, xg);
+        lc3_sns_synthesize(dt, sr, &side->sns, xf, xg, decoder->hrmode);
 
-        lc3_mdct_inverse(dt, sr_pcm, sr, xg, xd, xs);
+        lc3_mdct_inverse(dt, sr_pcm, sr, xg, xd, xs, decoder->hrmode);
 
     } else {
         lc3_plc_synthesize(dt, sr, &decoder->plc, xg, xf);
 
         memset(xf + ne, 0, (ns - ne) * sizeof(float));
 
-        lc3_mdct_inverse(dt, sr_pcm, sr, xf, xd, xs);
+        lc3_mdct_inverse(dt, sr_pcm, sr, xf, xd, xs, decoder->hrmode);
     }
 
     lc3_ltpf_synthesize(dt, sr_pcm, nbytes, &decoder->ltpf,
@@ -626,24 +714,31 @@ static void complete(struct lc3_decoder *decoder)
 /**
  * Return size needed for a decoder
  */
-unsigned lc3_decoder_size(int dt_us, int sr_hz)
+unsigned lc3_decoder_size(int dt_us, int sr_hz, bool hrmode)
 {
     if (resolve_dt(dt_us) >= LC3_NUM_DT ||
-        resolve_sr(sr_hz) >= LC3_NUM_SRATE)
+        resolve_sr(sr_hz) >= LC3_NUM_SRATE ||
+        (sr_hz == 96000 && !hrmode) ||
+        (hrmode && (sr_hz < 48000 || dt_us == 7500)))
         return 0;
 
     return sizeof(struct lc3_decoder) +
-        (LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
+        (LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz, hrmode)-1) * sizeof(float);
 }
 
 /**
  * Setup decoder
  */
 struct lc3_decoder *lc3_setup_decoder(
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
+    int dt_us, int sr_hz, int sr_pcm_hz, void *mem, bool hrmode)
 {
     if (sr_pcm_hz <= 0)
         sr_pcm_hz = sr_hz;
+
+#ifndef INCLUDE_HRMODE
+    if (hrmode)
+        return 0;
+#endif
 
     enum lc3_dt dt = resolve_dt(dt_us);
     enum lc3_srate sr = resolve_sr(sr_hz);
@@ -652,14 +747,18 @@ struct lc3_decoder *lc3_setup_decoder(
     if (dt >= LC3_NUM_DT || sr_pcm >= LC3_NUM_SRATE || sr > sr_pcm || !mem)
         return NULL;
 
+    if ((sr == LC3_SRATE_96K && !hrmode) || (hrmode && (sr < LC3_SRATE_48K || dt == LC3_DT_7M5)))
+        return NULL;
+
     struct lc3_decoder *decoder = mem;
     int nh = LC3_NH(dt, sr_pcm);
     int ns = LC3_NS(dt, sr_pcm);
-    int nd = LC3_ND(dt, sr_pcm);
+    int nd = /*hrmode ? LC3_NS(dt, sr) :*/ LC3_ND(dt, sr_pcm);
 
     *decoder = (struct lc3_decoder){
         .dt = dt, .sr = sr,
         .sr_pcm = sr_pcm,
+        .hrmode = hrmode,
 
         .xh_off = 0,
         .xs_off = nh - ns,
@@ -670,7 +769,7 @@ struct lc3_decoder *lc3_setup_decoder(
     lc3_plc_reset(&decoder->plc);
 
     memset(decoder->x, 0,
-        LC3_DECODER_BUFFER_COUNT(dt_us, sr_pcm_hz) * sizeof(float));
+        LC3_DECODER_BUFFER_COUNT(dt_us, sr_pcm_hz, hrmode) * sizeof(float));
 
     return decoder;
 }
@@ -693,8 +792,8 @@ int lc3_decode(struct lc3_decoder *decoder, const void *in, int nbytes,
     if (!decoder)
         return -1;
 
-    if (in && (nbytes < LC3_MIN_FRAME_BYTES ||
-               nbytes > LC3_MAX_FRAME_BYTES   ))
+    if (!decoder->hrmode && in && (nbytes < LC3_MIN_FRAME_BYTES ||
+                                   nbytes > LC3_MAX_FRAME_BYTES   ))
         return -1;
 
     /* --- Processing --- */

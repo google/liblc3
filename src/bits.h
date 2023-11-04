@@ -116,6 +116,7 @@ struct lc3_bits_buffer {
 };
 
 typedef struct lc3_bits {
+    bool hrmode;
     enum lc3_bits_mode mode;
     struct lc3_bits_ac ac;
     struct lc3_bits_accu accu;
@@ -130,7 +131,7 @@ typedef struct lc3_bits {
  * buffer, len     Output buffer and length (in bytes)
  */
 void lc3_setup_bits(lc3_bits_t *bits,
-    enum lc3_bits_mode mode, void *buffer, int len);
+    enum lc3_bits_mode mode, void *buffer, int len, bool hrmode);
 
 /**
  * Return number of bits left in the bitstream

@@ -145,6 +145,36 @@ static const int16_t h_48k_12k8_q15[4*60] = {
 #endif /* resample_48k_12k8 */
 
 
+#ifndef resample_96k_12k8
+static const int16_t h_96k_12k8_q15[2*120] = {
+       -3,    -7,   -10,   -13,   -13,   -10,    -4,     5,    15,    26,
+       33,    36,    31,    19,     0,   -23,   -47,   -66,   -76,   -73,
+      -54,   -21,    23,    70,   111,   139,   143,   121,    72,     0,
+      -84,  -165,  -227,  -256,  -240,  -175,   -67,    72,   219,   349,
+      433,   448,   379,   225,     0,  -268,  -536,  -755,  -874,  -848,
+     -648,  -260,   301,  1000,  1780,  2569,  3290,  3869,  4243,  4372,
+     4243,  3869,  3290,  2569,  1780,  1000,   301,  -260,  -648,  -848,
+     -874,  -755,  -536,  -268,     0,   225,   379,   448,   433,   349,
+      219,    72,   -67,  -175,  -240,  -256,  -227,  -165,   -84,     0,
+       72,   121,   143,   139,   111,    70,    23,   -21,   -54,   -73,
+      -76,   -66,   -47,   -23,     0,    19,    31,    36,    33,    26,
+       15,     5,    -4,   -10,   -13,   -13,   -10,    -7,    -3,     0,
+       -1,    -5,    -8,   -12,   -13,   -12,    -8,     0,    10,    21,
+       30,    35,    34,    26,    10,   -11,   -35,   -58,   -73,   -76,
+      -65,   -39,     0,    46,    92,   127,   144,   136,   100,    38,
+      -41,  -125,  -199,  -246,  -254,  -214,  -126,     0,   146,   288,
+      398,   450,   424,   312,   120,  -131,  -405,  -655,  -830,  -881,
+     -771,  -477,     0,   636,  1384,  2178,  2943,  3601,  4084,  4340,
+     4340,  4084,  3601,  2943,  2178,  1384,   636,     0,  -477,  -771,
+     -881,  -830,  -655,  -405,  -131,   120,   312,   424,   450,   398,
+      288,   146,     0,  -126,  -214,  -254,  -246,  -199,  -125,   -41,
+       38,   100,   136,   144,   127,    92,    46,     0,   -39,   -65,
+      -76,   -73,   -58,   -35,   -11,    10,    26,    34,    35,    30,
+       21,    10,     0,    -8,   -12,   -13,   -12,    -8,    -5,    -1,
+};
+#endif /* resample_96k_12k8 */
+
+
 /**
  * High-pass 50Hz filtering, at 12.8 KHz samplerate
  * hp50            Biquad filter state
@@ -212,8 +242,8 @@ LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
 #endif
 
 /**
- * Resample from 24 / 48 KHz to 12.8 KHz Template
- * p               Resampling factor with compared to 192 KHz (8 or 4)
+ * Resample from 24 / 48 / 96 KHz to 12.8 KHz Template
+ * p               Resampling factor with compared to 192 KHz (8, 4 or 2)
  * h               Arrange by phase coefficients table
  * hp50            High-Pass biquad filter state
  * x               [-d..-1] Previous, [0..ns-1] Current samples, Q15
@@ -221,9 +251,9 @@ LC3_HOT static inline void resample_x64k_12k8(const int p, const int16_t *h,
  *
  * The `x` vector is aligned on 32 bits
  * The number of previous samples `d` accessed on `x` is :
- *   d: { 30, 60 } - 1 for resampling factors 8 and 4.
+ *   d: { 30, 60, 120 } - 1 for resampling factors 8, 4 and 2.
  */
-#if !defined(resample_24k_12k8) || !defined(resample_48k_12k8)
+#if !defined(resample_24k_12k8) || !defined(resample_48k_12k8) || !defined (resample_96k_12k8)
 LC3_HOT static inline void resample_x192k_12k8(const int p, const int16_t *h,
     struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
 {
@@ -341,6 +371,22 @@ LC3_HOT static void resample_48k_12k8(
 #endif /* resample_48k_12k8 */
 
 /**
+ * Resample from 96 Khz to 12.8 KHz
+ * hp50            High-Pass biquad filter state
+ * x               [-60..-1] Previous, [0..ns-1] Current samples, in fixed Q15
+ * y, n            [0..n-1] Output `n` processed samples, in fixed Q14
+ *
+* The `x` vector is aligned on 32 bits
+*/
+#ifndef resample_96k_12k8
+LC3_HOT static void resample_96k_12k8(
+    struct lc3_ltpf_hp50_state *hp50, const int16_t *x, int16_t *y, int n)
+{
+    resample_x192k_12k8(2, h_96k_12k8_q15, hp50, x, y, n);
+}
+#endif /* resample_48k_12k8 */
+
+/**
 * Resample to 6.4 KHz
 * x               [-3..-1] Previous, [0..n-1] Current samples
 * y, n            [0..n-1] Output `n` processed samples
@@ -371,6 +417,7 @@ static void (* const resample_12k8[])
     [LC3_SRATE_24K] = resample_24k_12k8,
     [LC3_SRATE_32K] = resample_32k_12k8,
     [LC3_SRATE_48K] = resample_48k_12k8,
+    [LC3_SRATE_96K] = resample_96k_12k8,
 };
 
 
@@ -785,6 +832,12 @@ LC3_HOT static void synthesize_12(const float *xh, int nh, int lag,
     synthesize_template(xh, nh, lag, x0, x, n, c, 12, fade);
 }
 
+LC3_HOT static void synthesize_24(const float *xh, int nh, int lag,
+    const float *x0, float *x, int n, const float *c, int fade)
+{
+    synthesize_template(xh, nh, lag, x0, x, n, c, 24, fade);
+}
+
 static void (* const synthesize[])(const float *, int, int,
     const float *, float *, int, const float *, int) =
 {
@@ -793,6 +846,7 @@ static void (* const synthesize[])(const float *, int, int,
     [LC3_SRATE_24K] = synthesize_6,
     [LC3_SRATE_32K] = synthesize_8,
     [LC3_SRATE_48K] = synthesize_12,
+    [LC3_SRATE_96K] = synthesize_24,
 };
 
 

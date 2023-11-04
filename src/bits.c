@@ -78,9 +78,10 @@ static int get_bits_left(const struct lc3_bits *bits)
  * Setup bitstream writing
  */
 void lc3_setup_bits(struct lc3_bits *bits,
-    enum lc3_bits_mode mode, void *buffer, int len)
+    enum lc3_bits_mode mode, void *buffer, int len, bool hrmode)
 {
     *bits = (struct lc3_bits){
+        .hrmode = hrmode,
         .mode = mode,
         .accu = {
             .n = mode == LC3_BITS_MODE_READ ? LC3_ACCU_BITS : 0,

@@ -148,11 +148,12 @@ LC3_HOT static void dct16_inverse(const float *x, float *y)
  * dt, sr          Duration and samplerate of the frame
  * eb              Energy estimation per bands
  * att             1: Attack detected  0: Otherwise
+ * cf              Compression factor
  * scf             Output 16 scale factors
  */
 LC3_HOT static void compute_scale_factors(
     enum lc3_dt dt, enum lc3_srate sr,
-    const float *eb, bool att, float *scf)
+    const float *eb, bool att, float cf, float *scf, bool hrmode)
 {
     /* Pre-emphasis gain table :
      * Ge[b] = 10 ^ (b * g_tilt) / 630 , b = [0..63] */
@@ -248,13 +249,31 @@ LC3_HOT static void compute_scale_factors(
             2.99357729e+02, 3.34048498e+02, 3.72759372e+02, 4.15956216e+02,
             4.64158883e+02, 5.17947468e+02, 5.77969288e+02, 6.44946677e+02,
             7.19685673e+02, 8.03085722e+02, 8.96150502e+02, 1.00000000e+03 },
+
+        [LC3_SRATE_96K] = { /* g_tilt = 34 */
+            1.00000000e+00, 1.13231759e+00, 1.28214312e+00, 1.45179321e+00,
+            1.64389099e+00, 1.86140669e+00, 2.10770353e+00, 2.38658979e+00,
+            2.70237760e+00, 3.05994969e+00, 3.46483486e+00, 3.92329345e+00,
+            4.44241419e+00, 5.03022373e+00, 5.69581081e+00, 6.44946677e+00,
+            7.30284467e+00, 8.26913948e+00, 9.36329209e+00, 1.06022203e+01,
+            1.20050806e+01, 1.35935639e+01, 1.53922315e+01, 1.74288945e+01,
+            1.97350438e+01, 2.23463373e+01, 2.53031508e+01, 2.86512027e+01,
+            3.24422608e+01, 3.67349426e+01, 4.15956216e+01, 4.70994540e+01,
+            5.33315403e+01, 6.03882412e+01, 6.83786677e+01, 7.74263683e+01,
+            8.76712387e+01, 9.92716858e+01, 1.12407076e+02, 1.27280509e+02,
+            1.44121960e+02, 1.63191830e+02, 1.84784980e+02, 2.09235283e+02,
+            2.36920791e+02, 2.68269580e+02, 3.03766364e+02, 3.43959997e+02,
+            3.89471955e+02, 4.41005945e+02, 4.99358789e+02, 5.65432741e+02,
+            6.40249439e+02, 7.24965701e+02, 8.20891416e+02, 9.29509790e+02,
+            1.05250029e+03, 1.19176459e+03, 1.34945600e+03, 1.52801277e+03,
+            1.73019574e+03, 1.95913107e+03, 2.21835857e+03, 2.51188643e+03, },
     };
 
     float e[LC3_NUM_BANDS];
 
     /* --- Copy and padding --- */
-    int nb = lc3_bands_number[dt][sr];
-#if defined(INCLUDE_2M5) || defined(INCLUDE_05M)
+    int nb = get_band_num(hrmode, dt, sr);
+#if defined(INCLUDE_2M5) || defined(INCLUDE_05M) || defined(INCLUDE_HRMODE)
     if (nb < 32) {
         int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
         int n2 = nb - n4;
@@ -272,7 +291,7 @@ LC3_HOT static void compute_scale_factors(
 #else
     if (nb < LC3_NUM_BANDS) {
 #endif
-        nb = LC3_MIN(lc3_band_lim[dt][sr][nb], nb);
+        nb = LC3_MIN(get_band_lim(hrmode, dt, sr)[nb], nb);
         int n2 = LC3_NUM_BANDS - nb;
 
         for (int i2 = 0; i2 < n2; i2++)
@@ -330,8 +349,9 @@ LC3_HOT static void compute_scale_factors(
               (e[61] + e[62]) * 3.f/12  ;
     scf_sum += scf[15];
 
+
     for (int i = 0; i < 16; i++)
-        scf[i] = 0.85f * (scf[i] - scf_sum * 1.f/16);
+        scf[i] = cf * (scf[i] - scf_sum * 1.f/16);
 
     /* --- Attack handling --- */
 
@@ -697,7 +717,7 @@ static void deenumerate(int shape,
  * `x` and `y` can be the same buffer
  */
 LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
-    const float *scf_q, bool inv, const float *x, float *y)
+    const float *scf_q, bool inv, const float *x, float *y, bool hrmode)
 {
     /* --- Interpolate scale factors --- */
 
@@ -715,8 +735,8 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     scf[62] = s1 + 0.125f * (s1 - s0);
     scf[63] = s1 + 0.375f * (s1 - s0);
 
-    int nb = lc3_bands_number[dt][sr];
-#if defined(INCLUDE_2M5) || defined(INCLUDE_05M)
+    int nb = get_band_num(hrmode, dt, sr);
+#if defined(INCLUDE_2M5) || defined(INCLUDE_05M) || defined(INCLUDE_HRMODE)
     if (nb < 32) {
         float tmp[LC3_NUM_BANDS];
         int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
@@ -749,7 +769,7 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
 
     /* --- Spectral shaping --- */
 
-    const int *lim = lc3_band_lim[dt][sr];
+    const int *lim = get_band_lim(hrmode, dt, sr);
 
     for (int i = 0, ib = 0; ib < nb; ib++) {
         float g_sns = fast_exp2f(-scf[ib]);
@@ -768,8 +788,8 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
  * SNS analysis
  */
 void lc3_sns_analyze(enum lc3_dt dt, enum lc3_srate sr,
-    const float *eb, bool att, struct lc3_sns_data *data,
-    const float *x, float *y)
+    const float *eb, bool att, float cf, struct lc3_sns_data *data,
+    const float *x, float *y, bool hrmode)
 {
     /* Processing steps :
      * - Determine 16 scale factors from bands energy estimation
@@ -781,7 +801,7 @@ void lc3_sns_analyze(enum lc3_dt dt, enum lc3_srate sr,
     float scf[16], cn[4][16];
     int c[4][16];
 
-    compute_scale_factors(dt, sr, eb, att, scf);
+    compute_scale_factors(dt, sr, eb, att, cf, scf, hrmode);
 
     resolve_codebooks(scf, &data->lfcb, &data->hfcb);
 
@@ -794,14 +814,14 @@ void lc3_sns_analyze(enum lc3_dt dt, enum lc3_srate sr,
     enumerate(data->shape, c[data->shape],
         &data->idx_a, &data->ls_a, &data->idx_b, &data->ls_b);
 
-    spectral_shaping(dt, sr, scf, false, x, y);
+    spectral_shaping(dt, sr, scf, false, x, y, hrmode);
 }
 
 /**
  * SNS synthesis
  */
 void lc3_sns_synthesize(enum lc3_dt dt, enum lc3_srate sr,
-    const lc3_sns_data_t *data, const float *x, float *y)
+    const lc3_sns_data_t *data, const float *x, float *y, bool hrmode)
 {
     float scf[16], cn[16];
     int c[16];
@@ -813,7 +833,7 @@ void lc3_sns_synthesize(enum lc3_dt dt, enum lc3_srate sr,
 
     unquantize(data->lfcb, data->hfcb, cn, data->shape, data->gain, scf);
 
-    spectral_shaping(dt, sr, scf, true, x, y);
+    spectral_shaping(dt, sr, scf, true, x, y, hrmode);
 }
 
 /**

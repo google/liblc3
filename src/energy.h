@@ -37,7 +37,7 @@
  * return          True when high energy detected near Nyquist frequency
  */
 bool lc3_energy_compute(
-    enum lc3_dt dt, enum lc3_srate sr, const float *x, float *e);
+    enum lc3_dt dt, enum lc3_srate sr, bool hrmode, const float *x, float *e);
 
 
 #endif /* __LC3_ENERGY_H */

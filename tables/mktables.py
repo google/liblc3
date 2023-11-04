@@ -16,6 +16,7 @@
 #
 
 import numpy as np
+from scipy.signal.windows import kaiser_bessel_derived
 
 LTPF_H12K8 = np.array([
     -2.04305583e-05, -4.46345894e-05, -7.16366399e-05, -1.00101113e-04,
@@ -98,7 +99,7 @@ def print_table(t, m=4):
 
 def mdct_fft_twiddles():
 
-    for n in (10, 20, 30, 40, 60, 80, 90, 120, 160, 180, 240):
+    for n in (10, 20, 30, 40, 60, 80, 90, 120, 160, 180, 240, 480):
 
         print('\n--- fft bf2 twiddles {:3d} ---'.format(n))
 
@@ -120,7 +121,7 @@ def mdct_fft_twiddles():
 
 def mdct_rot_twiddles():
 
-    for n in (40, 80, 120, 160, 240, 320, 360, 480, 640, 720, 960):
+    for n in (40, 80, 120, 160, 240, 320, 360, 480, 640, 720, 960, 1920):
 
         print('\n--- mdct rot twiddles {:3d} ---'.format(n))
 
@@ -135,7 +136,7 @@ def mdct_rot_twiddles():
 def mdct_scaling():
 
     print('\n--- mdct scaling ---')
-    ns = np.array([ [ 60, 120, 180, 240, 360], [ 80, 160, 240, 320, 480] ])
+    ns = np.array([ [ 60, 120, 180, 240, 360, 720], [ 80, 160, 240, 320, 480, 960] ])
     print_table(np.sqrt(2 / ns[0]))
     print_table(np.sqrt(2 / ns[1]))
 
@@ -161,7 +162,7 @@ def quant_iq_table():
 
 def sns_ge_table():
 
-    g_tilt_table = [ 14, 18, 22, 26, 30 ]
+    g_tilt_table = [ 14, 18, 22, 26, 30, 34 ]
 
     for (sr, g_tilt) in enumerate(g_tilt_table):
         print('\n--- sns ge table, sr:{} ---'.format(sr))
@@ -175,7 +176,7 @@ def inv_table():
 
 def ltpf_resampler_table():
 
-    for sr in [ 8, 16, 32, 24, 48 ]:
+    for sr in [ 8, 16, 32, 24, 48, 96 ]:
 
         r = 192 // sr
         k = 64 if r & (r-1) else 192

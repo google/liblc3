@@ -69,6 +69,7 @@ enum lc3_srate {
     LC3_SRATE_24K,
     LC3_SRATE_32K,
     LC3_SRATE_48K,
+    LC3_SRATE_96K,
 
     LC3_NUM_SRATE,
 };
@@ -106,6 +107,7 @@ typedef struct lc3_spec_analysis {
 struct lc3_encoder {
     enum lc3_dt dt;
     enum lc3_srate sr, sr_pcm;
+    bool hrmode;
 
     lc3_attdet_analysis_t attdet;
     lc3_ltpf_analysis_t ltpf;
@@ -115,14 +117,14 @@ struct lc3_encoder {
     float x[1];
 };
 
-#define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) \
+#define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz, hrmode) \
     ( ( __LC3_NS(dt_us, sr_hz) + __LC3_NT(sr_hz) ) / 2 + \
-        __LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
+        __LC3_NS(dt_us, sr_hz) + ((hrmode) ? __LC3_NS(dt_us, sr_hz) : __LC3_ND(dt_us, sr_hz)) )
 
-#define LC3_ENCODER_MEM_T(dt_us, sr_hz) \
+#define LC3_ENCODER_MEM_T(dt_us, sr_hz, hrmode) \
     struct { \
         struct lc3_encoder __e; \
-        float __x[LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
+        float __x[LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz, hrmode)-1]; \
     }
 
 
@@ -145,6 +147,7 @@ typedef struct lc3_plc_state {
 struct lc3_decoder {
     enum lc3_dt dt;
     enum lc3_srate sr, sr_pcm;
+    bool hrmode;
 
     lc3_ltpf_synthesis_t ltpf;
     lc3_plc_state_t plc;
@@ -153,14 +156,14 @@ struct lc3_decoder {
     float x[1];
 };
 
-#define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( __LC3_NH(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) + \
+#define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz, hrmode) \
+    ( __LC3_NH(dt_us, sr_hz) + ((hrmode) ? __LC3_NS(dt_us, sr_hz) : __LC3_ND(dt_us, sr_hz)) + \
       __LC3_NS(dt_us, sr_hz) )
 
-#define LC3_DECODER_MEM_T(dt_us, sr_hz) \
+#define LC3_DECODER_MEM_T(dt_us, sr_hz, hrmode) \
     struct { \
         struct lc3_decoder __d; \
-        float __x[LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1]; \
+        float __x[LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz, hrmode)-1]; \
     }
 
 

@@ -162,8 +162,9 @@ int main(int argc, char *argv[])
     /* --- Check parameters --- */
 
     int frame_us, srate_hz, nch, nsamples;
+    bool hrmode;
 
-    if (lc3bin_read_header(fp_in, &frame_us, &srate_hz, &nch, &nsamples) < 0)
+    if (lc3bin_read_header(fp_in, &frame_us, &srate_hz, &nch, &nsamples, &hrmode) < 0)
         error(EINVAL, "LC3 binary input file");
 
     if (nch  < 1 || nch  > 2)
@@ -198,8 +199,7 @@ int main(int argc, char *argv[])
         pcm_sbits == 24 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 
     for (int ich = 0; ich < nch; ich++)
-        dec[ich] = lc3_setup_decoder(frame_us, srate_hz, p.srate_hz,
-            malloc(lc3_decoder_size(frame_us, pcm_srate_hz)));
+        dec[ich] = lc3_new_decoder(frame_us, srate_hz, p.srate_hz, hrmode, malloc);
 
     /* --- Decoding loop --- */
 

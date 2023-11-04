@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
@@ -61,6 +62,7 @@ struct parameters {
     float frame_ms;
     int srate_hz;
     int bitrate;
+    bool hrmode;
 };
 
 static struct parameters parse_args(int argc, char *argv[])
@@ -76,6 +78,7 @@ static struct parameters parse_args(int argc, char *argv[])
         "\t-b\t"     "Bitrate in bps (mandatory)\n"
         "\t-m\t"     "Frame duration in ms (default 10)\n"
         "\t-r\t"     "Encoder samplerate (default is input samplerate)\n"
+        "\t-z\t"    "High-Resolution mode (default is normal mode)\n"
         "\n";
 
     struct parameters p = { .frame_ms = 10 };
@@ -102,6 +105,7 @@ static struct parameters parse_args(int argc, char *argv[])
                 case 'b': p.bitrate = atoi(optarg); break;
                 case 'm': p.frame_ms = atof(optarg); break;
                 case 'r': p.srate_hz = atoi(optarg); break;
+                case 'z': p.hrmode = true; break;
                 default:
                     error(EINVAL, "Option %s", arg);
             }
@@ -189,7 +193,7 @@ int main(int argc, char *argv[])
         ((int64_t)nsamples * enc_srate_hz) / srate_hz;
 
     lc3bin_write_header(fp_out,
-        frame_us, enc_srate_hz, p.bitrate, nch, enc_samples);
+        frame_us, enc_srate_hz, p.bitrate, nch, enc_samples, p.hrmode);
 
     /* --- Setup encoding --- */
 
@@ -197,7 +201,7 @@ int main(int argc, char *argv[])
     uint8_t out[2 * LC3_MAX_FRAME_BYTES];
     lc3_encoder_t enc[2];
 
-    int frame_bytes = lc3_frame_bytes(frame_us, p.bitrate / nch);
+    int frame_bytes = lc3_frame_bytes(frame_us, enc_srate_hz, p.bitrate / nch, p.hrmode);
     int frame_samples = lc3_frame_samples(frame_us, srate_hz);
     int encode_samples = nsamples + lc3_delay_samples(frame_us, srate_hz);
     enum lc3_pcm_format pcm_fmt =
@@ -205,8 +209,7 @@ int main(int argc, char *argv[])
         pcm_sbytes == 24/8 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 
     for (int ich = 0; ich < nch; ich++)
-        enc[ich] = lc3_setup_encoder(frame_us, enc_srate_hz, srate_hz,
-            malloc(lc3_encoder_size(frame_us, srate_hz)));
+        enc[ich] = lc3_new_encoder(frame_us, enc_srate_hz, srate_hz, p.hrmode, malloc);
 
     /* --- Encoding loop --- */
 

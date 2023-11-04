@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include "tns.h"
+#include "lc3_private.h"
 #include "tables.h"
 
 
@@ -56,7 +57,7 @@ LC3_HOT static inline float dot(const float *a, const float *b, int n)
  * gain, a         Output the prediction gains and LPC coefficients
  */
 LC3_HOT static void compute_lpc_coeffs(
-    enum lc3_dt dt, enum lc3_bandwidth bw,
+    enum lc3_dt dt, enum lc3_bandwidth bw, bool hrmode,
     const float *x, float *gain, int maxorder,
     float (*a)[9])
 {
@@ -74,6 +75,18 @@ LC3_HOT static void compute_lpc_coeffs(
     static const int sub_5m_swb[]   = {  6, 43,  80, 120, 160 };
     static const int sub_5m_fb[]    = {  6, 53, 100, 150, 200 };
 #endif
+
+#ifdef INCLUDE_HRMODE
+    static const int sub_2m5_fbhr[] = {  3, 51, 100 };
+    static const int sub_2m5_ubhr[] = {  3, 51, 100 };
+
+    static const int sub_5m_fbhr[]  = {  6, 53, 100, 150, 200 };
+    static const int sub_5m_ubhr[]  = {  6, 53, 100, 150, 200 };
+
+    static const int sub_10m_fbhr[] = { 12, 74, 137, 200, 266, 333, 400};
+    static const int sub_10m_ubhr[] = { 12, 74, 137, 200, 266, 333, 400};
+#endif
+
     static const int sub_7m5_nb[]   = {  9, 26,  43,  60 };
     static const int sub_7m5_wb[]   = {  9, 46,  83, 120 };
     static const int sub_7m5_sswb[] = {  9, 66, 123, 180 };
@@ -94,16 +107,34 @@ LC3_HOT static void compute_lpc_coeffs(
         8.81323137e-01
     };
 
-    const int *sub = (const int * const [LC3_NUM_DT][LC3_NUM_SRATE]){
+    const int *sub = (const int * const [2][LC3_NUM_DT][LC3_NUM_SRATE]){
+        {
 #ifdef INCLUDE_2M5
-        { sub_2m5_nb, sub_2m5_wb, sub_2m5_sswb, sub_2m5_swb, sub_2m5_fb },
+            { sub_2m5_nb, sub_2m5_wb, sub_2m5_sswb, sub_2m5_swb, sub_2m5_fb },
 #endif
 #ifdef INCLUDE_05M
-        { sub_5m_nb,  sub_5m_wb,  sub_5m_sswb,  sub_5m_swb,  sub_5m_fb },
+            { sub_5m_nb,  sub_5m_wb,  sub_5m_sswb,  sub_5m_swb,  sub_5m_fb },
 #endif
-        { sub_7m5_nb, sub_7m5_wb, sub_7m5_sswb, sub_7m5_swb, sub_7m5_fb },
-        { sub_10m_nb, sub_10m_wb, sub_10m_sswb, sub_10m_swb, sub_10m_fb },
-    }[dt][bw];
+            { sub_7m5_nb, sub_7m5_wb, sub_7m5_sswb, sub_7m5_swb, sub_7m5_fb },
+            { sub_10m_nb, sub_10m_wb, sub_10m_sswb, sub_10m_swb, sub_10m_fb },
+        },
+        {
+#ifdef INCLUDE_HRMODE
+            [LC3_DT_2M5] = {
+                [LC3_SRATE_48K] = sub_2m5_fbhr,
+                [LC3_SRATE_96K] = sub_2m5_ubhr,
+            },
+            [LC3_DT_05M] = {
+                [LC3_SRATE_48K] = sub_5m_fbhr,
+                [LC3_SRATE_96K] = sub_5m_ubhr,
+            },
+            [LC3_DT_10M] = {
+                [LC3_SRATE_48K] = sub_10m_fbhr,
+                [LC3_SRATE_96K] = sub_10m_ubhr,
+            },
+#endif
+        }
+    }[hrmode][dt][bw];
 
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
 
@@ -287,10 +318,10 @@ static void unquantize_rc(const int *rc_q, int rc_order, float rc[8])
  */
 LC3_HOT static void forward_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
-    const int rc_order[2], float (* const rc)[8], float *x)
+    const int rc_order[2], float (* const rc)[8], float *x/*, bool hrmode*/)
 {
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-    int nf = LC3_NE(dt, bw) >> (nfilters - 1);
+    int nf = (/*hrmode ? LC3_NS(dt, (enum lc3_srate) bw) :*/ LC3_NE(dt, bw)) >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };
@@ -328,10 +359,10 @@ LC3_HOT static void forward_filtering(
  */
 LC3_HOT static void inverse_filtering(
     enum lc3_dt dt, enum lc3_bandwidth bw,
-    const int rc_order[2], float (* const rc)[8], float *x)
+    const int rc_order[2], float (* const rc)[8], float *x/*, bool hrmode*/)
 {
     int nfilters = 1 + (bw >= LC3_BANDWIDTH_SWB && dt > LC3_DT_2M5);
-    int nf = LC3_NE(dt, bw) >> (nfilters - 1);
+    int nf = (/*hrmode ? LC3_NS(dt, (enum lc3_srate) bw) :*/ LC3_NE(dt, bw)) >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };
@@ -370,7 +401,7 @@ LC3_HOT static void inverse_filtering(
  * TNS analysis
  */
 void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
-    bool nn_flag, int nbytes, struct lc3_tns_data *data, float *x)
+    bool nn_flag, int nbytes, struct lc3_tns_data *data, float *x, bool hrmode)
 {
     /* Processing steps :
      * - Determine the LPC (Linear Predictive Coding) Coefficients
@@ -386,7 +417,7 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
     data->lpc_weighting = resolve_lpc_weighting(dt, nbytes);
     int maxorder = dt >= LC3_DT_7M5 ? 8 : 4;
 
-    compute_lpc_coeffs(dt, bw, x, pred_gain, maxorder + 1, a);
+    compute_lpc_coeffs(dt, bw, hrmode, x, pred_gain, maxorder + 1, a);
 
     for (int f = 0; f < data->nfilters; f++) {
 
@@ -403,14 +434,14 @@ void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
         unquantize_rc(data->rc[f], data->rc_order[f], rc[f]);
     }
 
-    forward_filtering(dt, bw, data->rc_order, rc, x);
+    forward_filtering(dt, bw, data->rc_order, rc, x/*, hrmode*/);
 }
 
 /**
  * TNS synthesis
  */
 void lc3_tns_synthesize(enum lc3_dt dt, enum lc3_bandwidth bw,
-    const struct lc3_tns_data *data, float *x)
+    const struct lc3_tns_data *data, float *x, bool hrmode)
 {
     float rc[2][8] = { 0 };
 
@@ -418,7 +449,8 @@ void lc3_tns_synthesize(enum lc3_dt dt, enum lc3_bandwidth bw,
         if (data->rc_order[f])
             unquantize_rc(data->rc[f], data->rc_order[f], rc[f]);
 
-    inverse_filtering(dt, bw, data->rc_order, rc, x);
+    (void) hrmode; //TODO: remove
+    inverse_filtering(dt, bw, data->rc_order, rc, x/*, hrmode*/);
 }
 
 /**

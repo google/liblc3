@@ -131,7 +131,7 @@ int lc3_bwdet_get_nbits(enum lc3_srate sr)
 void lc3_bwdet_put_bw(lc3_bits_t *bits,
     enum lc3_srate sr, enum lc3_bandwidth bw)
 {
-    int nbits_bw = lc3_bwdet_get_nbits(sr);
+    int nbits_bw = bits->hrmode ? 0 : lc3_bwdet_get_nbits(sr);
     if (nbits_bw > 0)
         lc3_put_bits(bits, bw, nbits_bw);
 }
@@ -143,6 +143,12 @@ int lc3_bwdet_get_bw(lc3_bits_t *bits,
     enum lc3_srate sr, enum lc3_bandwidth *bw)
 {
     enum lc3_bandwidth max_bw = (enum lc3_bandwidth)sr;
+
+    if (bits->hrmode) {
+        *bw = max_bw;
+        return 0;
+    }
+
     int nbits_bw = lc3_bwdet_get_nbits(sr);
 
     *bw = nbits_bw > 0 ? lc3_get_bits(bits, nbits_bw) : LC3_BANDWIDTH_NB;

@@ -55,7 +55,7 @@ typedef struct lc3_tns_data {
  * x               Spectral coefficients, filtered as output
  */
 void lc3_tns_analyze(enum lc3_dt dt, enum lc3_bandwidth bw,
-    bool nn_flag, int nbytes, lc3_tns_data_t *data, float *x);
+    bool nn_flag, int nbytes, lc3_tns_data_t *data, float *x, bool hrmode);
 
 /**
  * Return number of bits coding the data
@@ -93,7 +93,7 @@ void lc3_tns_get_data(lc3_bits_t *bits,
  * x               Spectral coefficients, filtered as output
  */
 void lc3_tns_synthesize(enum lc3_dt dt, enum lc3_bandwidth bw,
-    const lc3_tns_data_t *data, float *x);
+    const lc3_tns_data_t *data, float *x, bool hrmode);
 
 
 #endif /* __LC3_TNS_H */

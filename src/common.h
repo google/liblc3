@@ -25,6 +25,7 @@
 
 #include <lc3.h>
 #include "fastmath.h"
+#include "lc3_private.h"
 
 #include <stdalign.h>
 #include <limits.h>
@@ -90,7 +91,7 @@
     ( (1 + (dt)) * 2500 )
 
 #define LC3_SRATE_KHZ(sr) \
-    ( (1 + (sr) + ((sr) == LC3_SRATE_48K)) * 8 )
+    ( (1 + (sr) + ((sr) == LC3_SRATE_48K)) * (1 + (sr == LC3_SRATE_96K)) * 8 )
 
 
 /**
@@ -101,7 +102,7 @@
  */
 
 #define LC3_NS(dt, sr) \
-    ( 20 * (1 + (dt)) * (1 + (sr) + ((sr) == LC3_SRATE_48K)) )
+    ( 20 * (1 + (dt)) * (1 + (sr) + ((sr) == LC3_SRATE_48K)) * (1 + (sr == LC3_SRATE_96K)) )
 
 #define LC3_ND(dt, sr) \
     ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 :  \
@@ -115,10 +116,10 @@
     ( 20 * (1 + (dt)) * (1 + (sr)) )
 
 #define LC3_MAX_NS \
-    LC3_NS(LC3_DT_10M, LC3_SRATE_48K)
+    LC3_NS(LC3_DT_10M, LC3_SRATE_96K)
 
 #define LC3_MAX_NE \
-    LC3_NE(LC3_DT_10M, LC3_SRATE_48K)
+    LC3_MAX_NS
 
 #define LC3_NT(sr_hz) \
     ( (5 * LC3_SRATE_KHZ(sr)) / 4 )
@@ -136,6 +137,7 @@ enum lc3_bandwidth {
     LC3_BANDWIDTH_SSWB = LC3_SRATE_24K,
     LC3_BANDWIDTH_SWB = LC3_SRATE_32K,
     LC3_BANDWIDTH_FB = LC3_SRATE_48K,
+    LC3_BANDWIDTH_UB = LC3_SRATE_96K,
 
     LC3_NUM_BANDWIDTH,
 };

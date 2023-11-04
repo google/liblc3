@@ -138,6 +138,12 @@ extern "C" {
 #define LC3_MIN_FRAME_SAMPLES  __LC3_NS( 7500,  8000)
 #define LC3_MAX_FRAME_SAMPLES  __LC3_NS(10000, 48000)
 
+#define LC3_MIN_HR_FRAME_BYTES        20
+#define LC3_MAX_HR_FRAME_BYTES       625
+
+#define LC3_MIN_HR_FRAME_SAMPLES  __LC3_NS( 2500, 48000)
+#define LC3_MAX_HR_FRAME_SAMPLES  __LC3_NS(10000, 96000)
+
 
 /**
  * Parameters check
@@ -150,7 +156,7 @@ extern "C" {
 
 #define LC3_CHECK_SR_HZ(sr) \
     ( ((sr) ==  8000) || ((sr) == 16000) || ((sr) == 24000) || \
-      ((sr) == 32000) || ((sr) == 48000)                       )
+      ((sr) == 32000) || ((sr) == 48000 || ((sr) == 96000)) )
 
 
 /**
@@ -187,12 +193,15 @@ typedef struct lc3_decoder *lc3_decoder_t;
  * `LC3_DECODER_MEM_T` macro.
  */
 
-typedef LC3_ENCODER_MEM_T(10000, 16000) lc3_encoder_mem_16k_t;
-typedef LC3_ENCODER_MEM_T(10000, 48000) lc3_encoder_mem_48k_t;
+typedef LC3_ENCODER_MEM_T(10000, 16000, false) lc3_encoder_mem_16k_t;
+typedef LC3_ENCODER_MEM_T(10000, 48000, false) lc3_encoder_mem_48k_t;
+typedef LC3_DECODER_MEM_T(10000, 16000, false) lc3_decoder_mem_16k_t;
+typedef LC3_DECODER_MEM_T(10000, 48000, false) lc3_decoder_mem_48k_t;
 
-typedef LC3_DECODER_MEM_T(10000, 16000) lc3_decoder_mem_16k_t;
-typedef LC3_DECODER_MEM_T(10000, 48000) lc3_decoder_mem_48k_t;
-
+typedef LC3_ENCODER_MEM_T(10000, 48000, true) lc3_encoder_hr_mem_48k_t;
+typedef LC3_ENCODER_MEM_T(10000, 96000, true) lc3_encoder_hr_mem_96k_t;
+typedef LC3_DECODER_MEM_T(10000, 48000, true) lc3_decoder_hr_mem_48k_t;
+typedef LC3_DECODER_MEM_T(10000, 96000, true) lc3_decoder_hr_mem_96k_t;
 
 /**
  * Return the number of PCM samples in a frame
@@ -208,7 +217,7 @@ int lc3_frame_samples(int dt_us, int sr_hz);
  * bitrate         Target bitrate in bit per second
  * return          The floor size in bytes of the frames, -1 on bad parameters
  */
-int lc3_frame_bytes(int dt_us, int bitrate);
+int lc3_frame_bytes(int dt_us, int sr_hz, int bitrate, bool hrmode);
 
 /**
  * Resolve the bitrate, from the size of frames
@@ -216,7 +225,7 @@ int lc3_frame_bytes(int dt_us, int bitrate);
  * nbytes          Size in bytes of the frames
  * return          The according bitrate in bps, -1 on bad parameters
  */
-int lc3_resolve_bitrate(int dt_us, int nbytes);
+int lc3_resolve_bitrate(int dt_us, int nbytes, bool hrmode);
 
 /**
  * Return algorithmic delay, as a number of samples
@@ -235,7 +244,7 @@ int lc3_delay_samples(int dt_us, int sr_hz);
  * The `sr_hz` parameter is the samplerate of the PCM input stream,
  * and will match `sr_pcm_hz` of `lc3_setup_encoder()`.
  */
-unsigned lc3_encoder_size(int dt_us, int sr_hz);
+unsigned lc3_encoder_size(int dt_us, int sr_hz, bool hrmode);
 
 /**
  * Setup encoder
@@ -252,7 +261,11 @@ unsigned lc3_encoder_size(int dt_us, int sr_hz);
  * `lc3_encoder_size()` will be set accordingly to `sr_pcm_hz`.
  */
 lc3_encoder_t lc3_setup_encoder(
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
+    int dt_us, int sr_hz, int sr_pcm_hz, void *mem, bool hrmode);
+
+#define lc3_new_encoder(dt_us, sr_hz, sr_pcm_hz, hrmode, alloc) \
+    lc3_setup_encoder(dt_us, sr_hz, sr_pcm_hz, \
+                      alloc(lc3_encoder_size(dt_us, sr_hz, hrmode)), hrmode)
 
 /**
  * Encode a frame
@@ -275,7 +288,7 @@ int lc3_encode(lc3_encoder_t encoder, enum lc3_pcm_format fmt,
  * The `sr_hz` parameter is the samplerate of the PCM output stream,
  * and will match `sr_pcm_hz` of `lc3_setup_decoder()`.
  */
-unsigned lc3_decoder_size(int dt_us, int sr_hz);
+unsigned lc3_decoder_size(int dt_us, int sr_hz, bool hrmode);
 
 /**
  * Setup decoder
@@ -292,7 +305,12 @@ unsigned lc3_decoder_size(int dt_us, int sr_hz);
  * `lc3_decoder_size()` will be set accordingly to `sr_pcm_hz`.
  */
 lc3_decoder_t lc3_setup_decoder(
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
+    int dt_us, int sr_hz, int sr_pcm_hz, void *mem, bool hrmode);
+
+
+#define lc3_new_decoder(dt_us, sr_hz, sr_pcm_hz, hrmode, alloc) \
+    lc3_setup_decoder(dt_us, sr_hz, sr_pcm_hz, \
+                      alloc(lc3_decoder_size(dt_us, sr_hz, hrmode)), hrmode)
 
 /**
  * Decode a frame

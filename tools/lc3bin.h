@@ -34,7 +34,7 @@
  * return          0: Ok  -1: Bad LC3 File
  */
 int lc3bin_read_header(FILE *fp,
-    int *frame_us, int *srate_hz, int *nchannels, int *nsamples);
+    int *frame_us, int *srate_hz, int *nchannels, int *nsamples, bool *hrmode);
 
 /**
  * Read LC3 block of data
@@ -55,7 +55,7 @@ int lc3bin_read_data(FILE *fp, int nchannels, void *buffer);
  * nsamples        Count of source samples by channels
  */
 void lc3bin_write_header(FILE *fp,
-    int frame_us, int srate_hz, int bitrate, int nchannels, int nsamples);
+    int frame_us, int srate_hz, int bitrate, int nchannels, int nsamples, bool hrmode);
 
 /**
  * Write LC3 block of data

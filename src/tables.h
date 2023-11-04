@@ -37,7 +37,9 @@ extern const struct lc3_fft_bf2_twiddles *lc3_fft_twiddles_bf2[][3];
 extern const struct lc3_mdct_rot_def *lc3_mdct_rot[LC3_NUM_DT][LC3_NUM_SRATE];
 
 extern const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
-
+#ifdef INCLUDE_HRMODE
+extern const float *lc3_mdct_win_hr[LC3_NUM_DT][LC3_NUM_SRATE];
+#endif
 
 /**
  * Limits of bands
@@ -45,10 +47,19 @@ extern const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
 
 #define LC3_NUM_BANDS  64
 
-extern const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
-
-
-extern const int lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE];
+extern const int _lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
+extern const int _lc3_bands_number[LC3_NUM_DT][LC3_NUM_SRATE];
+#ifdef INCLUDE_HRMODE
+extern const int _lc3_band_lim_hr[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
+extern const int _lc3_bands_number_hr[LC3_NUM_DT][LC3_NUM_SRATE];
+#define get_band_lim(hrmode, dt, sr) ((hrmode) ? _lc3_band_lim_hr[dt][sr] : _lc3_band_lim[dt][sr])
+#define get_band_num(hrmode, dt, sr) ((hrmode) ? _lc3_bands_number_hr[dt][sr] : _lc3_bands_number[dt][sr])
+#define get_window(hrmode, dt, sr) ((hrmode) ? lc3_mdct_win_hr[dt][sr] : lc3_mdct_win[dt][sr])
+#else
+#define get_band_lim(hrmode, dt, sr) (_lc3_bands_number[dt][sr])
+#define get_band_num(hrmode, dt, sr) (_lc3_bands_number[dt][sr])
+#define get_window(hrmode, dt, sr) (lc3_mdct_win[dt][sr])
+#endif
 
 /**
  * SNS Quantization
@@ -93,5 +104,15 @@ extern const uint8_t lc3_spectrum_lookup[2][2][256][4];
 extern const struct lc3_ac_model lc3_spectrum_models[];
 extern const uint16_t lc3_spectrum_bits[][17];
 
+/**
+ * Bitrate limits
+ */
+
+struct bitrate_limit {
+    int min_bitrate, max_bitrate;
+    int min_nbytes, max_nbytes;
+};
+
+extern const struct bitrate_limit bitrate_limits[LC3_NUM_DT][LC3_NUM_SRATE];
 
 #endif /* __LC3_TABLES_H */

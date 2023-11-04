@@ -44,7 +44,7 @@ struct lc3bin_header {
  * Read LC3 binary header
  */
 int lc3bin_read_header(FILE *fp,
-    int *frame_us, int *srate_hz, int *nchannels, int *nsamples)
+    int *frame_us, int *srate_hz, int *nchannels, int *nsamples, bool *hrmode)
 {
     struct lc3bin_header hdr;
 
@@ -57,6 +57,7 @@ int lc3bin_read_header(FILE *fp,
     *frame_us = hdr.frame_10us * 10;
     *srate_hz = hdr.srate_100hz * 100;
     *nsamples = hdr.nsamples_low | (hdr.nsamples_high << 16);
+    *hrmode = hdr.header_size == sizeof(hdr) ? hdr.hrmode : false;
 
     fseek(fp, hdr.header_size, SEEK_SET);
 
@@ -83,7 +84,7 @@ int lc3bin_read_data(FILE *fp, int nchannels, void *buffer)
  * Write LC3 binary header
  */
 void lc3bin_write_header(FILE *fp,
-    int frame_us, int srate_hz, int bitrate, int nchannels, int nsamples)
+    int frame_us, int srate_hz, int bitrate, int nchannels, int nsamples, bool hrmode)
 {
     struct lc3bin_header hdr = {
         .file_id = LC3_FILE_ID,
@@ -94,7 +95,7 @@ void lc3bin_write_header(FILE *fp,
         .frame_10us = frame_us / 10,
         .nsamples_low = nsamples & 0xffff,
         .nsamples_high = nsamples >> 16,
-        .hrmode = 0, // TODO: Change to actual value once hrmode is supported
+        .hrmode = hrmode,
     };
 
     fwrite(&hdr, sizeof(hdr), 1, fp);

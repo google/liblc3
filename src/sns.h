@@ -58,8 +58,8 @@ typedef struct lc3_sns_data {
  * `x` and `y` can be the same buffer
  */
 void lc3_sns_analyze(enum lc3_dt dt, enum lc3_srate sr,
-    const float *eb, bool att, lc3_sns_data_t *data,
-    const float *x, float *y);
+    const float *eb, bool att, float cf, lc3_sns_data_t *data,
+    const float *x, float *y, bool hrmode);
 
 /**
  * Return number of bits coding the bitstream data
@@ -97,7 +97,7 @@ int lc3_sns_get_data(lc3_bits_t *bits, lc3_sns_data_t *data);
  * `x` and `y` can be the same buffer
  */
 void lc3_sns_synthesize(enum lc3_dt dt, enum lc3_srate sr,
-    const lc3_sns_data_t *data, const float *x, float *y);
+    const lc3_sns_data_t *data, const float *x, float *y, bool hrmode);
 
 
 #endif /* __LC3_SNS_H */

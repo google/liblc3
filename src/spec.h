@@ -40,6 +40,7 @@
 typedef struct lc3_spec_side {
     int g_idx, nq;
     bool lsb_mode;
+    float g;
 } lc3_spec_side_t;
 
 
@@ -61,7 +62,7 @@ typedef struct lc3_spec_side {
  */
 void lc3_spec_analyze(enum lc3_dt dt, enum lc3_srate sr,
     int nbytes, bool pitch, const lc3_tns_data_t *tns,
-    lc3_spec_analysis_t *spec, float *x, uint16_t *xq, lc3_spec_side_t *side);
+    lc3_spec_analysis_t *spec, float *x, uint32_t *xq, lc3_spec_side_t *side, bool hrmode);
 
 /**
  * Put spectral quantization side data
@@ -86,7 +87,7 @@ void lc3_spec_put_side(lc3_bits_t *bits,
  */
 void lc3_spec_encode(lc3_bits_t *bits,
     enum lc3_dt dt, enum lc3_srate sr, enum lc3_bandwidth bw, int nbytes,
-    const uint16_t *xq, const lc3_spec_side_t *side, const float *x);
+    uint32_t *xq, const lc3_spec_side_t *side, const float *x);
 
 
 /* ----------------------------------------------------------------------------
