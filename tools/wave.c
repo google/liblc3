@@ -112,9 +112,11 @@ int wave_read_header(FILE *fp, int *bitdepth, int *samplesize,
 
     fseek(fp, sizeof(format) - (8 + format.size), SEEK_CUR);
 
-    if (fread(&data, sizeof(data), 1, fp) != 1
-            || data.id != WAVE_DATA_ID)
-        return -1;
+    for ( ; fread(&data, sizeof(data), 1, fp) == 1 && data.id != WAVE_DATA_ID
+          ; fseek(fp, data.size, SEEK_CUR) );
+
+    if (feof(fp))
+      return -1;
 
     *bitdepth = format.bitdepth;
     *samplesize = format.framesize / format.channels;
