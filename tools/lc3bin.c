@@ -48,7 +48,8 @@ int lc3bin_read_header(FILE *fp,
     struct lc3bin_header hdr;
 
     if (fread(&hdr, sizeof(hdr), 1, fp) != 1
-            || hdr.file_id != LC3_FILE_ID)
+            || hdr.file_id != LC3_FILE_ID
+            || hdr.header_size < sizeof(hdr))
         return -1;
 
     *nchannels = hdr.channels;
@@ -56,7 +57,7 @@ int lc3bin_read_header(FILE *fp,
     *srate_hz = hdr.srate_100hz * 100;
     *nsamples = hdr.nsamples_low | (hdr.nsamples_high << 16);
 
-    fseek(fp, SEEK_SET, hdr.header_size);
+    fseek(fp, hdr.header_size, SEEK_SET);
 
     return 0;
 }
