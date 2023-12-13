@@ -157,7 +157,7 @@ LC3_HOT static void compute_scale_factors(
     /* Pre-emphasis gain table :
      * Ge[b] = 10 ^ (b * g_tilt) / 630 , b = [0..63] */
 
-    static const float ge_table[LC3_NUM_SRATE][LC3_NUM_BANDS] = {
+    static const float ge_table[LC3_NUM_SRATE][LC3_MAX_BANDS] = {
 
         [LC3_SRATE_8K] = { /* g_tilt = 14 */
             1.00000000e+00, 1.05250029e+00, 1.10775685e+00, 1.16591440e+00,
@@ -250,17 +250,22 @@ LC3_HOT static void compute_scale_factors(
             7.19685673e+02, 8.03085722e+02, 8.96150502e+02, 1.00000000e+03 },
     };
 
-    float e[LC3_NUM_BANDS];
+    float e[LC3_MAX_BANDS];
 
     /* --- Copy and padding --- */
 
-    int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
-    int n2 = LC3_NUM_BANDS - nb;
+    int nb = lc3_num_bands[dt][sr];
+    int n4 = nb < 32 ? 32 % nb : 0;
+    int n2 = nb < 32 ? nb - n4 : LC3_MAX_BANDS - nb;
 
-    for (int i2 = 0; i2 < n2; i2++)
-        e[2*i2 + 0] = e[2*i2 + 1] = eb[i2];
+    for (int i4 = 0; i4 < n4; i4++)
+        e[4*i4 + 0] = e[4*i4 + 1] =
+        e[4*i4 + 2] = e[4*i4 + 3] = eb[i4];
 
-    memcpy(e + 2*n2, eb + n2, (nb - n2) * sizeof(float));
+    for (int i2 = n4; i2 < n4+n2; i2++)
+        e[2*(n4+i2) + 0] = e[2*(n4+i2) + 1] = eb[i2];
+
+    memcpy(e + 4*n4 + 2*n2, eb + n4 + n2, (nb - n4 - n2) * sizeof(float));
 
     /* --- Smoothing, pre-emphasis and logarithm --- */
 
@@ -269,7 +274,7 @@ LC3_HOT static void compute_scale_factors(
     float e0 = e[0], e1 = e[0], e2;
     float e_sum = 0;
 
-    for (int i = 0; i < LC3_NUM_BANDS-1; ) {
+    for (int i = 0; i < LC3_MAX_BANDS-1; ) {
         e[i] = (e0 * 0.25f + e1 * 0.5f + (e2 = e[i+1]) * 0.25f) * ge[i];
         e_sum += e[i++];
 
@@ -280,12 +285,12 @@ LC3_HOT static void compute_scale_factors(
         e_sum += e[i++];
     }
 
-    e[LC3_NUM_BANDS-1] = (e0 * 0.25f + e1 * 0.75f) * ge[LC3_NUM_BANDS-1];
-    e_sum += e[LC3_NUM_BANDS-1];
+    e[LC3_MAX_BANDS-1] = (e0 * 0.25f + e1 * 0.75f) * ge[LC3_MAX_BANDS-1];
+    e_sum += e[LC3_MAX_BANDS-1];
 
     float noise_floor = fmaxf(e_sum * (1e-4f / 64), 0x1p-32f);
 
-    for (int i = 0; i < LC3_NUM_BANDS; i++)
+    for (int i = 0; i < LC3_MAX_BANDS; i++)
         e[i] = fast_log2f(fmaxf(e[i], noise_floor)) * 0.5f;
 
     /* --- Grouping & scaling --- */
@@ -680,7 +685,7 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
 {
     /* --- Interpolate scale factors --- */
 
-    float scf[LC3_NUM_BANDS];
+    float scf[LC3_MAX_BANDS];
     float s0, s1 = inv ? -scf_q[0] : scf_q[0];
 
     scf[0] = scf[1] = s1;
@@ -694,18 +699,22 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
     scf[62] = s1 + 0.125f * (s1 - s0);
     scf[63] = s1 + 0.375f * (s1 - s0);
 
-    int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
-    int n2 = LC3_NUM_BANDS - nb;
+    int nb = lc3_num_bands[dt][sr];
+    int n4 = nb < 32 ? 32 % nb : 0;
+    int n2 = nb < 32 ? nb - n4 : LC3_MAX_BANDS - nb;
 
-    for (int i2 = 0; i2 < n2; i2++)
-        scf[i2] = 0.5f * (scf[2*i2] + scf[2*i2+1]);
+    for (int i4 = 0; i4 < n4; i4++)
+        scf[i4] = 0.25f * (scf[4*i4+0] + scf[4*i4+1] +
+                           scf[4*i4+2] + scf[4*i4+3]);
 
-    if (n2 > 0)
-        memmove(scf + n2, scf + 2*n2, (nb - n2) * sizeof(float));
+    for (int i2 = n4; i2 < n4+n2; i2++)
+        scf[i2] = 0.5f * (scf[2*(n4+i2)] + scf[2*(n4+i2)+1]);
+
+    memmove(scf + n4 + n2, scf + 4*n4 + 2*n2, (nb - n4 - n2) * sizeof(float));
 
     /* --- Spectral shaping --- */
 
-    const int *lim = lc3_band_lim[dt][sr];
+    const uint16_t *lim = lc3_band_lim[dt][sr];
 
     for (int i = 0, ib = 0; ib < nb; ib++) {
         float g_sns = fast_exp2f(-scf[ib]);

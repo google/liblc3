@@ -135,7 +135,7 @@ extern "C" {
 #define LC3_MIN_FRAME_BYTES        20
 #define LC3_MAX_FRAME_BYTES       400
 
-#define LC3_MIN_FRAME_SAMPLES  __LC3_NS( 7500,  8000)
+#define LC3_MIN_FRAME_SAMPLES  __LC3_NS( 2500,  8000)
 #define LC3_MAX_FRAME_SAMPLES  __LC3_NS(10000, 48000)
 
 
@@ -146,7 +146,8 @@ extern "C" {
  */
 
 #define LC3_CHECK_DT_US(us) \
-    ( ((us) == 7500) || ((us) == 10000) )
+    ( ((us) == 2500) || ((us) ==  5000) || \
+      ((us) == 7500) || ((us) == 10000)    )
 
 #define LC3_CHECK_SR_HZ(sr) \
     ( ((sr) ==  8000) || ((sr) == 16000) || ((sr) == 24000) || \
@@ -196,7 +197,7 @@ typedef LC3_DECODER_MEM_T(10000, 48000) lc3_decoder_mem_48k_t;
 
 /**
  * Return the number of PCM samples in a frame
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * return          Number of PCM samples, -1 on bad parameters
  */
@@ -204,7 +205,7 @@ int lc3_frame_samples(int dt_us, int sr_hz);
 
 /**
  * Return the size of frames, from bitrate
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * bitrate         Target bitrate in bit per second
  * return          The floor size in bytes of the frames, -1 on bad parameters
  */
@@ -212,7 +213,7 @@ int lc3_frame_bytes(int dt_us, int bitrate);
 
 /**
  * Resolve the bitrate, from the size of frames
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * nbytes          Size in bytes of the frames
  * return          The according bitrate in bps, -1 on bad parameters
  */
@@ -220,7 +221,7 @@ int lc3_resolve_bitrate(int dt_us, int nbytes);
 
 /**
  * Return algorithmic delay, as a number of samples
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * return          Number of algorithmic delay samples, -1 on bad parameters
  */
@@ -228,7 +229,7 @@ int lc3_delay_samples(int dt_us, int sr_hz);
 
 /**
  * Return size needed for an encoder
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * return          Size of then encoder in bytes, 0 on bad parameters
  *
@@ -239,7 +240,7 @@ unsigned lc3_encoder_size(int dt_us, int sr_hz);
 
 /**
  * Setup encoder
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * sr_pcm_hz       Input samplerate, downsampling option of input, or 0
  * mem             Encoder memory space, aligned to pointer type
@@ -268,7 +269,7 @@ int lc3_encode(lc3_encoder_t encoder, enum lc3_pcm_format fmt,
 
 /**
  * Return size needed for an decoder
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * return          Size of then decoder in bytes, 0 on bad parameters
  *
@@ -279,7 +280,7 @@ unsigned lc3_decoder_size(int dt_us, int sr_hz);
 
 /**
  * Setup decoder
- * dt_us           Frame duration in us, 7500 or 10000
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Samplerate in Hz, 8000, 16000, 24000, 32000 or 48000
  * sr_pcm_hz       Output samplerate, upsampling option of output (or 0)
  * mem             Decoder memory space, aligned to pointer type

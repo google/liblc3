@@ -16,10 +16,6 @@
  *
  ******************************************************************************/
 
-/**
- * LC3 - Mathematics function approximation
- */
-
 #ifndef __LC3_FASTMATH_H
 #define __LC3_FASTMATH_H
 

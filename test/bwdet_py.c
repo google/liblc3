@@ -33,7 +33,7 @@ static PyObject *bwdet_run_py(PyObject *m, PyObject *args)
 
     CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
     CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
-    CTYPES_CHECK("e", to_1d_ptr(e_obj, NPY_FLOAT, LC3_NUM_BANDS, &e));
+    CTYPES_CHECK("e", to_1d_ptr(e_obj, NPY_FLOAT, LC3_MAX_BANDS, &e));
 
     int bw = lc3_bwdet_run(dt, sr, e);
 

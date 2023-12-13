@@ -108,14 +108,15 @@ class Encoder:
 
 def check_appendix_c(dt):
 
-    ok = True
+    i0 = dt - T.DT_7M5
 
     enc_c = lc3.setup_encoder(int(T.DT_MS[dt] * 1000), 16000)
+    ok = True
 
-    for i in range(len(C.X_PCM[dt])):
+    for i in range(len(C.X_PCM[i0])):
 
-        data = lc3.encode(enc_c, C.X_PCM[dt][i], C.NBYTES[dt])
-        ok = ok and data == C.BYTES_AC[dt][i]
+        data = lc3.encode(enc_c, C.X_PCM[i0][i], C.NBYTES[i0])
+        ok = ok and data == C.BYTES_AC[i0][i]
 
     return ok
 
@@ -123,7 +124,7 @@ def check():
 
     ok = True
 
-    for dt in range(T.NUM_DT):
+    for dt in range(T.DT_7M5, T.NUM_DT):
         ok = ok and check_appendix_c(dt)
 
     return ok

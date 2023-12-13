@@ -40,7 +40,7 @@ static PyObject *energy_compute_py(PyObject *m, PyObject *args)
     int ns = LC3_NS(dt, sr);
 
     CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, ns, &x));
-    e_obj = new_1d_ptr(NPY_FLOAT, LC3_NUM_BANDS, &e);
+    e_obj = new_1d_ptr(NPY_FLOAT, lc3_num_bands[dt][sr], &e);
 
     int nn_flag = lc3_energy_compute(dt, sr, x, e);
 

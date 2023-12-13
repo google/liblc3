@@ -175,9 +175,9 @@ static struct lc3_complex *fft(const struct lc3_complex *x, int n,
      *
      *   n = 5^1 * 3^n3 * 2^n2
      *
-     *   for n = 40, 80, 160        n3 = 0, n2 = [3..5]
-     *       n = 30, 60, 120, 240   n3 = 1, n2 = [1..4]
-     *       n = 90, 180            n3 = 2, n2 = [1..2]
+     *   for n = 10, 20, 40, 80, 160  n3 = 0, n2 = [1..5]
+     *       n = 30, 60, 120, 240     n3 = 1, n2 = [1..4]
+     *       n = 90, 180              n3 = 2, n2 = [1..2]
      *
      * Note that the expression `n & (n-1) == 0` is equivalent
      * to the check that `n` is a power of 2. */

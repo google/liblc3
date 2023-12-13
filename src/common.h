@@ -16,10 +16,6 @@
  *
  ******************************************************************************/
 
-/**
- * LC3 - Common constants and types
- */
-
 #ifndef __LC3_COMMON_H
 #define __LC3_COMMON_H
 
@@ -87,7 +83,7 @@
  */
 
 #define LC3_DT_US(dt) \
-    ( (3 + (dt)) * 2500 )
+    ( (1 + (dt)) * 2500 )
 
 #define LC3_SRATE_KHZ(sr) \
     ( (1 + (sr) + ((sr) == LC3_SRATE_48K)) * 8 )
@@ -96,19 +92,20 @@
 /**
  * Return number of samples, delayed samples and
  * encoded spectrum coefficients within a frame
- * - For encoding, keep 1.25 ms for temporal window
+ *
+ * - The number of MDCT delayed samples is the sum of half a frame and
+ *   an ovelap of future by 1.25 ms (2.5ms, 5ms and 10ms frame durations)
+ *   or 2 ms (7.5ms frame duration).
+ *
+ * - For encoding, keep 1.25 ms of temporal previous samples
  * - For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
 #define LC3_NS(dt, sr) \
-    ( 20 * (3 + (dt)) * (1 + (sr) + ((sr) == LC3_SRATE_48K)) )
-
-#define LC3_ND(dt, sr) \
-    ( (dt) == LC3_DT_7M5 ? 23 * LC3_NS(dt, sr) / 30 \
-                         :  5 * LC3_NS(dt, sr) /  8 )
+    ( 20 * (1 + (dt)) * (1 + (sr) + ((sr) == LC3_SRATE_48K)) )
 
 #define LC3_NE(dt, sr) \
-    ( 20 * (3 + (dt)) * (1 + (sr)) )
+    ( 20 * (1 + (dt)) * (1 + (sr)) )
 
 #define LC3_MAX_NS \
     LC3_NS(LC3_DT_10M, LC3_SRATE_48K)
@@ -116,11 +113,17 @@
 #define LC3_MAX_NE \
     LC3_NE(LC3_DT_10M, LC3_SRATE_48K)
 
+#define LC3_ND(dt, sr) \
+    ( LC3_NS(dt, sr) / 2 + \
+      (5 + 3*((dt) == LC3_DT_7M5)) * LC3_SRATE_KHZ(sr) / 4 )
+
 #define LC3_NT(sr_hz) \
     ( (5 * LC3_SRATE_KHZ(sr)) / 4 )
 
 #define LC3_NH(dt, sr) \
-    ( ((3 - dt) + 1) * LC3_NS(dt, sr) )
+    ( ((dt == LC3_DT_2M5 ? 8 : \
+        dt == LC3_DT_5M  ? 4 : \
+        dt == LC3_DT_7M5 ? 3 : 2) + 1) *  LC3_NS(dt, sr) )
 
 
 /**

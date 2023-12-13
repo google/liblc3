@@ -33,7 +33,7 @@ struct lc3bin_header {
     uint16_t bitrate_100bps;
     uint16_t channels;
     uint16_t frame_10us;
-    uint16_t rfu;
+    uint16_t epmode;
     uint16_t nsamples_low;
     uint16_t nsamples_high;
 };
@@ -46,16 +46,25 @@ int lc3bin_read_header(FILE *fp,
     int *frame_us, int *srate_hz, int *nchannels, int *nsamples)
 {
     struct lc3bin_header hdr;
+    uint16_t hrmode = 0;
 
     if (fread(&hdr, sizeof(hdr), 1, fp) != 1
             || hdr.file_id != LC3_FILE_ID
             || hdr.header_size < sizeof(hdr))
         return -1;
 
+    int num_extended_params = (hdr.header_size - sizeof(hdr)) / sizeof(uint16_t);
+    if (num_extended_params >= 1 &&
+        fread(&hrmode, sizeof(hrmode), 1, fp) != 1)
+      return -1;
+
     *nchannels = hdr.channels;
     *frame_us = hdr.frame_10us * 10;
     *srate_hz = hdr.srate_100hz * 100;
     *nsamples = hdr.nsamples_low | (hdr.nsamples_high << 16);
+
+    if (hdr.epmode || hrmode)
+      return -1;
 
     fseek(fp, hdr.header_size, SEEK_SET);
 

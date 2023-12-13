@@ -457,7 +457,7 @@ LC3_HOT static int argmax_weighted(
 }
 
 /**
- * Interpolate from pitch detected value (3.3.9.8)
+ * Interpolate from pitch detected value
  * x, n            [-2..-1] Previous, [0..n] Current input
  * d               The phase of interpolation (0 to 3)
  * return          The interpolated vector
@@ -492,7 +492,7 @@ LC3_HOT static void interpolate(const int16_t *x, int n, int d, int16_t *y)
 }
 
 /**
- * Interpolate autocorrelation (3.3.9.7)
+ * Interpolate autocorrelation
  * x               [-4..-1] Previous, [0..4] Current input
  * d               The phase of interpolation (-3 to 3)
  * return          The interpolated value
@@ -522,7 +522,7 @@ LC3_HOT static float interpolate_corr(const float *x, int d)
 }
 
 /**
- * Pitch detection algorithm (3.3.9.5-6)
+ * Pitch detection algorithm
  * ltpf            Context of analysis
  * x, n            [-114..-17] Previous, [0..n-1] Current 6.4KHz samples
  * tc              Return the pitch-lag estimation
@@ -530,8 +530,8 @@ LC3_HOT static float interpolate_corr(const float *x, int d)
  *
  * The `x` vector is aligned on 32 bits
  */
-static bool detect_pitch(
-    struct lc3_ltpf_analysis *ltpf, const int16_t *x, int n, int *tc)
+static bool detect_pitch(struct lc3_ltpf_analysis *ltpf,
+    const int16_t *x, int n, int *tc)
 {
     float rm1, rm2;
     float r[98];
@@ -562,7 +562,7 @@ static bool detect_pitch(
 }
 
 /**
- * Pitch-lag parameter (3.3.9.7)
+ * Pitch-lag parameter
  * x, n            [-232..-28] Previous, [0..n-1] Current 12.8KHz samples, Q14
  * tc              Pitch-lag estimation
  * pitch           The pitch value, in fixed .4
@@ -615,7 +615,7 @@ bool lc3_ltpf_analyse(
     /* --- Resampling to 12.8 KHz --- */
 
     int z_12k8 = sizeof(ltpf->x_12k8) / sizeof(*ltpf->x_12k8);
-    int n_12k8 = dt == LC3_DT_7M5 ? 96 : 128;
+    int n_12k8 = (1 + dt) * 32;
 
     memmove(ltpf->x_12k8, ltpf->x_12k8 + n_12k8,
         (z_12k8 - n_12k8) * sizeof(*ltpf->x_12k8));
@@ -624,7 +624,7 @@ bool lc3_ltpf_analyse(
 
     resample_12k8[sr](&ltpf->hp50, x, x_12k8, n_12k8);
 
-    x_12k8 -= (dt == LC3_DT_7M5 ? 44 :  24);
+    x_12k8 -= (dt == LC3_DT_7M5 ? 44 : 24);
 
     /* --- Resampling to 6.4 KHz --- */
 
@@ -637,6 +637,13 @@ bool lc3_ltpf_analyse(
     int16_t *x_6k4 = ltpf->x_6k4 + (z_6k4 - n_6k4);
 
     resample_6k4(x_12k8, x_6k4, n_6k4);
+
+    /* --- Enlarge for small frame size --- */
+
+    if (dt == LC3_DT_2M5) {
+        x_12k8 -= n_12k8, x_6k4 -= n_6k4;
+        n_12k8 += n_12k8; n_6k4 += n_6k4;
+    }
 
     /* --- Pitch detection --- */
 
@@ -817,6 +824,11 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     pitch = (pitch * LC3_SRATE_KHZ(sr) * 10 + 64) / 128;
 
     int nbits = (nbytes*8 * 10000 + (dt_us/2)) / dt_us;
+    if (dt == LC3_DT_2M5)
+      nbits = (6 * nbits + 5) / 10;
+    if (dt == LC3_DT_5M)
+      nbits -= 160;
+
     int g_idx = LC3_MAX(nbits / 80, 3 + (int)sr) - (3 + sr);
     bool active = data && data->active && g_idx < 4;
 
@@ -832,30 +844,31 @@ void lc3_ltpf_synthesize(enum lc3_dt dt, enum lc3_srate sr, int nbytes,
     /* --- Transition handling --- */
 
     int ns = LC3_NS(dt, sr);
-    int nt = ns / (3 + dt);
-    float x0[MAX_FILTER_WIDTH];
+    int nt = ns / (1 + dt);
+    float x0[2][MAX_FILTER_WIDTH];
+
+    memcpy(x0[0], ltpf->x, (w-1) * sizeof(float));
+    memcpy(ltpf->x, x + ns - (w-1), (w-1) * sizeof(float));
 
     if (active)
-        memcpy(x0, x + nt-(w-1), (w-1) * sizeof(float));
+        memcpy(x0[1], x + nt-(w-1), (w-1) * sizeof(float));
 
     if (!ltpf->active && active)
-        synthesize[sr](xh, nh, pitch/4, ltpf->x, x, nt, c, 1);
+        synthesize[sr](xh, nh, pitch/4, x0[0], x, nt, c, 1);
     else if (ltpf->active && !active)
-        synthesize[sr](xh, nh, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xh, nh, ltpf->pitch/4, x0[0], x, nt, ltpf->c, -1);
     else if (ltpf->active && active && ltpf->pitch == pitch)
-        synthesize[sr](xh, nh, pitch/4, ltpf->x, x, nt, c, 0);
+        synthesize[sr](xh, nh, pitch/4, x0[0], x, nt, c, 0);
     else if (ltpf->active && active) {
-        synthesize[sr](xh, nh, ltpf->pitch/4, ltpf->x, x, nt, ltpf->c, -1);
+        synthesize[sr](xh, nh, ltpf->pitch/4, x0[0], x, nt, ltpf->c, -1);
         synthesize[sr](xh, nh, pitch/4,
             (x <= xh ? x + nh : x) - (w-1), x, nt, c, 1);
     }
 
     /* --- Remainder --- */
 
-    memcpy(ltpf->x, x + ns - (w-1), (w-1) * sizeof(float));
-
-    if (active)
-        synthesize[sr](xh, nh, pitch/4, x0, x + nt, ns-nt, c, 0);
+    if (active && ns > nt)
+        synthesize[sr](xh, nh, pitch/4, x0[1], x + nt, ns-nt, c, 0);
 
     /* --- Update state --- */
 

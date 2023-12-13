@@ -42,9 +42,10 @@ extern const float *lc3_mdct_win[LC3_NUM_DT][LC3_NUM_SRATE];
  * Limits of bands
  */
 
-#define LC3_NUM_BANDS  64
+#define LC3_MAX_BANDS  64
 
-extern const int lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE][LC3_NUM_BANDS+1];
+extern const int lc3_num_bands[LC3_NUM_DT][LC3_NUM_SRATE];
+extern const uint16_t *lc3_band_lim[LC3_NUM_DT][LC3_NUM_SRATE];
 
 
 /**

@@ -38,7 +38,7 @@ static PyObject *resample_py(PyObject *m, PyObject *args)
 
     int ns = LC3_NS(dt, sr), nt = LC3_NT(dt);
     int ny = sizeof((struct lc3_ltpf_analysis){ }.x_12k8) / sizeof(int16_t);
-    int n  = dt == LC3_DT_7M5 ? 96 : 128;
+    int n  = (1 + dt) * 32;
 
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_INT16, ns+nt, &x));
     CTYPES_CHECK("y", y_obj = to_1d_ptr(y_obj, NPY_INT16, ny, &y));

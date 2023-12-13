@@ -36,7 +36,7 @@ static PyObject *compute_scale_factors_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
     CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
 
-    int nb = LC3_MIN(lc3_band_lim[dt][sr][LC3_NUM_BANDS], LC3_NUM_BANDS);
+    int nb = lc3_num_bands[dt][sr];
 
     CTYPES_CHECK("eb", to_1d_ptr(eb_obj, NPY_FLOAT, nb, &eb));
     scf_obj = new_1d_ptr(NPY_FLOAT, 16, &scf);
@@ -150,7 +150,7 @@ static PyObject *analyze_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
 
     int ne = LC3_NE(dt, sr);
-    int nb = LC3_MIN(ne, LC3_NUM_BANDS);
+    int nb = lc3_num_bands[dt][sr];
 
     CTYPES_CHECK("eb", to_1d_ptr(eb_obj, NPY_FLOAT, nb, &eb));
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));

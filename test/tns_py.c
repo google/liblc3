@@ -36,13 +36,14 @@ static PyObject *compute_lpc_coeffs_py(PyObject *m, PyObject *args)
     CTYPES_CHECK("sr", (unsigned)bw < LC3_NUM_BANDWIDTH);
 
     int ne = LC3_NE(dt, bw);
+    int maxorder = dt <= LC3_DT_5M ? 4 : 8;
 
     CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
     g_obj = new_1d_ptr(NPY_FLOAT, 2, &g);
     a_obj = new_2d_ptr(NPY_FLOAT, 2, 9, &a);
 
-    compute_lpc_coeffs(dt, bw, x, g, a);
+    compute_lpc_coeffs(dt, bw, maxorder, x, g, a);
 
     return Py_BuildValue("NN", g_obj, a_obj);
 }
@@ -50,15 +51,20 @@ static PyObject *compute_lpc_coeffs_py(PyObject *m, PyObject *args)
 static PyObject *lpc_reflection_py(PyObject *m, PyObject *args)
 {
     PyObject *a_obj, *rc_obj;
+    unsigned dt;
     float *a, *rc;
 
-    if (!PyArg_ParseTuple(args, "O", &a_obj))
+    if (!PyArg_ParseTuple(args, "IO", &dt, &a_obj))
         return NULL;
 
-    CTYPES_CHECK("a", to_1d_ptr(a_obj, NPY_FLOAT, 9, &a));
-    rc_obj = new_1d_ptr(NPY_FLOAT, 8, &rc);
+    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
 
-    lpc_reflection(a, rc);
+    int maxorder = dt <= LC3_DT_5M ? 4 : 8;
+
+    CTYPES_CHECK("a", to_1d_ptr(a_obj, NPY_FLOAT, 9, &a));
+    rc_obj = new_1d_ptr(NPY_FLOAT, maxorder, &rc);
+
+    lpc_reflection(a, maxorder, rc);
 
     return Py_BuildValue("N", rc_obj);
 }
@@ -66,17 +72,21 @@ static PyObject *lpc_reflection_py(PyObject *m, PyObject *args)
 static PyObject *quantize_rc_py(PyObject *m, PyObject *args)
 {
     PyObject *rc_obj, *rc_q_obj;
+    unsigned dt;
     float *rc;
     int rc_order, *rc_q;
 
-    if (!PyArg_ParseTuple(args, "O", &rc_obj))
+    if (!PyArg_ParseTuple(args, "IO", &dt, &rc_obj))
         return NULL;
 
-    CTYPES_CHECK("rc", to_1d_ptr(rc_obj, NPY_FLOAT, 8, &rc));
+    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
 
+    int maxorder = dt <= LC3_DT_5M ? 4 : 8;
+
+    CTYPES_CHECK("rc", to_1d_ptr(rc_obj, NPY_FLOAT, 8, &rc));
     rc_q_obj = new_1d_ptr(NPY_INT, 8, &rc_q);
 
-    quantize_rc(rc, &rc_order, rc_q);
+    quantize_rc(rc, maxorder, &rc_order, rc_q);
 
     return Py_BuildValue("iN", rc_order, rc_q_obj);
 }

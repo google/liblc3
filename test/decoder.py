@@ -100,14 +100,15 @@ class Decoder:
 
 def check_appendix_c(dt):
 
-    ok = True
+    i0 = dt - T.DT_7M5
 
     dec_c = lc3.setup_decoder(int(T.DT_MS[dt] * 1000), 16000)
+    ok = True
 
-    for i in range(len(C.BYTES_AC[dt])):
+    for i in range(len(C.BYTES_AC[i0])):
 
-        pcm = lc3.decode(dec_c, bytes(C.BYTES_AC[dt][i]))
-        ok = ok and np.max(np.abs(pcm - C.X_HAT_CLIP[dt][i])) < 1
+        pcm = lc3.decode(dec_c, bytes(C.BYTES_AC[i0][i]))
+        ok = ok and np.max(np.abs(pcm - C.X_HAT_CLIP[i0][i])) < 1
 
     return ok
 
@@ -115,7 +116,7 @@ def check():
 
     ok = True
 
-    for dt in range(T.NUM_DT):
+    for dt in range(T.DT_7M5, T.NUM_DT):
         ok = ok and check_appendix_c(dt)
 
     return ok

@@ -57,7 +57,9 @@ struct side_data {
  */
 static enum lc3_dt resolve_dt(int us)
 {
-    return us ==  7500 ? LC3_DT_7M5 :
+    return us ==  2500 ? LC3_DT_2M5 :
+           us ==  5000 ? LC3_DT_5M  :
+           us ==  7500 ? LC3_DT_7M5 :
            us == 10000 ? LC3_DT_10M : LC3_NUM_DT;
 }
 
@@ -269,7 +271,7 @@ static void analyze(struct lc3_encoder *encoder,
 
     /* --- Spectral --- */
 
-    float e[LC3_NUM_BANDS];
+    float e[LC3_MAX_BANDS];
 
     lc3_mdct_forward(dt, sr_pcm, sr, xs, xd, xf);
 
@@ -534,7 +536,8 @@ static int decode(struct lc3_decoder *decoder,
     if ((ret = lc3_spec_get_side(&bits, dt, sr, &side->spec)) < 0)
         return ret;
 
-    lc3_tns_get_data(&bits, dt, side->bw, nbytes, &side->tns);
+    if ((ret = lc3_tns_get_data(&bits, dt, side->bw, nbytes, &side->tns)) < 0)
+        return ret;
 
     side->pitch_present = lc3_get_bit(&bits);
 

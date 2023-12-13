@@ -16,13 +16,6 @@
  *
  ******************************************************************************/
 
-/**
- * LC3 - Compute LD-MDCT (Low Delay Modified Discret Cosinus Transform)
- *
- * Reference : Low Complexity Communication Codec (LC3)
- *             Bluetooth Specification v1.0
- */
-
 #ifndef __LC3_MDCT_H
 #define __LC3_MDCT_H
 
