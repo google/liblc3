@@ -275,7 +275,7 @@ LC3_HOT static void compute_scale_factors(
     int nb = get_band_num(hrmode, dt, sr);
 #if defined(INCLUDE_2M5) || defined(INCLUDE_05M) || defined(INCLUDE_HRMODE)
     if (nb < 32) {
-        int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
+        int n4 = roundf(LC3_ABS(1.f - 32.f / nb) * nb);
         int n2 = nb - n4;
         for (int i = 0; i < n4; i++) {
             for (int i2 = 0; i2 < 4; i2++) {
@@ -739,7 +739,7 @@ LC3_HOT static void spectral_shaping(enum lc3_dt dt, enum lc3_srate sr,
 #if defined(INCLUDE_2M5) || defined(INCLUDE_05M) || defined(INCLUDE_HRMODE)
     if (nb < 32) {
         float tmp[LC3_NUM_BANDS];
-        int n4 = round(LC3_ABS(1.f - 32.f / nb) * nb);
+        int n4 = roundf(LC3_ABS(1.f - 32.f / nb) * nb);
         int n2 = nb - n4;
         for (int i = 0; i < n4; i++) {
             float sum = 0;
