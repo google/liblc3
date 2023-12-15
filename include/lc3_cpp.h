@@ -43,6 +43,7 @@ enum class PcmFormat {
   kS16 = LC3_PCM_FORMAT_S16,
   kS24 = LC3_PCM_FORMAT_S24,
   kS24In3Le = LC3_PCM_FORMAT_S24_3LE,
+  kS32 = LC3_PCM_FORMAT_S32,
   kF32 = LC3_PCM_FORMAT_FLOAT
 };
 
@@ -145,8 +146,8 @@ class Encoder : public Base<struct lc3_encoder> {
     return EncodeImpl(PcmFormat::kS16, pcm, frame_size, out);
   }
 
-  int Encode(const int32_t *pcm, int frame_size, uint8_t *out) {
-    return EncodeImpl(PcmFormat::kS24, pcm, frame_size, out);
+  int Encode(const int32_t *pcm, int frame_size, uint8_t *out, PcmFormat fmt = PcmFormat::kS24) {
+    return EncodeImpl(fmt, pcm, frame_size, out);
   }
 
   int Encode(const float *pcm, int frame_size, uint8_t *out) {
@@ -169,6 +170,11 @@ class Encoder : public Base<struct lc3_encoder> {
 
       case PcmFormat::kS24In3Le:
         return EncodeImpl(fmt, reinterpret_cast<const int8_t(*)[3]>(pcm),
+                          frame_size, out);
+
+      case PcmFormat::kS32:
+        assert(pcm_ptr % alignof(int32_t) == 0);
+        return EncodeImpl(fmt, reinterpret_cast<const int32_t *>(pcm),
                           frame_size, out);
 
       case PcmFormat::kF32:
@@ -244,8 +250,8 @@ class Decoder : public Base<struct lc3_decoder> {
     return DecodeImpl(in, frame_size, PcmFormat::kS16, pcm);
   }
 
-  int Decode(const uint8_t *in, int frame_size, int32_t *pcm) {
-    return DecodeImpl(in, frame_size, PcmFormat::kS24In3Le, pcm);
+  int Decode(const uint8_t *in, int frame_size, int32_t *pcm, PcmFormat fmt = PcmFormat::kS24) {
+    return DecodeImpl(in, frame_size, fmt, pcm);
   }
 
   int Decode(const uint8_t *in, int frame_size, float *pcm) {
@@ -269,6 +275,11 @@ class Decoder : public Base<struct lc3_decoder> {
       case PcmFormat::kS24In3Le:
         return DecodeImpl(in, frame_size, fmt,
                           reinterpret_cast<int8_t(*)[3]>(pcm));
+
+      case PcmFormat::kS32:
+        assert(pcm_ptr % alignof(int32_t) == 0);
+        return DecodeImpl(in, frame_size, fmt,
+                          reinterpret_cast<int32_t *>(pcm));
 
       case PcmFormat::kF32:
         assert(pcm_ptr % alignof(float) == 0);

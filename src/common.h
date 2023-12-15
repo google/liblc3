@@ -68,6 +68,7 @@
 #define LC3_CLIP(v, min, max)  LC3_MIN(LC3_MAX(v, min), max)
 #define LC3_SAT16(v)  LC3_CLIP(v, -(1 << 15), (1 << 15) - 1)
 #define LC3_SAT24(v)  LC3_CLIP(v, -(1 << 23), (1 << 23) - 1)
+#define LC3_SAT32(v)  LC3_CLIP(v, -2147483648, 2147483647)
 
 #define LC3_ABS(v)  ( (v) < 0 ? -(v) : (v) )
 
@@ -79,6 +80,9 @@
 
 #undef  LC3_SAT24
 #define LC3_SAT24(v) __ssat(v, 24)
+
+#undef  LC3_SAT32
+#define LC3_SAT32(v) __ssat(v, 32)
 
 #endif /* __ARM_FEATURE_SAT */
 

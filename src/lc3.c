@@ -274,6 +274,29 @@ static void load_s24_3le(
 }
 
 /**
+ * Input PCM Samples from signed 32 bits
+ * encoder         Encoder state
+ * pcm, stride     Input PCM samples, and count between two consecutives
+ */
+static void load_s32(
+    struct lc3_encoder *encoder, const void *_pcm, int stride)
+{
+    const int32_t *pcm = _pcm;
+
+    enum lc3_dt dt = encoder->dt;
+    enum lc3_srate sr = encoder->sr_pcm;
+
+    int16_t *xt = (int16_t *)encoder->x + encoder->xt_off;
+    float *xs = encoder->x + encoder->xs_off;
+    int ns = LC3_NS(dt, sr);
+
+    for (int i = 0; i < ns; i++, pcm += stride) {
+        xt[i] = *pcm >> 16;
+        xs[i] = ldexpf(*pcm, -16);
+    }
+}
+
+/**
  * Input PCM Samples from float 32 bits
  * encoder         Encoder state
  * pcm, stride     Input PCM samples, and count between two consecutives
@@ -478,6 +501,7 @@ int lc3_encode(struct lc3_encoder *encoder, enum lc3_pcm_format fmt,
         [LC3_PCM_FORMAT_S16    ] = load_s16,
         [LC3_PCM_FORMAT_S24    ] = load_s24,
         [LC3_PCM_FORMAT_S24_3LE] = load_s24_3le,
+        [LC3_PCM_FORMAT_S32    ] = load_s32,
         [LC3_PCM_FORMAT_FLOAT  ] = load_float,
     };
 
@@ -578,6 +602,29 @@ static void store_s24_3le(
         pcm[0] = (s >>  0) & 0xff;
         pcm[1] = (s >>  8) & 0xff;
         pcm[2] = (s >> 16) & 0xff;
+    }
+}
+
+/**
+ * Output PCM Samples to signed 32 bits
+ * decoder         Decoder state
+ * pcm, stride     Output PCM samples, and count between two consecutives
+ */
+static void store_s32(
+    struct lc3_decoder *decoder, void *_pcm, int stride)
+{
+    int32_t *pcm = _pcm;
+
+    enum lc3_dt dt = decoder->dt;
+    enum lc3_srate sr = decoder->sr_pcm;
+
+    float *xs = decoder->x + decoder->xs_off;
+    int ns = LC3_NS(dt, sr);
+
+    for ( ; ns > 0; ns--, xs++, pcm += stride) {
+        int64_t s = *xs >= 0 ? (int64_t)(ldexpf(*xs, 16) + 0.5f)
+                             : (int64_t)(ldexpf(*xs, 16) - 0.5f);
+        *pcm = LC3_SAT32(s);
     }
 }
 
@@ -784,6 +831,7 @@ int lc3_decode(struct lc3_decoder *decoder, const void *in, int nbytes,
         [LC3_PCM_FORMAT_S16    ] = store_s16,
         [LC3_PCM_FORMAT_S24    ] = store_s24,
         [LC3_PCM_FORMAT_S24_3LE] = store_s24_3le,
+        [LC3_PCM_FORMAT_S32    ] = store_s32,
         [LC3_PCM_FORMAT_FLOAT  ] = store_float,
     };
 

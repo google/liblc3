@@ -172,6 +172,7 @@ enum lc3_pcm_format {
     LC3_PCM_FORMAT_S16,
     LC3_PCM_FORMAT_S24,
     LC3_PCM_FORMAT_S24_3LE,
+    LC3_PCM_FORMAT_S32,
     LC3_PCM_FORMAT_FLOAT,
 };
 
