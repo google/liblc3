@@ -50,11 +50,12 @@ enum class PcmFormat {
 template <typename T>
 class Base {
  protected:
-  Base(int dt_us, int sr_hz, int sr_pcm_hz, size_t nchannels)
+  Base(int dt_us, int sr_hz, int sr_pcm_hz, size_t nchannels, bool hrmode)
       : dt_us_(dt_us),
         sr_hz_(sr_hz),
         sr_pcm_hz_(sr_pcm_hz == 0 ? sr_hz : sr_pcm_hz),
-        nchannels_(nchannels) {
+        nchannels_(nchannels),
+        hrmode_(hrmode) {
     states.reserve(nchannels_);
   }
 
@@ -63,6 +64,7 @@ class Base {
   int dt_us_, sr_hz_;
   int sr_pcm_hz_;
   size_t nchannels_;
+  bool hrmode_;
 
   using state_ptr = std::unique_ptr<T, decltype(&free)>;
   std::vector<state_ptr> states;
@@ -72,10 +74,10 @@ class Base {
   int GetFrameSamples() { return lc3_frame_samples(dt_us_, sr_pcm_hz_); }
 
   // Return the size of frames, from bitrate
-  int GetFrameBytes(int bitrate) { return lc3_frame_bytes(dt_us_, bitrate); }
+  int GetFrameBytes(int bitrate) { return lc3_frame_bytes(dt_us_, sr_hz_, bitrate, hrmode_); }
 
   // Resolve the bitrate, from the size of frames
-  int ResolveBitrate(int nbytes) { return lc3_resolve_bitrate(dt_us_, nbytes); }
+  int ResolveBitrate(int nbytes) { return lc3_resolve_bitrate(dt_us_, nbytes, hrmode_); }
 
   // Return algorithmic delay, as a number of samples
   int GetDelaySamples() { return lc3_delay_samples(dt_us_, sr_pcm_hz_); }
@@ -109,13 +111,13 @@ class Encoder : public Base<struct lc3_encoder> {
   // When used, `sr_pcm_hz` is intended to be higher or equal to the encoder
   // samplerate `sr_hz`.
 
-  Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1)
-      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels) {
+  Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1, bool hrmode = false)
+      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, hrmode) {
     for (size_t ich = 0; ich < nchannels_; ich++) {
       auto s = state_ptr(
-          (lc3_encoder_t)malloc(lc3_encoder_size(dt_us_, sr_pcm_hz_)), free);
+          (lc3_encoder_t)malloc(lc3_encoder_size(dt_us_, sr_pcm_hz_, hrmode_)), free);
 
-      if (lc3_setup_encoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
+      if (lc3_setup_encoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get(), hrmode_))
         states.push_back(std::move(s));
     }
   }
@@ -126,7 +128,7 @@ class Encoder : public Base<struct lc3_encoder> {
 
   void Reset() {
     for (auto &s : states)
-      lc3_setup_encoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get());
+      lc3_setup_encoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get(), hrmode_);
   }
 
   // Encode
@@ -207,13 +209,13 @@ class Decoder : public Base<struct lc3_decoder> {
   // When used, `sr_pcm_hz` is intended to be higher or equal to the decoder
   // samplerate `sr_hz`.
 
-  Decoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1)
-      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels) {
+  Decoder(int dt_us, int sr_hz, int sr_pcm_hz = 0, size_t nchannels = 1, bool hrmode = false)
+      : Base(dt_us, sr_hz, sr_pcm_hz, nchannels, hrmode) {
     for (size_t i = 0; i < nchannels_; i++) {
       auto s = state_ptr(
-          (lc3_decoder_t)malloc(lc3_decoder_size(dt_us_, sr_pcm_hz_)), free);
+          (lc3_decoder_t)malloc(lc3_decoder_size(dt_us_, sr_pcm_hz_, hrmode_)), free);
 
-      if (lc3_setup_decoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
+      if (lc3_setup_decoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get(), hrmode_))
         states.push_back(std::move(s));
     }
   }
@@ -224,7 +226,7 @@ class Decoder : public Base<struct lc3_decoder> {
 
   void Reset() {
     for (auto &s : states)
-      lc3_setup_decoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get());
+      lc3_setup_decoder(dt_us_, sr_hz_, sr_pcm_hz_, s.get(), hrmode_);
   }
 
   // Decode
