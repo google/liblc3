@@ -140,7 +140,7 @@ int lc3_frame_bytes(int dt_us, int sr_hz, int bitrate, bool hrmode)
             return LC3_MAX_FRAME_BYTES;
     }
 
-    int nbytes = ((unsigned)bitrate * dt_us) / (1000*1000*8);
+    int nbytes = ((unsigned long long)bitrate * dt_us) / (1000*1000*8);
 
     return hrmode ? nbytes : LC3_CLIP(nbytes, LC3_MIN_FRAME_BYTES, LC3_MAX_FRAME_BYTES);
 }
@@ -178,7 +178,7 @@ int lc3_resolve_bitrate(int dt_us, int nbytes, bool hrmode)
             return LC3_MAX_BITRATE;
     }
 
-    int bitrate = ((unsigned)nbytes * (1000*1000*8) + dt_us/2) / dt_us;
+    int bitrate = ((unsigned long long)nbytes * (1000*1000*8) + dt_us/2) / dt_us;
 
     return hrmode ? bitrate : LC3_CLIP(bitrate, LC3_MIN_BITRATE, LC3_MAX_BITRATE);
 }
