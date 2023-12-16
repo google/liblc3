@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
     /* --- Setup decoding --- */
 
     uint8_t in[2 * LC3_MAX_FRAME_BYTES];
-    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_HR_FRAME_SAMPLES*4];
     lc3_decoder_t dec[2];
 
     int frame_samples = lc3_frame_samples(frame_us, pcm_srate_hz);

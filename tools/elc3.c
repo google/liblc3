@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
     /* --- Setup encoding --- */
 
-    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_HR_FRAME_SAMPLES*4];
     uint8_t out[2 * LC3_MAX_FRAME_BYTES];
     lc3_encoder_t enc[2];
 

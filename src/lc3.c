@@ -739,8 +739,9 @@ static void synthesize(struct lc3_decoder *decoder,
         lc3_mdct_inverse(dt, sr_pcm, sr, xf, xd, xs, decoder->hrmode);
     }
 
-    lc3_ltpf_synthesize(dt, sr_pcm, nbytes, &decoder->ltpf,
-        side && side->pitch_present ? &side->ltpf : NULL, xh, xs);
+    if (!decoder->hrmode)
+        lc3_ltpf_synthesize(dt, sr_pcm, nbytes, &decoder->ltpf,
+            side && side->pitch_present ? &side->ltpf : NULL, xh, xs);
 }
 
 /**
