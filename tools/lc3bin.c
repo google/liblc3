@@ -67,13 +67,13 @@ int lc3bin_read_header(FILE *fp,
 /**
  * Read LC3 block of data
  */
-int lc3bin_read_data(FILE *fp, int nchannels, void *buffer)
+int lc3bin_read_data(FILE *fp, int nchannels, bool hrmode, void *buffer)
 {
     uint16_t nbytes;
 
     if (fread(&nbytes, sizeof(nbytes), 1, fp) < 1
-            || nbytes > nchannels * LC3_MAX_FRAME_BYTES
-            || nbytes % nchannels
+            || nbytes > nchannels * (hrmode ? LC3_MAX_HR_FRAME_BYTES : LC3_MAX_FRAME_BYTES)
+            || nbytes % nchannels // FIXME: nbytes/2+1 and nbytes/2 for stereo
             || fread(buffer, nbytes, 1, fp) < 1)
         return -1;
 

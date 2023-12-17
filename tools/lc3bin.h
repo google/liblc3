@@ -43,7 +43,7 @@ int lc3bin_read_header(FILE *fp,
  * buffer          Output buffer of `nchannels * LC3_MAX_FRAME_BYTES`
  * return          Size of each 'nchannels` frames, -1 on error
  */
-int lc3bin_read_data(FILE *fp, int nchannels, void *buffer);
+int lc3bin_read_data(FILE *fp, int nchannels, bool hrmode, void *buffer);
 
 /**
  * Write LC3 binary header

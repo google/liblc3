@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i * frame_samples < encode_samples; i++) {
 
-        int frame_bytes = lc3bin_read_data(fp_in, nch, in);
+        int frame_bytes = lc3bin_read_data(fp_in, nch, hrmode, in);
 
         if (floorf(i * frame_us * 1e-6) > nsec) {
 
