@@ -1137,7 +1137,7 @@ static const struct lc3_mdct_rot_def mdct_rot_960 = {
 };
 
 static const struct lc3_mdct_rot_def mdct_rot_1920 = {
-    .n4 = 960/4, .w = (const struct lc3_complex []){
+    .n4 = 1920/4, .w = (const struct lc3_complex []){
         {  2.1364349e-01,  8.7393339e-05 }, {  2.1364206e-01,  7.8653829e-04 },
         {  2.1363834e-01,  1.4856748e-03 }, {  2.1363233e-01,  2.1847954e-03 },
         {  2.1362404e-01,  2.8838927e-03 }, {  2.1361346e-01,  3.5829590e-03 },

@@ -774,8 +774,8 @@ LC3_HOT static void get_lsb(lc3_bits_t *bits,
 LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     const uint32_t *xq, int nq, const float *x, bool hrmode)
 {
-    int bw_stop = hrmode ? 20 * (1 + dt) * (1 + bw) : 100 * (1 + dt);
-    int w = dt + (dt == LC3_DT_2M5);
+    int bw_stop = hrmode ? 100 * (1 + dt) : 20 * (1 + dt) * (1 + bw);
+    int w = 1 + (dt >= LC3_DT_7M5) + (dt >= LC3_DT_10M);
 
     float sum = 0;
     int i, n = 0, z = 0;
@@ -805,8 +805,8 @@ LC3_HOT static int estimate_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
 LC3_HOT static void fill_noise(enum lc3_dt dt, enum lc3_bandwidth bw,
     int nf, uint16_t nf_seed, float g, float *x, int nq, bool hrmode)
 {
-    int bw_stop = hrmode ? 20 * (1 + dt) * (1 + bw) : 100 * (1 + dt);
-    int w = dt + (dt == LC3_DT_2M5);
+    int bw_stop = hrmode ? 100 * (1 + dt) : 20 * (1 + dt) * (1 + bw);
+    int w = 1 + (dt >= LC3_DT_7M5) + (dt >= LC3_DT_10M);
 
     float s = g * (float)(8 - nf) / 16;
     int i, z = 0;
