@@ -859,7 +859,7 @@ static int get_noise_factor(lc3_bits_t *bits)
 static int get_nbits_nq(enum lc3_dt dt, enum lc3_srate sr, bool hrmode)
 {
     int ne = hrmode ? LC3_NS(dt, sr) : LC3_NE(dt, sr);
-    return 4 + (ne > 32) + (ne > 64) + (ne > 128) + (ne > 256);
+    return 4 + (ne > 32) + (ne > 64) + (ne > 128) + (ne > 256) + (ne > 512);
 }
 
 /**
