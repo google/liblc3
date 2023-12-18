@@ -343,7 +343,7 @@ static void analyze(struct lc3_encoder *encoder,
 
     bool att = encoder->hrmode ? false : lc3_attdet_run(dt, sr_pcm, nbytes, &encoder->attdet, xt);
 
-    side->pitch_present =
+    side->pitch_present = encoder->hrmode ? false : 
         lc3_ltpf_analyse(dt, sr_pcm, &encoder->ltpf, xt, &side->ltpf);
 
     memmove(xt - nt, xt + (ns-nt), nt * sizeof(*xt));
