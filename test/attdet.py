@@ -105,7 +105,7 @@ def check_enabling(rng, dt):
 
     ok = True
 
-    for sr in range(T.SRATE_16K, T.NUM_SRATE):
+    for sr in range(T.SRATE_8K, T.SRATE_48K + 1):
 
         attdet = AttackDetector(dt, sr)
 
@@ -175,11 +175,11 @@ def check():
     for dt in range(T.NUM_DT):
         ok and check_enabling(rng, dt)
 
-    for dt in range(T.DT_7M5, T.NUM_DT):
-        for sr in range(T.SRATE_32K, T.NUM_SRATE):
+    for dt in ( T.DT_7M5, T.DT_10M ):
+        for sr in ( T.SRATE_32K, T.SRATE_48K ):
             ok = ok and check_unit(rng, dt, sr)
 
-    for dt in range(T.DT_7M5, T.NUM_DT):
+    for dt in ( T.DT_7M5, T.DT_10M ):
         ok = ok and check_appendix_c(dt)
 
     return ok

@@ -153,17 +153,16 @@ int main(int argc, char *argv[])
     if (p.fname_out && (fp_out = fopen(p.fname_out, "wb")) == NULL)
         error(errno, "%s", p.fname_out);
 
-    if (p.srate_hz && !LC3_CHECK_SR_HZ(p.srate_hz))
-        error(EINVAL, "Samplerate %d Hz", p.srate_hz);
-
     if (p.bitdepth && p.bitdepth != 16 && p.bitdepth != 24)
         error(EINVAL, "Bitdepth %d", p.bitdepth);
 
     /* --- Check parameters --- */
 
     int frame_us, srate_hz, nch, nsamples;
+    bool hrmode;
 
-    if (lc3bin_read_header(fp_in, &frame_us, &srate_hz, &nch, &nsamples) < 0)
+    if (lc3bin_read_header(fp_in,
+            &frame_us, &srate_hz, &hrmode, &nch, &nsamples) < 0)
         error(EINVAL, "LC3 binary input file");
 
     if (nch  < 1 || nch  > 2)
@@ -172,8 +171,12 @@ int main(int argc, char *argv[])
     if (!LC3_CHECK_DT_US(frame_us))
         error(EINVAL, "Frame duration");
 
-    if (!LC3_CHECK_SR_HZ(srate_hz) || (p.srate_hz && p.srate_hz < srate_hz))
+    if (!LC3_CHECK_HR_SR_HZ(hrmode, srate_hz))
          error(EINVAL, "Samplerate %d Hz", srate_hz);
+
+    if (p.srate_hz && (!LC3_CHECK_HR_SR_HZ(hrmode, p.srate_hz) ||
+                       p.srate_hz < srate_hz                     ))
+         error(EINVAL, "Output samplerate %d Hz", p.srate_hz);
 
     int pcm_sbits = p.bitdepth;
     int pcm_sbytes = pcm_sbits / 8;
@@ -187,19 +190,24 @@ int main(int argc, char *argv[])
 
     /* --- Setup decoding --- */
 
-    uint8_t in[2 * LC3_MAX_FRAME_BYTES];
-    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
+    uint8_t in[2 * LC3_MAX_HR_FRAME_BYTES];
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_HR_FRAME_SAMPLES*4];
     lc3_decoder_t dec[2];
 
-    int frame_samples = lc3_frame_samples(frame_us, pcm_srate_hz);
+    int frame_samples = lc3_hr_frame_samples(hrmode, frame_us, pcm_srate_hz);
     int encode_samples = pcm_samples +
-        lc3_delay_samples(frame_us, pcm_srate_hz);
+        lc3_hr_delay_samples(hrmode, frame_us, pcm_srate_hz);
     enum lc3_pcm_format pcm_fmt =
         pcm_sbits == 24 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 
-    for (int ich = 0; ich < nch; ich++)
-        dec[ich] = lc3_setup_decoder(frame_us, srate_hz, p.srate_hz,
-            malloc(lc3_decoder_size(frame_us, pcm_srate_hz)));
+    for (int ich = 0; ich < nch; ich++) {
+        dec[ich] = lc3_hr_setup_decoder(
+            hrmode, frame_us, srate_hz, p.srate_hz,
+            malloc(lc3_hr_decoder_size(hrmode, frame_us, pcm_srate_hz)));
+
+        if (!dec[ich])
+            error(EINVAL, "Decoder initialization failed");
+    }
 
     /* --- Decoding loop --- */
 

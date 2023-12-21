@@ -32,7 +32,7 @@ bool lc3_attdet_run(enum lc3_dt dt, enum lc3_srate sr,
         [LC3_DT_10M - LC3_DT_7M5] = { { 81, INT_MAX }, { 100, INT_MAX } },
     };
 
-    if (dt < LC3_DT_7M5 || sr < LC3_SRATE_32K ||
+    if (dt < LC3_DT_7M5 || sr < LC3_SRATE_32K || lc3_hr(sr) ||
             nbytes < nbytes_ranges[dt - LC3_DT_7M5][sr - LC3_SRATE_32K][0] ||
             nbytes > nbytes_ranges[dt - LC3_DT_7M5][sr - LC3_SRATE_32K][1]   )
         return 0;

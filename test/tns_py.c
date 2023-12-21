@@ -32,10 +32,10 @@ static PyObject *compute_lpc_coeffs_py(PyObject *m, PyObject *args)
     if (!PyArg_ParseTuple(args, "IIO", &dt, &bw, &x_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
-    CTYPES_CHECK("sr", (unsigned)bw < LC3_NUM_BANDWIDTH);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
+    CTYPES_CHECK("sr", bw < LC3_NUM_BANDWIDTH);
 
-    int ne = LC3_NE(dt, bw);
+    int ne = lc3_ne(dt, bw);
     int maxorder = dt <= LC3_DT_5M ? 4 : 8;
 
     CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
@@ -57,7 +57,7 @@ static PyObject *lpc_reflection_py(PyObject *m, PyObject *args)
     if (!PyArg_ParseTuple(args, "IO", &dt, &a_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
 
     int maxorder = dt <= LC3_DT_5M ? 4 : 8;
 
@@ -76,10 +76,10 @@ static PyObject *quantize_rc_py(PyObject *m, PyObject *args)
     float *rc;
     int rc_order, *rc_q;
 
-    if (!PyArg_ParseTuple(args, "IO", &dt, &rc_obj))
+    if (!PyArg_ParseTuple(args, "iO", &dt, &rc_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
 
     int maxorder = dt <= LC3_DT_5M ? 4 : 8;
 
@@ -115,17 +115,17 @@ static PyObject *analyze_py(PyObject *m, PyObject *args)
     PyObject *x_obj;
     struct lc3_tns_data data = { 0 };
     unsigned dt, bw;
-    int nn_flag;
-    unsigned nbytes;
+    int nn_flag, nbytes;
     float *x;
 
-    if (!PyArg_ParseTuple(args, "IIpIO", &dt, &bw, &nn_flag, &nbytes, &x_obj))
+    if (!PyArg_ParseTuple(args, "IIpiO",
+            &dt, &bw, &nn_flag, &nbytes, &x_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
-    CTYPES_CHECK("bw", (unsigned)bw < LC3_NUM_BANDWIDTH);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
+    CTYPES_CHECK("bw", bw < LC3_NUM_BANDWIDTH);
 
-    int ne = LC3_NE(dt, bw);
+    int ne = lc3_ne(dt, bw);
 
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
@@ -144,11 +144,11 @@ static PyObject *synthesize_py(PyObject *m, PyObject *args)
     if (!PyArg_ParseTuple(args, "IIOO", &dt, &bw, &data_obj, &x_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
-    CTYPES_CHECK("bw", (unsigned)bw < LC3_NUM_BANDWIDTH);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
+    CTYPES_CHECK("bw", bw < LC3_NUM_BANDWIDTH);
     CTYPES_CHECK(NULL, data_obj = to_tns_data(data_obj, &data));
 
-    int ne = LC3_NE(dt, bw);
+    int ne = lc3_ne(dt, bw);
 
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 

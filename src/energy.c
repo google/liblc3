@@ -26,10 +26,10 @@
 bool lc3_energy_compute(
     enum lc3_dt dt, enum lc3_srate sr, const float *x, float *e)
 {
-    /* Mean the square of coefficients within each band */
-
     int nb = lc3_num_bands[dt][sr];
-    const uint16_t *lim = lc3_band_lim[dt][sr];
+    const int *lim = lc3_band_lim[dt][sr];
+
+    /* Mean the square of coefficients within each band */
 
     float e_sum[2] = { 0, 0 };
     int iband_h = nb - (const int []){

@@ -22,24 +22,15 @@ import tables as T, appendix_c as C
 ### ------------------------------------------------------------------------ ###
 
 class Tns:
+    SUB_LIM_2M5_NB   = [ [   3,  10,  20  ] ]
+    SUB_LIM_2M5_WB   = [ [   3,  20,  40  ] ]
+    SUB_LIM_2M5_SSWB = [ [   3,  30,  60  ] ]
+    SUB_LIM_2M5_SWB  = [ [   3,  40,  80  ] ]
+    SUB_LIM_2M5_FB   = [ [   3,  50, 100  ] ]
 
-    SUB_LIM_10M_NB   = [ [  12,  34,  57,  80 ] ]
-    SUB_LIM_10M_WB   = [ [  12,  61, 110, 160 ] ]
-    SUB_LIM_10M_SSWB = [ [  12,  88, 164, 240 ] ]
-    SUB_LIM_10M_SWB  = [ [  12,  61, 110, 160 ], [ 160, 213, 266, 320 ] ]
-    SUB_LIM_10M_FB   = [ [  12,  74, 137, 200 ], [ 200, 266, 333, 400 ] ]
-
-    SUB_LIM_10M = [ SUB_LIM_10M_NB, SUB_LIM_10M_WB,
-        SUB_LIM_10M_SSWB, SUB_LIM_10M_SWB, SUB_LIM_10M_FB ]
-
-    SUB_LIM_7M5_NB   = [ [   9,  26,  43,  60 ] ]
-    SUB_LIM_7M5_WB   = [ [   9,  46,  83, 120 ] ]
-    SUB_LIM_7M5_SSWB = [ [   9,  66, 123, 180 ] ]
-    SUB_LIM_7M5_SWB  = [ [   9,  46,  82, 120 ], [ 120, 159, 200, 240 ] ]
-    SUB_LIM_7M5_FB   = [ [   9,  56, 103, 150 ], [ 150, 200, 250, 300 ] ]
-
-    SUB_LIM_7M5 = [ SUB_LIM_7M5_NB, SUB_LIM_7M5_WB,
-        SUB_LIM_7M5_SSWB, SUB_LIM_7M5_SWB, SUB_LIM_7M5_FB ]
+    SUB_LIM_2M5 = [
+        SUB_LIM_2M5_NB , SUB_LIM_2M5_WB, SUB_LIM_2M5_SSWB,
+        SUB_LIM_2M5_SWB, SUB_LIM_2M5_FB, SUB_LIM_2M5_FB, SUB_LIM_2M5_FB ]
 
     SUB_LIM_5M_NB    = [ [  6,  23,  40 ] ]
     SUB_LIM_5M_WB    = [ [  6,  43,  80 ] ]
@@ -47,46 +38,32 @@ class Tns:
     SUB_LIM_5M_SWB   = [ [  6,  43,  80 ], [  80, 120, 160 ] ]
     SUB_LIM_5M_FB    = [ [  6,  53, 100 ], [ 100, 150, 200 ] ]
 
-    SUB_LIM_5M = [ SUB_LIM_5M_NB, SUB_LIM_5M_WB,
-        SUB_LIM_5M_SSWB, SUB_LIM_5M_SWB, SUB_LIM_5M_FB ]
+    SUB_LIM_5M = [
+        SUB_LIM_5M_NB , SUB_LIM_5M_WB, SUB_LIM_5M_SSWB,
+        SUB_LIM_5M_SWB, SUB_LIM_5M_FB, SUB_LIM_5M_FB, SUB_LIM_5M_FB ]
 
-    SUB_LIM_2M5_NB   = [ [   3,  10,  20  ] ]
-    SUB_LIM_2M5_WB   = [ [   3,  20,  40  ] ]
-    SUB_LIM_2M5_SSWB = [ [   3,  30,  60  ] ]
-    SUB_LIM_2M5_SWB  = [ [   3,  40,  80  ] ]
-    SUB_LIM_2M5_FB   = [ [   3,  50, 100  ] ]
+    SUB_LIM_7M5_NB   = [ [   9,  26,  43,  60 ] ]
+    SUB_LIM_7M5_WB   = [ [   9,  46,  83, 120 ] ]
+    SUB_LIM_7M5_SSWB = [ [   9,  66, 123, 180 ] ]
+    SUB_LIM_7M5_SWB  = [ [   9,  46,  82, 120 ], [ 120, 159, 200, 240 ] ]
+    SUB_LIM_7M5_FB   = [ [   9,  56, 103, 150 ], [ 150, 200, 250, 300 ] ]
 
-    SUB_LIM_2M5 = [ SUB_LIM_2M5_NB, SUB_LIM_2M5_WB,
-        SUB_LIM_2M5_SSWB, SUB_LIM_2M5_SWB, SUB_LIM_2M5_FB ]
+    SUB_LIM_7M5 = [
+        SUB_LIM_7M5_NB , SUB_LIM_7M5_WB, SUB_LIM_7M5_SSWB,
+        SUB_LIM_7M5_SWB, SUB_LIM_7M5_FB, None, None ]
+
+    SUB_LIM_10M_NB   = [ [  12,  34,  57,  80 ] ]
+    SUB_LIM_10M_WB   = [ [  12,  61, 110, 160 ] ]
+    SUB_LIM_10M_SSWB = [ [  12,  88, 164, 240 ] ]
+    SUB_LIM_10M_SWB  = [ [  12,  61, 110, 160 ], [ 160, 213, 266, 320 ] ]
+    SUB_LIM_10M_FB   = [ [  12,  74, 137, 200 ], [ 200, 266, 333, 400 ] ]
+
+    SUB_LIM_10M = [
+        SUB_LIM_10M_NB , SUB_LIM_10M_WB, SUB_LIM_10M_SSWB,
+        SUB_LIM_10M_SWB, SUB_LIM_10M_FB, SUB_LIM_10M_FB, SUB_LIM_10M_FB ]
 
     SUB_LIM = [ SUB_LIM_2M5, SUB_LIM_5M, SUB_LIM_7M5, SUB_LIM_10M ]
 
-    FREQ_LIM_10M_NB   = [  12,  80 ]
-    FREQ_LIM_10M_WB   = [  12, 160 ]
-    FREQ_LIM_10M_SSWB = [  12, 240 ]
-    FREQ_LIM_10M_SWB  = [  12, 160, 320 ]
-    FREQ_LIM_10M_FB   = [  12, 200, 400 ]
-
-    FREQ_LIM_10M = [ FREQ_LIM_10M_NB, FREQ_LIM_10M_WB,
-        FREQ_LIM_10M_SSWB, FREQ_LIM_10M_SWB, FREQ_LIM_10M_FB ]
-
-    FREQ_LIM_7M5_NB   = [   9,  60 ]
-    FREQ_LIM_7M5_WB   = [   9, 120 ]
-    FREQ_LIM_7M5_SSWB = [   9, 180 ]
-    FREQ_LIM_7M5_SWB  = [   9, 120, 240 ]
-    FREQ_LIM_7M5_FB   = [   9, 150, 300 ]
-
-    FREQ_LIM_7M5 = [ FREQ_LIM_7M5_NB, FREQ_LIM_7M5_WB,
-        FREQ_LIM_7M5_SSWB, FREQ_LIM_7M5_SWB, FREQ_LIM_7M5_FB ]
-
-    FREQ_LIM_5M_NB    = [   6,  40 ]
-    FREQ_LIM_5M_WB    = [   6,  80 ]
-    FREQ_LIM_5M_SSWB  = [   6, 120 ]
-    FREQ_LIM_5M_SWB   = [   6,  80, 160 ]
-    FREQ_LIM_5M_FB    = [   6, 100, 200 ]
-
-    FREQ_LIM_5M = [ FREQ_LIM_5M_NB, FREQ_LIM_5M_WB,
-        FREQ_LIM_5M_SSWB, FREQ_LIM_5M_SWB, FREQ_LIM_5M_FB ]
 
     FREQ_LIM_2M5_NB   = [   3,  20 ]
     FREQ_LIM_2M5_WB   = [   3,  40 ]
@@ -94,10 +71,42 @@ class Tns:
     FREQ_LIM_2M5_SWB  = [   3,  80 ]
     FREQ_LIM_2M5_FB   = [   3, 100 ]
 
-    FREQ_LIM_2M5 = [ FREQ_LIM_2M5_NB, FREQ_LIM_2M5_WB,
-        FREQ_LIM_2M5_SSWB, FREQ_LIM_2M5_SWB, FREQ_LIM_2M5_FB ]
+    FREQ_LIM_2M5 = [
+        FREQ_LIM_2M5_NB , FREQ_LIM_2M5_WB, FREQ_LIM_2M5_SSWB,
+        FREQ_LIM_2M5_SWB, FREQ_LIM_2M5_FB, FREQ_LIM_2M5_FB, FREQ_LIM_2M5_FB ]
+
+    FREQ_LIM_5M_NB    = [   6,  40 ]
+    FREQ_LIM_5M_WB    = [   6,  80 ]
+    FREQ_LIM_5M_SSWB  = [   6, 120 ]
+    FREQ_LIM_5M_SWB   = [   6,  80, 160 ]
+    FREQ_LIM_5M_FB    = [   6, 100, 200 ]
+
+    FREQ_LIM_5M = [
+        FREQ_LIM_5M_NB , FREQ_LIM_5M_WB, FREQ_LIM_5M_SSWB,
+        FREQ_LIM_5M_SWB, FREQ_LIM_5M_FB, FREQ_LIM_5M_FB, FREQ_LIM_5M_FB ]
+
+    FREQ_LIM_7M5_NB   = [   9,  60 ]
+    FREQ_LIM_7M5_WB   = [   9, 120 ]
+    FREQ_LIM_7M5_SSWB = [   9, 180 ]
+    FREQ_LIM_7M5_SWB  = [   9, 120, 240 ]
+    FREQ_LIM_7M5_FB   = [   9, 150, 300 ]
+
+    FREQ_LIM_7M5 = [
+        FREQ_LIM_7M5_NB , FREQ_LIM_7M5_WB, FREQ_LIM_7M5_SSWB,
+        FREQ_LIM_7M5_SWB, FREQ_LIM_7M5_FB, None, None ]
+
+    FREQ_LIM_10M_NB   = [  12,  80 ]
+    FREQ_LIM_10M_WB   = [  12, 160 ]
+    FREQ_LIM_10M_SSWB = [  12, 240 ]
+    FREQ_LIM_10M_SWB  = [  12, 160, 320 ]
+    FREQ_LIM_10M_FB   = [  12, 200, 400 ]
+
+    FREQ_LIM_10M = [
+        FREQ_LIM_10M_NB , FREQ_LIM_10M_WB, FREQ_LIM_10M_SSWB,
+        FREQ_LIM_10M_SWB, FREQ_LIM_10M_FB, FREQ_LIM_10M_FB, FREQ_LIM_10M_FB ]
 
     FREQ_LIM = [ FREQ_LIM_2M5, FREQ_LIM_5M, FREQ_LIM_7M5, FREQ_LIM_10M ]
+
 
     def __init__(self, dt):
 
@@ -349,8 +358,9 @@ def check_analysis(rng, dt, bw):
     nbytes_lim = int((48 * T.DT_MS[dt]) // 8)
 
     for i in range(10):
-        x = rng.random(T.NE[dt][bw]) * 1e2
-        x = pow(x, .5 + i/5)
+        ne = T.I[dt][bw][-1]
+        x  = rng.random(ne) * 1e2
+        x  = pow(x, .5 + i/5)
 
         for nn_flag in (True, False):
             for nbytes in (nbytes_lim, nbytes_lim + 1):
@@ -379,7 +389,8 @@ def check_synthesis(rng, dt, bw):
 
     for i in range(100):
 
-        x = rng.random(T.NE[dt][bw]) * 1e2
+        ne = T.I[dt][bw][-1]
+        x  = rng.random(ne) * 1e2
 
         maxorder = [ 4, 8 ][dt > T.DT_5M]
         synthesis.nfilters = 1 + int(dt >= T.DT_5M and bw >= T.SRATE_32K)
@@ -473,11 +484,15 @@ def check():
     ok = True
 
     for dt in range(T.NUM_DT):
-        for sr in range(T.NUM_SRATE):
+        for sr in range(T.SRATE_8K, T.SRATE_48K + 1):
             ok = ok and check_analysis(rng, dt, sr)
             ok = ok and check_synthesis(rng, dt, sr)
 
-    for dt in range(T.DT_7M5, T.NUM_DT):
+    for dt in ( T.DT_2M5, T.DT_5M, T.DT_10M ):
+        for sr in ( T.SRATE_48K_HR, T.SRATE_96K_HR ):
+            ok = ok and check_analysis(rng, dt, sr)
+
+    for dt in ( T.DT_7M5, T.DT_10M ):
         check_analysis_appendix_c(dt)
         check_synthesis_appendix_c(dt)
 

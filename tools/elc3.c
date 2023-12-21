@@ -60,6 +60,7 @@ struct parameters {
     const char *fname_out;
     float frame_ms;
     int srate_hz;
+    bool hrmode;
     int bitrate;
 };
 
@@ -76,6 +77,7 @@ static struct parameters parse_args(int argc, char *argv[])
         "\t-b\t"     "Bitrate in bps (mandatory)\n"
         "\t-m\t"     "Frame duration in ms (default 10)\n"
         "\t-r\t"     "Encoder samplerate (default is input samplerate)\n"
+        "\t-H\t"     "Enable high-resolution mode\n"
         "\n";
 
     struct parameters p = { .frame_ms = 10 };
@@ -102,6 +104,7 @@ static struct parameters parse_args(int argc, char *argv[])
                 case 'b': p.bitrate = atoi(optarg); break;
                 case 'm': p.frame_ms = atof(optarg); break;
                 case 'r': p.srate_hz = atoi(optarg); break;
+                case 'H': p.hrmode = true; break;
                 default:
                     error(EINVAL, "Option %s", arg);
             }
@@ -152,9 +155,6 @@ int main(int argc, char *argv[])
     if (p.fname_out && (fp_out = fopen(p.fname_out, "wb")) == NULL)
         error(errno, "%s", p.fname_out);
 
-    if (p.srate_hz && !LC3_CHECK_SR_HZ(p.srate_hz))
-        error(EINVAL, "Samplerate %d Hz", p.srate_hz);
-
     /* --- Check parameters --- */
 
     int frame_us = p.frame_ms * 1000;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     if (!LC3_CHECK_DT_US(frame_us))
         error(EINVAL, "Frame duration");
 
-    if (!LC3_CHECK_SR_HZ(srate_hz) || (p.srate_hz && p.srate_hz > srate_hz))
+    if (!LC3_CHECK_HR_SR_HZ(p.hrmode, srate_hz))
         error(EINVAL, "Samplerate %d Hz", srate_hz);
 
     if (pcm_sbits != 16 && pcm_sbits != 24)
@@ -184,29 +184,42 @@ int main(int argc, char *argv[])
     if (nch  < 1 || nch  > 2)
         error(EINVAL, "Number of channels %d", nch);
 
+    if (p.srate_hz && (!LC3_CHECK_HR_SR_HZ(p.hrmode, p.srate_hz) ||
+                       p.srate_hz > srate_hz                       ))
+        error(EINVAL, "Encoder samplerate %d Hz", p.srate_hz);
+
     int enc_srate_hz = !p.srate_hz ? srate_hz : p.srate_hz;
     int enc_samples = !p.srate_hz ? nsamples :
         ((int64_t)nsamples * enc_srate_hz) / srate_hz;
 
     lc3bin_write_header(fp_out,
-        frame_us, enc_srate_hz, p.bitrate, nch, enc_samples);
+        frame_us, enc_srate_hz, p.hrmode,
+        p.bitrate, nch, enc_samples);
 
     /* --- Setup encoding --- */
 
-    int8_t alignas(int32_t) pcm[2 * LC3_MAX_FRAME_SAMPLES*4];
-    uint8_t out[2 * LC3_MAX_FRAME_BYTES];
+    int8_t alignas(int32_t) pcm[2 * LC3_MAX_HR_FRAME_SAMPLES*4];
+    uint8_t out[2 * LC3_MAX_HR_FRAME_BYTES];
     lc3_encoder_t enc[2];
 
-    int frame_bytes = lc3_frame_bytes(frame_us, p.bitrate / nch);
-    int frame_samples = lc3_frame_samples(frame_us, srate_hz);
-    int encode_samples = nsamples + lc3_delay_samples(frame_us, srate_hz);
+    int frame_bytes = lc3_hr_frame_bytes(
+        p.hrmode, frame_us, srate_hz, p.bitrate / nch);
+    int frame_samples = lc3_hr_frame_samples(
+        p.hrmode, frame_us, srate_hz);
+    int encode_samples = nsamples + lc3_hr_delay_samples(
+        p.hrmode, frame_us, srate_hz);
     enum lc3_pcm_format pcm_fmt =
         pcm_sbytes == 32/8 ? LC3_PCM_FORMAT_S24 :
         pcm_sbytes == 24/8 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 
-    for (int ich = 0; ich < nch; ich++)
-        enc[ich] = lc3_setup_encoder(frame_us, enc_srate_hz, srate_hz,
-            malloc(lc3_encoder_size(frame_us, srate_hz)));
+    for (int ich = 0; ich < nch; ich++) {
+        enc[ich] = lc3_hr_setup_encoder(
+            p.hrmode, frame_us, enc_srate_hz, srate_hz,
+            malloc(lc3_hr_encoder_size(p.hrmode, frame_us, srate_hz)));
+
+        if (!enc[ich])
+            error(EINVAL, "Encoder initialization failed");
+    }
 
     /* --- Encoding loop --- */
 

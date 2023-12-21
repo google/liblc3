@@ -34,10 +34,10 @@ static PyObject *energy_compute_py(PyObject *m, PyObject *args)
     if (!PyArg_ParseTuple(args, "IIO", &dt, &sr, &x_obj))
         return NULL;
 
-    CTYPES_CHECK("dt", (unsigned)dt < LC3_NUM_DT);
-    CTYPES_CHECK("sr", (unsigned)sr < LC3_NUM_SRATE);
+    CTYPES_CHECK("dt", dt < LC3_NUM_DT);
+    CTYPES_CHECK("sr", sr < LC3_NUM_SRATE);
 
-    int ns = LC3_NS(dt, sr);
+    int ns = lc3_ns(dt, sr);
 
     CTYPES_CHECK("x", to_1d_ptr(x_obj, NPY_FLOAT, ns, &x));
     e_obj = new_1d_ptr(NPY_FLOAT, lc3_num_bands[dt][sr], &e);

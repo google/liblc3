@@ -157,10 +157,10 @@ def check():
 
     ok = True
     for dt in range(T.NUM_DT):
-        for sr in range(T.NUM_SRATE):
+        for sr in range(T.SRATE_8K, T.SRATE_48K + 1):
             ok = ok and check_unit(rng, dt, sr)
 
-    for dt in range(T.DT_7M5, T.NUM_DT):
+    for dt in ( T.DT_7M5, T.DT_10M ):
         ok = ok and check_appendix_c(dt)
 
     return ok

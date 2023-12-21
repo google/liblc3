@@ -24,10 +24,17 @@ import tables as T, appendix_c as C
 
 class Mdct:
 
-    W = [ [ T.W_2M5_8K, T.W_2M5_16K, T.W_2M5_24K, T.W_2M5_32K, T.W_2M5_48K ],
-          [ T.W_5M_8K , T.W_5M_16K , T.W_5M_24K , T.W_5M_32K , T.W_5M_48K  ],
-          [ T.W_7M5_8K, T.W_7M5_16K, T.W_7M5_24K, T.W_7M5_32K, T.W_7M5_48K ],
-          [ T.W_10M_8K, T.W_10M_16K, T.W_10M_24K, T.W_10M_32K, T.W_10M_48K ] ]
+    W = [ [ T.W_2M5_8K , T.W_2M5_16K, T.W_2M5_24K,
+            T.W_2M5_32K, T.W_2M5_48K, T.W_2M5_48K_HR, T.W_2M5_96K_HR ],
+
+          [ T.W_5M_8K  , T.W_5M_16K , T.W_5M_24K ,
+            T.W_5M_32K , T.W_5M_48K , T.W_5M_48K_HR , T.W_5M_96K_HR  ],
+
+          [ T.W_7M5_8K , T.W_7M5_16K, T.W_7M5_24K,
+            T.W_7M5_32K, T.W_7M5_48K, None, None ],
+
+          [ T.W_10M_8K , T.W_10M_16K, T.W_10M_24K,
+            T.W_10M_32K, T.W_10M_48K, T.W_10M_48K_HR, T.W_10M_96K_HR ] ]
 
     def __init__(self, dt, sr):
 
@@ -195,11 +202,16 @@ def check():
     ok  = True
 
     for dt in range(T.NUM_DT):
-        for sr in range(T.NUM_SRATE):
+        for sr in range(T.SRATE_8K, T.SRATE_48K + 1):
             ok = ok and check_forward_unit(rng, dt, sr)
             ok = ok and check_inverse_unit(rng, dt, sr)
 
-    for dt in range(T.DT_7M5, T.NUM_DT):
+    for dt in ( T.DT_2M5, T.DT_5M, T.DT_10M ):
+        for sr in ( T.SRATE_48K_HR, T.SRATE_96K_HR ):
+            ok = ok and check_forward_unit(rng, dt, sr)
+            ok = ok and check_inverse_unit(rng, dt, sr)
+
+    for dt in ( T.DT_7M5, T.DT_10M ):
         ok = ok and check_forward_appendix_c(dt)
         ok = ok and check_inverse_appendix_c(dt)
 

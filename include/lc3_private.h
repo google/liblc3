@@ -24,30 +24,32 @@
 
 
 /**
- * Return number of samples, delayed samples and
- * encoded spectrum coefficients within a frame.
+ * Characteristics
  *
- * - The number of MDCT delayed samples is the sum of half a frame and
+ * - The number of samples within a frame
+ *
+ * - The number of MDCT delayed samples, sum of half a frame and
  *   an ovelap of future by 1.25 ms (2.5ms, 5ms and 10ms frame durations)
  *   or 2 ms (7.5ms frame duration).
  *
+ * - For decoding, keep 18 ms of history, aligned on a frame
+ *
  * - For encoding, keep 1.25 ms of temporal previous samples
- * - For decoding, keep 18 ms of history, aligned on frames, and a frame
  */
 
-#define __LC3_NS(dt_us, sr_hz) \
+#define LC3_NS(dt_us, sr_hz) \
     ( (dt_us) * (sr_hz) / 1000 / 1000 )
 
-#define __LC3_ND(dt_us, sr_hz) \
-    ( __LC3_NS(dt_us, sr_hz) / 2 + \
-      __LC3_NS((dt_us) == 7500 ? 2000 : 1250, sr_hz) )
+#define LC3_ND(dt_us, sr_hz) \
+    ( LC3_NS(dt_us, sr_hz) / 2 + \
+      LC3_NS((dt_us) == 7500 ? 2000 : 1250, sr_hz) )
 
-#define __LC3_NT(sr_hz) \
-    ( __LC3_NS(1250, sr_hz) )
+#define LC3_NH(dt_us, sr_hz) \
+    ( (sr_hz) > 48000 ? 0 : ( LC3_NS(18000, sr_hz) + \
+      LC3_NS(dt_us, sr_hz) - (LC3_NS(18000, sr_hz) % LC3_NS(dt_us, sr_hz)) ) )
 
-#define __LC3_NH(dt_us, sr_hz) \
-    ( __LC3_NS(18000, sr_hz) + 2*__LC3_NS(dt_us, sr_hz) - \
-      (__LC3_NS(18000, sr_hz) % __LC3_NS(dt_us, sr_hz))   )
+#define LC3_NT(sr_hz) \
+    ( LC3_NS(1250, sr_hz) )
 
 
 /**
@@ -65,17 +67,19 @@ enum lc3_dt {
 
 
 /**
- * Sampling frequency
+ * Sampling frequency and high-resolution mode
  */
 
 enum lc3_srate {
-    LC3_SRATE_8K  = 0,
-    LC3_SRATE_16K = 1,
-    LC3_SRATE_24K = 2,
-    LC3_SRATE_32K = 3,
-    LC3_SRATE_48K = 4,
+    LC3_SRATE_8K,
+    LC3_SRATE_16K,
+    LC3_SRATE_24K,
+    LC3_SRATE_32K,
+    LC3_SRATE_48K,
+    LC3_SRATE_48K_HR,
+    LC3_SRATE_96K_HR,
 
-    LC3_NUM_SRATE,
+    LC3_NUM_SRATE
 };
 
 
@@ -121,8 +125,8 @@ struct lc3_encoder {
 };
 
 #define LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( ( __LC3_NS(dt_us, sr_hz) + __LC3_NT(sr_hz) ) / 2 + \
-        __LC3_NS(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) )
+    ( ( LC3_NS(dt_us, sr_hz) + LC3_NT(sr_hz) ) / 2 + \
+        LC3_NS(dt_us, sr_hz) + LC3_ND(dt_us, sr_hz) )
 
 #define LC3_ENCODER_MEM_T(dt_us, sr_hz) \
     struct { \
@@ -159,8 +163,8 @@ struct lc3_decoder {
 };
 
 #define LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz) \
-    ( __LC3_NH(dt_us, sr_hz) + __LC3_ND(dt_us, sr_hz) + \
-      __LC3_NS(dt_us, sr_hz) )
+    ( LC3_NH(dt_us, sr_hz) + LC3_NS(dt_us, sr_hz) + \
+      LC3_ND(dt_us, sr_hz) + LC3_NS(dt_us, sr_hz)   )
 
 #define LC3_DECODER_MEM_T(dt_us, sr_hz) \
     struct { \

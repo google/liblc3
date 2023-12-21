@@ -61,7 +61,7 @@ LC3_HOT static void compute_lpc_coeffs(
     const float *x, float *gain, float (*a)[9])
 {
 
-#if !LC3_NPLUS
+#if LC3_PLUS
 
     static const int sub_2m5_nb[]   = {  3,  10,  20 };
     static const int sub_2m5_wb[]   = {  3,  20,  40 };
@@ -75,7 +75,7 @@ LC3_HOT static void compute_lpc_coeffs(
     static const int sub_5m_swb[]   = {  6,  43,  80, 120, 160 };
     static const int sub_5m_fb[]    = {  6,  53, 100, 150, 200 };
 
-#endif /* !LC3_NPLUS */
+#endif /* LC3_PLUS */
 
     static const int sub_7m5_nb[]   = {  9,  26,  43,  60 };
     static const int sub_7m5_wb[]   = {  9,  46,  83, 120 };
@@ -89,8 +89,6 @@ LC3_HOT static void compute_lpc_coeffs(
     static const int sub_10m_swb[]  = { 12,  61, 110, 160, 213, 266, 320 };
     static const int sub_10m_fb[]   = { 12,  74, 137, 200, 266, 333, 400 };
 
-    /* --- Normalized autocorrelation --- */
-
     static const float lag_window[] = {
         1.00000000e+00, 9.98028026e-01, 9.92135406e-01, 9.82391584e-01,
         9.68910791e-01, 9.51849807e-01, 9.31404933e-01, 9.07808230e-01,
@@ -99,21 +97,29 @@ LC3_HOT static void compute_lpc_coeffs(
 
     const int *sub = (const int * const [LC3_NUM_DT][LC3_NUM_BANDWIDTH]){
 
-#if !LC3_NPLUS
+#if LC3_PLUS
 
-        [LC3_DT_2M5] = { sub_2m5_nb, sub_2m5_wb,
-            sub_2m5_sswb, sub_2m5_swb, sub_2m5_fb },
-        [LC3_DT_5M ] = { sub_5m_nb , sub_5m_wb ,
-            sub_5m_sswb , sub_5m_swb , sub_5m_fb  },
+        [LC3_DT_2M5] = {
+          sub_2m5_nb, sub_2m5_wb, sub_2m5_sswb, sub_2m5_swb,
+          sub_2m5_fb, sub_2m5_fb, sub_2m5_fb                },
 
-#endif /* !LC3_NPLUS */
+        [LC3_DT_5M] = {
+            sub_5m_nb , sub_5m_wb , sub_5m_sswb , sub_5m_swb ,
+            sub_5m_fb , sub_5m_fb , sub_5m_fb                 },
 
-        [LC3_DT_7M5] = { sub_7m5_nb, sub_7m5_wb,
-            sub_7m5_sswb, sub_7m5_swb, sub_7m5_fb },
-        [LC3_DT_10M] = { sub_10m_nb, sub_10m_wb,
-            sub_10m_sswb, sub_10m_swb, sub_10m_fb },
+#endif /* LC3_PLUS */
+
+        [LC3_DT_7M5] = {
+            sub_7m5_nb, sub_7m5_wb, sub_7m5_sswb, sub_7m5_swb,
+            sub_7m5_fb                                        },
+
+        [LC3_DT_10M] = {
+            sub_10m_nb, sub_10m_wb, sub_10m_sswb, sub_10m_swb,
+            sub_10m_fb, sub_10m_fb, sub_10m_fb                },
 
     }[dt][bw];
+
+    /* --- Normalized autocorrelation --- */
 
     int nfilters = 1 + (dt >= LC3_DT_5M && bw >= LC3_BANDWIDTH_SWB);
     int nsubdivisions = 2 + (dt >= LC3_DT_7M5);
@@ -296,7 +302,8 @@ LC3_HOT static void forward_filtering(
     const int rc_order[2], float (* const rc)[8], float *x)
 {
     int nfilters = 1 + (dt >= LC3_DT_5M && bw >= LC3_BANDWIDTH_SWB);
-    int nf = LC3_NE(dt, bw) >> (nfilters - 1);
+    int nf = lc3_ne(dt, (enum lc3_srate)LC3_MIN(bw, LC3_BANDWIDTH_FB))
+                >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };
@@ -337,7 +344,8 @@ LC3_HOT static void inverse_filtering(
     const int rc_order[2], float (* const rc)[8], float *x)
 {
     int nfilters = 1 + (dt >= LC3_DT_5M && bw >= LC3_BANDWIDTH_SWB);
-    int nf = LC3_NE(dt, bw) >> (nfilters - 1);
+    int nf = lc3_ne(dt, (enum lc3_srate)LC3_MIN(bw, LC3_BANDWIDTH_FB))
+                >> (nfilters - 1);
     int i0, ie = 3*(1 + dt);
 
     float s[8] = { 0 };

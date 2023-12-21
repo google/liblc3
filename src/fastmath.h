@@ -28,7 +28,7 @@
  * x               Operand, range -8 to 8
  * return          2^x approximation (max relative error ~ 7e-6)
  */
-static inline float fast_exp2f(float x)
+static inline float lc3_exp2f(float x)
 {
     float y;
 
@@ -59,7 +59,7 @@ static inline float fast_exp2f(float x)
  * x               Operand, greater than 0
  * return          log2(x) approximation (max absolute error ~ 1e-4)
  */
-static inline float fast_log2f(float x)
+static inline float lc3_log2f(float x)
 {
     float y;
     int e;
@@ -87,9 +87,9 @@ static inline float fast_log2f(float x)
  * x               Operand, greater than 0
  * return          log10(x) approximation (max absolute error ~ 1e-4)
  */
-static inline float fast_log10f(float x)
+static inline float lc3_log10f(float x)
 {
-    return log10f(2) * fast_log2f(x);
+    return log10f(2) * lc3_log2f(x);
 }
 
 /**
@@ -100,7 +100,7 @@ static inline float fast_log10f(float x)
  * - The 0 value is accepted and return the minimum value ~ -191dB
  * - This function assumed that float 32 bits is coded IEEE 754
  */
-static inline int32_t fast_db_q16(float x)
+static inline int32_t lc3_db_q16(float x)
 {
     /* --- Table in Q15 --- */
 
