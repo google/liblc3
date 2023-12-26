@@ -124,7 +124,7 @@ class Encoder : public Base<struct lc3_encoder> {
       auto s = state_ptr((lc3_encoder_t)
         malloc(lc3_hr_encoder_size(hrmode_, dt_us_, sr_pcm_hz_)), free);
 
-      if (lc3_setup_hr_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
+      if (lc3_hr_setup_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
         states.push_back(std::move(s));
     }
   }
@@ -135,7 +135,7 @@ class Encoder : public Base<struct lc3_encoder> {
 
   void Reset() {
     for (auto &s : states)
-      lc3_setup_hr_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get());
+      lc3_hr_setup_encoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get());
   }
 
   // Encode
@@ -225,7 +225,7 @@ class Decoder : public Base<struct lc3_decoder> {
       auto s = state_ptr((lc3_decoder_t)
         malloc(lc3_hr_decoder_size(hrmode_, dt_us_, sr_pcm_hz_)), free);
 
-      if (lc3_setup_hr_decoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
+      if (lc3_hr_setup_decoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get()))
         states.push_back(std::move(s));
     }
   }
@@ -236,7 +236,7 @@ class Decoder : public Base<struct lc3_decoder> {
 
   void Reset() {
     for (auto &s : states)
-      lc3_setup_hr_decoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get());
+      lc3_hr_setup_decoder(hrmode_, dt_us_, sr_hz_, sr_pcm_hz_, s.get());
   }
 
   // Decode
