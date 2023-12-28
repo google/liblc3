@@ -70,7 +70,7 @@ int encode(Encoder &e, int frame_size, int nchannels,
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-  const int dt_list[] = { 7500, 10000 };
+  const int dt_list[] = { 2500, 5000, 7500, 10000 };
   const int sr_list[] = { 8000, 16000, 24000, 32000, 48000 };
 
   FuzzedDataProvider fdp(data, size);
@@ -78,12 +78,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
   int dt_us = fdp.PickValueInArray(dt_list);
   int sr_hz = fdp.PickValueInArray(sr_list);
   int nchannels = fdp.PickValueInArray({1, 2});
+  bool hrmode = fdp.ConsumeBool();
 
   int sr_pcm_hz = fdp.PickValueInArray(sr_list);
   if (sr_pcm_hz < sr_hz)
     sr_pcm_hz = 0;
 
-  Encoder enc(dt_us, sr_hz, sr_pcm_hz, nchannels);
+  Encoder enc(dt_us, sr_hz, sr_pcm_hz, nchannels, hrmode);
 
   PcmFormat fmt = fdp.PickValueInArray(
     { PcmFormat::kS16, PcmFormat::kS24,
