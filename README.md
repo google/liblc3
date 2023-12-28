@@ -1,8 +1,15 @@
 # Low Complexity Communication Codec (LC3)
 
-The LC3 is an efficient low latency audio codec.
+LC3 and LC3 Plus are audio codecs designed for low-latency audio transport.
 
-[_Low Complexity Communication Codec_](https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=502107&vId=542963)
+- LC3 is specified by [_the Bluetooth Special Interset Group for the LE Audio
+  protocol_](https://www.bluetooth.org/DocMan/handlers/DownloadDoc.ashx?doc_id=502107&vId=542963)
+
+- LC3 Plus is defined by [_ETSI TS 103 634_](https://www.etsi.org/deliver/etsi_ts/103600_103699/103634/01.04.01_60/ts_103634v010401p.pdf)
+
+In addition to LC3, following features of LC3 Plus are proposed:
+- Frame duration of 2.5 and 5ms.
+- High-Resolution mode, 48 KHz, and 96 kHz sampling rates.
 
 ## Overview
 
@@ -10,7 +17,7 @@ The directory layout is as follows :
 - include:      Library interface
 - src:          Source files
 - tools:        Standalone encoder/decoder tools
-- test:         Python implentation, used as reference for unit testing
+- test:         Unit testing framework
 - fuzz:         Roundtrip fuzz testing harness
 - build:        Building outputs
 - bin:          Compilation output
@@ -24,6 +31,16 @@ $ make -j
 ```
 
 Compiled library `liblc3.a` will be found in `bin` directory.
+
+LC3 Plus features can be selectively disabled :
+- `LC3_PLUS=0` disable the support of 2.5ms and 5ms frame durations.
+- `LC3_PLUS_HR=0` turns off the support of the High-Resolution mode.
+
+Only Bluetooth LC3 features will be included using the following command:
+
+```sh
+$ make LC3_PLUS=0 LC3_PLUS_HR=0 -j
+```
 
 #### Cross compilation
 
@@ -77,7 +94,7 @@ $ ./elc3 <in.wav> -b <bitrate> | ./dlc3 | aplay
 
 A python implementation of the encoder is provided in `test` diretory.
 The C implementation is unitary validated against this implementation and
-intermediate values given in Appendix C of the specification.
+intermediate values given in Appendix C of the LC3 specification.
 
 #### Prerequisite
 

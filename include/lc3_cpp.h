@@ -108,14 +108,14 @@ class Encoder : public Base<struct lc3_encoder> {
   // Encoder construction / destruction
   //
   // The frame duration `dt_us` is 2500, 5000, 7500 or 10000 us.
-  // The samplerate `sr_hz` is 8000, 16000, 24000, 32000 or 48000 Hz.
+  // The sample rate `sr_hz` is 8000, 16000, 24000, 32000 or 48000 Hz.
   // The `hrmode` flag enables the high-resolution mode, in which case
   // the sample rate is 48000 or 96000 Hz.
   //
   // The `sr_pcm_hz` parameter is a downsampling option of PCM input,
-  // the value 0 fallback to the samplerate of the encoded stream `sr_hz`.
+  // the value 0 fallback to the sample rate of the encoded stream `sr_hz`.
   // When used, `sr_pcm_hz` is intended to be higher or equal to the encoder
-  // samplerate `sr_hz`.
+  // sample rate `sr_hz`.
 
   Encoder(int dt_us, int sr_hz, int sr_pcm_hz = 0,
           size_t nchannels = 1, bool hrmode = false)
@@ -209,14 +209,14 @@ class Decoder : public Base<struct lc3_decoder> {
   // Decoder construction / destruction
   //
   // The frame duration `dt_us` is 2500, 5000, 7500 or 10000 us.
-  // The samplerate `sr_hz` is 8000, 16000, 24000, 32000 or 48000 Hz.
+  // The sample rate `sr_hz` is 8000, 16000, 24000, 32000 or 48000 Hz.
   // The `hrmode` flag enables the high-resolution mode, in which case
   // the sample rate is 48000 or 96000 Hz.
   //
   // The `sr_pcm_hz` parameter is an downsampling option of PCM output,
-  // the value 0 fallback to the samplerate of the decoded stream `sr_hz`.
+  // the value 0 fallback to the sample rate of the decoded stream `sr_hz`.
   // When used, `sr_pcm_hz` is intended to be higher or equal to the decoder
-  // samplerate `sr_hz`.
+  // sample rate `sr_hz`.
 
   Decoder(int dt_us, int sr_hz, int sr_pcm_hz = 0,
           size_t nchannels = 1, bool hrmode = false)

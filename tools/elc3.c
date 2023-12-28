@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     if (!LC3_CHECK_DT_US(frame_us))
         error(EINVAL, "Frame duration");
 
-    if (!LC3_CHECK_HR_SR_HZ(p.hrmode, srate_hz))
+    if (!LC3_HR_CHECK_SR_HZ(p.hrmode, srate_hz))
         error(EINVAL, "Samplerate %d Hz", srate_hz);
 
     if (pcm_sbits != 16 && pcm_sbits != 24)
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
     if (nch  < 1 || nch  > 2)
         error(EINVAL, "Number of channels %d", nch);
 
-    if (p.srate_hz && (!LC3_CHECK_HR_SR_HZ(p.hrmode, p.srate_hz) ||
+    if (p.srate_hz && (!LC3_HR_CHECK_SR_HZ(p.hrmode, p.srate_hz) ||
                        p.srate_hz > srate_hz                       ))
         error(EINVAL, "Encoder samplerate %d Hz", p.srate_hz);
 
@@ -198,8 +198,8 @@ int main(int argc, char *argv[])
 
     /* --- Setup encoding --- */
 
-    int8_t alignas(int32_t) pcm[2 * LC3_MAX_HR_FRAME_SAMPLES*4];
-    uint8_t out[2 * LC3_MAX_HR_FRAME_BYTES];
+    int8_t alignas(int32_t) pcm[2 * LC3_HR_MAX_FRAME_SAMPLES*4];
+    uint8_t out[2 * LC3_HR_MAX_FRAME_BYTES];
     lc3_encoder_t enc[2];
 
     int frame_bytes = lc3_hr_frame_bytes(
