@@ -31,6 +31,14 @@ LD := $(if $(LD)=ld,$(CC),$(LD))
 CFLAGS := $(if $(DEBUG),-O0 -g,-O3)
 CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 
+ifneq ($(LC3_PLUS),)
+  DEFINE += LC3_PLUS=$(LC3_PLUS)
+endif
+
+ifneq ($(LC3_PLUS_HR),)
+  DEFINE += LC3_PLUS_HR=$(LC3_PLUS_HR)
+endif
+
 
 #
 # Declarations

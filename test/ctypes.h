@@ -701,9 +701,9 @@ static PyObject *from_encoder(PyObject *obj, const struct lc3_encoder *enc)
 {
     unsigned dt = enc->dt, sr = enc->sr;
     unsigned sr_pcm = enc->sr_pcm;
-    int ns = LC3_NS(dt, sr);
-    int nd = LC3_ND(dt, sr);
-    int nt = LC3_NT(sr);
+    int ns = lc3_ns(dt, sr);
+    int nd = lc3_nd(dt, sr);
+    int nt = lc3_nt(sr);
 
     if (!obj) obj = PyDict_New();
 
@@ -759,9 +759,9 @@ static PyObject *to_encoder(PyObject *obj, struct lc3_encoder *enc)
     CTYPES_CHECK("encoder.s_pcmr",
         (unsigned)(enc->sr_pcm = sr_pcm) < LC3_NUM_SRATE);
 
-    int ns = LC3_NS(dt, sr);
-    int nd = LC3_ND(dt, sr);
-    int nt = LC3_NT(sr);
+    int ns = lc3_ns(dt, sr);
+    int nd = lc3_nd(dt, sr);
+    int nt = lc3_nt(sr);
 
     CTYPES_CHECK(NULL, to_attdet_analysis(
         PyDict_GetItemString(obj, "attdet"), &enc->attdet));
@@ -796,9 +796,9 @@ static PyObject *from_decoder(PyObject *obj, const struct lc3_decoder *dec)
     unsigned dt = dec->dt, sr = dec->sr;
     unsigned sr_pcm = dec->sr_pcm;
     unsigned xs_pos = dec->xs_off - dec->xh_off;
-    int nh = LC3_NH(dt, sr);
-    int ns = LC3_NS(dt, sr);
-    int nd = LC3_ND(dt, sr);
+    int nh = lc3_nh(dt, sr);
+    int ns = lc3_ns(dt, sr);
+    int nd = lc3_nd(dt, sr);
 
     if (!obj) obj = PyDict_New();
 
@@ -818,7 +818,7 @@ static PyObject *from_decoder(PyObject *obj, const struct lc3_decoder *dec)
         new_plc_state(&dec->plc));
 
     PyDict_SetItemString(obj, "xh",
-        new_1d_copy(NPY_FLOAT, nh, dec->x + dec->xh_off));
+        new_1d_copy(NPY_FLOAT, nh + ns, dec->x + dec->xh_off));
 
     PyDict_SetItemString(obj, "xs_pos",
         new_scalar(NPY_INT, &xs_pos));
@@ -853,9 +853,9 @@ static PyObject *to_decoder(PyObject *obj, struct lc3_decoder *dec)
     CTYPES_CHECK("decoder.sr_pcm",
         (unsigned)(dec->sr_pcm = sr_pcm) < LC3_NUM_SRATE);
 
-    int nh = LC3_NH(dt, sr);
-    int ns = LC3_NS(dt, sr);
-    int nd = LC3_ND(dt, sr);
+    int nh = lc3_nh(dt, sr);
+    int ns = lc3_ns(dt, sr);
+    int nd = lc3_nd(dt, sr);
 
     CTYPES_CHECK(NULL, to_ltpf_synthesis(
         PyDict_GetItemString(obj, "ltpf"), &dec->ltpf));
@@ -865,7 +865,7 @@ static PyObject *to_decoder(PyObject *obj, struct lc3_decoder *dec)
 
     CTYPES_CHECK("decoder.xh", xh_obj = to_1d_copy(
         PyDict_GetItemString(obj, "xh"), NPY_FLOAT,
-            dec->x + dec->xh_off, nh));
+            dec->x + dec->xh_off, nh + ns));
     PyDict_SetItemString(obj, "xh", xh_obj);
 
     CTYPES_CHECK("decoder.xs", to_scalar(
