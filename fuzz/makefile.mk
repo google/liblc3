@@ -17,8 +17,8 @@
 efuzz_src += \
     $(FUZZ_DIR)/efuzz.cc
 
-efuzz_lib += liblc3
-efuzz_ldlibs += m
+efuzz_ldlibs += lc3 m
+efuzz_dependencies += liblc3
 
 $(eval $(call add-bin,efuzz))
 
@@ -26,8 +26,8 @@ $(eval $(call add-bin,efuzz))
 dfuzz_src += \
     $(FUZZ_DIR)/dfuzz.cc
 
-dfuzz_lib += liblc3
-dfuzz_ldlibs += m
+dfuzz_ldlibs += lc3 m
+dfuzz_dependencies += liblc3
 
 $(eval $(call add-bin,dfuzz))
 
@@ -44,9 +44,9 @@ efuzz dfuzz: CXXFLAGS += $(FUZZER_SANITIZE)
 efuzz dfuzz: LDFLAGS  += $(FUZZER_SANITIZE)
 
 dfuzz:
-	$(V)$(dfuzz_bin) -runs=1000000
+	$(V)LD_LIBRARY_PATH=$(BIN_DIR) $(dfuzz_bin) -runs=1000000
 
 efuzz:
-	$(V)$(efuzz_bin) -runs=1000000
+	$(V)LD_LIBRARY_PATH=$(BIN_DIR) $(efuzz_bin) -runs=1000000
 
 fuzz: efuzz dfuzz

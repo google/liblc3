@@ -19,9 +19,8 @@ elc3_src += \
     $(TOOLS_DIR)/lc3bin.c \
     $(TOOLS_DIR)/wave.c
 
-elc3_lib += liblc3
-elc3_ldlibs += m
-elc3_ldflags += -flto
+elc3_ldlibs += lc3 m
+elc3_dependencies += liblc3
 
 $(eval $(call add-bin,elc3))
 
@@ -31,9 +30,8 @@ dlc3_src += \
     $(TOOLS_DIR)/lc3bin.c \
     $(TOOLS_DIR)/wave.c
 
-dlc3_lib += liblc3
-dlc3_ldlibs += m
-elc3_ldflags += -flto
+dlc3_ldlibs += lc3 m
+dlc3_dependencies += liblc3
 
 $(eval $(call add-bin,dlc3))
 

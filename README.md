@@ -30,7 +30,7 @@ The default toolchain used is GCC. Invoke `make` to build the library.
 $ make -j
 ```
 
-Compiled library `liblc3.a` will be found in `bin` directory.
+Compiled library `liblc3.so` will be found in `bin` directory.
 
 LC3 Plus features can be selectively disabled :
 - `LC3_PLUS=0` disable the support of 2.5ms and 5ms frame durations.
@@ -81,13 +81,17 @@ file are omitted.
 In such way you can easly test encoding / decoding loop with :
 
 ```sh
-$ ./elc3 <in.wav> -b <bitrate> | ./dlc3 > <out.wav>
+$ alias elc3="LD_LIBRARY_PATH=`pwd`/bin `pwd`/bin/elc3"
+$ alias dlc3="LD_LIBRARY_PATH=`pwd`/bin `pwd`/bin/dlc3"
+$ elc3 <in.wav> -b <bitrate> | dlc3 > <out.wav>
 ```
 
 Adding Linux `aplay` tools, you will be able to instant hear the result :
 
 ```sh
-$ ./elc3 <in.wav> -b <bitrate> | ./dlc3 | aplay
+$ alias elc3="LD_LIBRARY_PATH=`pwd`/bin `pwd`/bin/elc3"
+$ alias dlc3="LD_LIBRARY_PATH=`pwd`/bin `pwd`/bin/dlc3"
+$ elc3 <in.wav> -b <bitrate> | dlc3 | aplay -D pipewire
 ```
 
 ## Test
@@ -141,8 +145,6 @@ environment.
 
 ```sh
 $ meson build
-$ cd build
-$ ninja
-$ sudo ninja install
+$ cd build && meson install
 ```
 
