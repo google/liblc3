@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 # Copyright 2022 Google LLC
 #
@@ -27,8 +26,6 @@ import tables as T, appendix_c as C
 import attdet, ltpf
 import mdct, energy, bwdet, sns, tns, spec
 import bitstream
-
-### ------------------------------------------------------------------------ ###
 
 class Encoder:
 
@@ -104,8 +101,6 @@ class Encoder:
 
         return data
 
-### ------------------------------------------------------------------------ ###
-
 def check_appendix_c(dt):
 
     i0 = dt - T.DT_7M5
@@ -128,86 +123,3 @@ def check():
         ok = ok and check_appendix_c(dt)
 
     return ok
-
-### ------------------------------------------------------------------------ ###
-
-def dump(data):
-    for i in range(0, len(data), 20):
-        print(''.join('{:02x} '.format(x)
-            for x in data[i:min(i+20, len(data))] ))
-
-if __name__ == "__main__":
-
-    parser = argparse.ArgumentParser(description='LC3 Encoder Test Framework')
-    parser.add_argument('wav_file',
-        help='Input wave file', type=argparse.FileType('r'))
-    parser.add_argument('--bitrate',
-        help='Bitrate in bps', type=int, required=True)
-    parser.add_argument('--dt',
-        help='Frame duration in ms', type=float, default=10)
-    parser.add_argument('--pyout',
-        help='Python output file', type=argparse.FileType('w'))
-    parser.add_argument('--cout',
-        help='C output file', type=argparse.FileType('w'))
-    args = parser.parse_args()
-
-    if args.bitrate < 16000 or args.bitrate > 320000:
-        raise ValueError('Invalid bitate %d bps' % args.bitrate)
-
-    if args.dt not in (7.5, 10):
-        raise ValueError('Invalid frame duration %.1f ms' % args.dt)
-
-    (sr_hz, pcm) = wavfile.read(args.wav_file.name)
-    if sr_hz not in (8000, 16000, 24000, 320000, 48000):
-        raise ValueError('Unsupported input samplerate: %d' % sr_hz)
-    if pcm.ndim != 1:
-        raise ValueError('Only single channel wav file supported')
-
-    ### Setup ###
-
-    enc = Encoder(args.dt, sr_hz)
-    enc_c = lc3.setup_encoder(int(args.dt * 1000), sr_hz)
-
-    frame_samples = int((args.dt * sr_hz) / 1000)
-    frame_nbytes = int((args.bitrate * args.dt) / (1000 * 8))
-
-    ### File Header ###
-
-    f_py = open(args.pyout.name, 'wb') if args.pyout else None
-    f_c  = open(args.cout.name , 'wb') if args.cout  else None
-
-    header = struct.pack('=HHHHHHHI', 0xcc1c, 18,
-        sr_hz // 100, args.bitrate // 100, 1, int(args.dt * 100), 0, len(pcm))
-
-    for f in (f_py, f_c):
-        if f: f.write(header)
-
-    ### Encoding loop ###
-
-    if len(pcm) % frame_samples > 0:
-        pcm = np.append(pcm, np.zeros(frame_samples - (len(pcm) % frame_samples)))
-
-    for i in range(0, len(pcm), frame_samples):
-
-        print('Encoding frame %d' % (i // frame_samples), end='\r')
-
-        frame_pcm = pcm[i:i+frame_samples]
-
-        data = enc.run(frame_pcm, frame_nbytes)
-        data_c = lc3.encode(enc_c, frame_pcm, frame_nbytes)
-
-        for f in (f_py, f_c):
-            if f: f.write(struct.pack('=H', frame_nbytes))
-
-        if f_py: f_py.write(data)
-        if f_c: f_c.write(data_c)
-
-    print('done ! %16s' % '')
-
-    ### Terminate ###
-
-    for f in (f_py, f_c):
-        if f: f.close()
-
-
-### ------------------------------------------------------------------------ ###
