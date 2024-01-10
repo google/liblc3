@@ -72,15 +72,20 @@ class Base {
  public:
   // Return the number of PCM samples in a frame
   int GetFrameSamples() {
-      return lc3_hr_frame_samples(hrmode_, dt_us_, sr_pcm_hz_); }
+    return lc3_hr_frame_samples(hrmode_, dt_us_, sr_pcm_hz_); }
 
   // Return the size of frames, from bitrate
   int GetFrameBytes(int bitrate) {
-      return lc3_hr_frame_bytes(hrmode_, dt_us_, sr_hz_, bitrate); }
+    return lc3_hr_frame_bytes(hrmode_, dt_us_, sr_hz_, bitrate); }
 
-  // Resolve the bitrate, from the size of frames
+  // Return the size of a frame block, from bitrate
+  int GetFrameBlockBytes(int bitrate) {
+    return lc3_hr_frame_block_bytes(
+        hrmode_, dt_us_, sr_hz_, nchannels_, bitrate); }
+
+  // Resolve the bitrate, from the size of frame blocks
   int ResolveBitrate(int nbytes) {
-      return lc3_hr_resolve_bitrate(hrmode_, dt_us_, sr_hz_, nbytes); }
+    return lc3_hr_resolve_bitrate(hrmode_, dt_us_, sr_hz_, nbytes); }
 
   // Return algorithmic delay, as a number of samples
   int GetDelaySamples() {
@@ -91,15 +96,22 @@ class Base {
 // Encoder Class
 class Encoder : public Base<struct lc3_encoder> {
   template <typename T>
-  int EncodeImpl(PcmFormat fmt, const T *pcm, int frame_size, uint8_t *out) {
+  int EncodeImpl(PcmFormat fmt, const T *pcm, int block_size, uint8_t *out) {
     if (states.size() != nchannels_) return -1;
 
     enum lc3_pcm_format cfmt = static_cast<lc3_pcm_format>(fmt);
     int ret = 0;
 
-    for (size_t ich = 0; ich < nchannels_; ich++)
+    uint8_t *out_ptr = out;
+    for (size_t ich = 0; ich < nchannels_; ich++) {
+      int frame_size = block_size / nchannels_
+          + (ich < block_size % nchannels_);
+
       ret |= lc3_encode(states[ich].get(), cfmt, pcm + ich, nchannels_,
-                        frame_size, out + ich * frame_size);
+                        frame_size, out_ptr);
+
+      out_ptr += frame_size;
+    }
 
     return ret;
   }
@@ -144,43 +156,43 @@ class Encoder : public Base<struct lc3_encoder> {
   // according the type of `pcm` input buffer, or by selecting a format.
   //
   // The PCM samples are read in interleaved way, and consecutive
-  // `nchannels` frames of size `frame_size` are output in `out` buffer.
+  // `nchannels` frames, are output in `out` buffer, of size `buffer_size`.
   //
   // The value returned is 0 on successs, -1 otherwise.
 
-  int Encode(const int16_t *pcm, int frame_size, uint8_t *out) {
-    return EncodeImpl(PcmFormat::kS16, pcm, frame_size, out);
+  int Encode(const int16_t *pcm, int block_size, uint8_t *out) {
+    return EncodeImpl(PcmFormat::kS16, pcm, block_size, out);
   }
 
-  int Encode(const int32_t *pcm, int frame_size, uint8_t *out) {
-    return EncodeImpl(PcmFormat::kS24, pcm, frame_size, out);
+  int Encode(const int32_t *pcm, int block_size, uint8_t *out) {
+    return EncodeImpl(PcmFormat::kS24, pcm, block_size, out);
   }
 
-  int Encode(const float *pcm, int frame_size, uint8_t *out) {
-    return EncodeImpl(PcmFormat::kF32, pcm, frame_size, out);
+  int Encode(const float *pcm, int block_size, uint8_t *out) {
+    return EncodeImpl(PcmFormat::kF32, pcm, block_size, out);
   }
 
-  int Encode(PcmFormat fmt, const void *pcm, int frame_size, uint8_t *out) {
+  int Encode(PcmFormat fmt, const void *pcm, int block_size, uint8_t *out) {
     uintptr_t pcm_ptr = reinterpret_cast<uintptr_t>(pcm);
 
     switch (fmt) {
       case PcmFormat::kS16:
         assert(pcm_ptr % alignof(int16_t) == 0);
         return EncodeImpl(fmt, reinterpret_cast<const int16_t *>(pcm),
-                          frame_size, out);
+                          block_size, out);
 
       case PcmFormat::kS24:
         assert(pcm_ptr % alignof(int32_t) == 0);
         return EncodeImpl(fmt, reinterpret_cast<const int32_t *>(pcm),
-                          frame_size, out);
+                          block_size, out);
 
       case PcmFormat::kS24In3Le:
         return EncodeImpl(fmt, reinterpret_cast<const int8_t(*)[3]>(pcm),
-                          frame_size, out);
+                          block_size, out);
 
       case PcmFormat::kF32:
         assert(pcm_ptr % alignof(float) == 0);
-        return EncodeImpl(fmt, reinterpret_cast<const float *>(pcm), frame_size,
+        return EncodeImpl(fmt, reinterpret_cast<const float *>(pcm), block_size,
                           out);
     }
 
@@ -192,15 +204,22 @@ class Encoder : public Base<struct lc3_encoder> {
 // Decoder Class
 class Decoder : public Base<struct lc3_decoder> {
   template <typename T>
-  int DecodeImpl(const uint8_t *in, int frame_size, PcmFormat fmt, T *pcm) {
+  int DecodeImpl(const uint8_t *in, int block_size, PcmFormat fmt, T *pcm) {
     if (states.size() != nchannels_) return -1;
 
     enum lc3_pcm_format cfmt = static_cast<enum lc3_pcm_format>(fmt);
     int ret = 0;
 
-    for (size_t ich = 0; ich < nchannels_; ich++)
-      ret |= lc3_decode(states[ich].get(), in + ich * frame_size, frame_size,
+    const uint8_t *in_ptr = in;
+    for (size_t ich = 0; ich < nchannels_; ich++) {
+      int frame_size = block_size / nchannels_
+          + (ich < block_size % nchannels_);
+
+      ret |= lc3_decode(states[ich].get(), in_ptr, frame_size,
                         cfmt, pcm + ich, nchannels_);
+
+      in_ptr += frame_size;
+    }
 
     return ret;
   }
@@ -241,7 +260,7 @@ class Decoder : public Base<struct lc3_decoder> {
 
   // Decode
   //
-  // Consecutive `nchannels` frames of size `frame_size` are decoded
+  // Decode a frame block of size `block_size`,
   // in the `pcm` buffer in interleaved way.
   //
   // The PCM samples are output in signed 16 bits, 24 bits, float,
@@ -250,39 +269,39 @@ class Decoder : public Base<struct lc3_decoder> {
   // The value returned is 0 on successs, 1 when PLC has been performed,
   // and -1 otherwise.
 
-  int Decode(const uint8_t *in, int frame_size, int16_t *pcm) {
-    return DecodeImpl(in, frame_size, PcmFormat::kS16, pcm);
+  int Decode(const uint8_t *in, int block_size, int16_t *pcm) {
+    return DecodeImpl(in, block_size, PcmFormat::kS16, pcm);
   }
 
-  int Decode(const uint8_t *in, int frame_size, int32_t *pcm) {
-    return DecodeImpl(in, frame_size, PcmFormat::kS24In3Le, pcm);
+  int Decode(const uint8_t *in, int block_size, int32_t *pcm) {
+    return DecodeImpl(in, block_size, PcmFormat::kS24In3Le, pcm);
   }
 
-  int Decode(const uint8_t *in, int frame_size, float *pcm) {
-    return DecodeImpl(in, frame_size, PcmFormat::kF32, pcm);
+  int Decode(const uint8_t *in, int block_size, float *pcm) {
+    return DecodeImpl(in, block_size, PcmFormat::kF32, pcm);
   }
 
-  int Decode(const uint8_t *in, int frame_size, PcmFormat fmt, void *pcm) {
+  int Decode(const uint8_t *in, int block_size, PcmFormat fmt, void *pcm) {
     uintptr_t pcm_ptr = reinterpret_cast<uintptr_t>(pcm);
 
     switch (fmt) {
       case PcmFormat::kS16:
         assert(pcm_ptr % alignof(int16_t) == 0);
-        return DecodeImpl(in, frame_size, fmt,
+        return DecodeImpl(in, block_size, fmt,
                           reinterpret_cast<int16_t *>(pcm));
 
       case PcmFormat::kS24:
         assert(pcm_ptr % alignof(int32_t) == 0);
-        return DecodeImpl(in, frame_size, fmt,
+        return DecodeImpl(in, block_size, fmt,
                           reinterpret_cast<int32_t *>(pcm));
 
       case PcmFormat::kS24In3Le:
-        return DecodeImpl(in, frame_size, fmt,
+        return DecodeImpl(in, block_size, fmt,
                           reinterpret_cast<int8_t(*)[3]>(pcm));
 
       case PcmFormat::kF32:
         assert(pcm_ptr % alignof(float) == 0);
-        return DecodeImpl(in, frame_size, fmt, reinterpret_cast<float *>(pcm));
+        return DecodeImpl(in, block_size, fmt, reinterpret_cast<float *>(pcm));
     }
 
     return -1;

@@ -31,6 +31,8 @@
 #include "lc3bin.h"
 #include "wave.h"
 
+#define MAX_CHANNELS 2
+
 
 /**
  * Error handling
@@ -158,11 +160,11 @@ int main(int argc, char *argv[])
     /* --- Check parameters --- */
 
     int frame_us = p.frame_ms * 1000;
-    int srate_hz, nch, nsamples;
+    int srate_hz, nchannels, nsamples;
     int pcm_sbits, pcm_sbytes;
 
     if (wave_read_header(fp_in,
-            &pcm_sbits, &pcm_sbytes, &srate_hz, &nch, &nsamples) < 0)
+            &pcm_sbits, &pcm_sbytes, &srate_hz, &nchannels, &nsamples) < 0)
         error(EINVAL, "Bad or unsupported WAVE input file");
 
     if (p.bitrate <= 0)
@@ -181,8 +183,8 @@ int main(int argc, char *argv[])
         (pcm_sbits == 24 && pcm_sbytes != 24/8 && pcm_sbytes != 32/8))
         error(EINVAL, "Sample storage on %d bytes", pcm_sbytes);
 
-    if (nch  < 1 || nch  > 2)
-        error(EINVAL, "Number of channels %d", nch);
+    if (nchannels < 1 || nchannels > MAX_CHANNELS)
+        error(EINVAL, "Number of channels %d", nchannels);
 
     if (p.srate_hz && (!LC3_HR_CHECK_SR_HZ(p.hrmode, p.srate_hz) ||
                        p.srate_hz > srate_hz                       ))
@@ -192,9 +194,18 @@ int main(int argc, char *argv[])
     int enc_samples = !p.srate_hz ? nsamples :
         ((int64_t)nsamples * enc_srate_hz) / srate_hz;
 
+    int block_bytes = lc3_hr_frame_block_bytes(
+        p.hrmode, frame_us, srate_hz, nchannels, p.bitrate);
+
+    int bitrate = lc3_hr_resolve_bitrate(
+        p.hrmode, frame_us, srate_hz, block_bytes);
+
+    if (bitrate != p.bitrate)
+        fprintf(stderr, "Bitrate adjusted to %d bps\n", bitrate);
+
     lc3bin_write_header(fp_out,
         frame_us, enc_srate_hz, p.hrmode,
-        p.bitrate, nch, enc_samples);
+        bitrate, nchannels, enc_samples);
 
     /* --- Setup encoding --- */
 
@@ -202,8 +213,6 @@ int main(int argc, char *argv[])
     uint8_t out[2 * LC3_HR_MAX_FRAME_BYTES];
     lc3_encoder_t enc[2];
 
-    int frame_bytes = lc3_hr_frame_bytes(
-        p.hrmode, frame_us, srate_hz, p.bitrate / nch);
     int frame_samples = lc3_hr_frame_samples(
         p.hrmode, frame_us, srate_hz);
     int encode_samples = nsamples + lc3_hr_delay_samples(
@@ -212,7 +221,7 @@ int main(int argc, char *argv[])
         pcm_sbytes == 32/8 ? LC3_PCM_FORMAT_S24 :
         pcm_sbytes == 24/8 ? LC3_PCM_FORMAT_S24_3LE : LC3_PCM_FORMAT_S16;
 
-    for (int ich = 0; ich < nch; ich++) {
+    for (int ich = 0; ich < nchannels; ich++) {
         enc[ich] = lc3_hr_setup_encoder(
             p.hrmode, frame_us, enc_srate_hz, srate_hz,
             malloc(lc3_hr_encoder_size(p.hrmode, frame_us, srate_hz)));
@@ -230,10 +239,10 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i * frame_samples < encode_samples; i++) {
 
-        int nread = wave_read_pcm(fp_in, pcm_sbytes, nch, frame_samples, pcm);
+        int nread = wave_read_pcm(fp_in, pcm_sbytes, nchannels, frame_samples, pcm);
 
-        memset(pcm + nread * nch * pcm_sbytes, 0,
-            nch * (frame_samples - nread) * pcm_sbytes);
+        memset(pcm + nread * nchannels * pcm_sbytes, 0,
+            nchannels * (frame_samples - nread) * pcm_sbytes);
 
         if (floorf(i * frame_us * 1e-6) > nsec) {
             float progress = fminf(
@@ -246,12 +255,19 @@ int main(int argc, char *argv[])
             nsec = (int)(i * frame_us * 1e-6);
         }
 
-        for (int ich = 0; ich < nch; ich++)
-            lc3_encode(enc[ich],
-                pcm_fmt, pcm + ich * pcm_sbytes, nch,
-                frame_bytes, out + ich * frame_bytes);
+        uint8_t *out_ptr = out;
+        for (int ich = 0; ich < nchannels; ich++) {
+            int frame_bytes = block_bytes / nchannels
+                + (ich < block_bytes % nchannels);
 
-        lc3bin_write_data(fp_out, out, nch, frame_bytes);
+            lc3_encode(enc[ich],
+                pcm_fmt, pcm + ich * pcm_sbytes, nchannels,
+                frame_bytes, out_ptr);
+
+            out_ptr += frame_bytes;
+        }
+
+        lc3bin_write_data(fp_out, out, block_bytes);
     }
 
     unsigned t = (clock_us() - t0) / 1000;
@@ -262,7 +278,7 @@ int main(int argc, char *argv[])
 
     /* --- Cleanup --- */
 
-    for (int ich = 0; ich < nch; ich++)
+    for (int ich = 0; ich < nchannels; ich++)
         free(enc[ich]);
 
     if (fp_in != stdin)

@@ -280,13 +280,28 @@ int lc3_hr_frame_bytes(bool hrmode, int dt_us, int sr_hz, int bitrate);
 int lc3_frame_bytes(int dt_us, int bitrate);
 
 /**
+ * Return the size of frame blocks, from bitrate
+ * A frame block contains the frame data from all channels.
+ * hrmode          Enable High-Resolution mode (48000 and 96000 sample rates)
+ * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
+ * sr_hz           Sample rate in Hz, 8000, 16000, 24000, 32000, 48000 or 96000
+ * nchannels       The number of channels (or frames) in the block (<= 8)
+ * bitrate         Target bitrate in bit per second, 0 or `INT_MAX` returns
+ *                 respectively the minimum and maximum allowed size.
+ * return          The floor size in bytes of the frames, -1 on bad parameters
+ */
+int lc3_hr_frame_block_bytes(bool hrmode,
+    int dt_us, int sr_hz, int nchannels, int bitrate);
+
+int lc3_frame_block_bytes(int dt_us, int nframes, int bitrate);
+
+/**
  * Resolve the bitrate, from the size of frames
  * hrmode          Enable High-Resolution mode (48000 and 96000 sample rates)
  * dt_us           Frame duration in us, 2500, 5000, 7500 or 10000
  * sr_hz           Sample rate in Hz, 8000, 16000, 24000, 32000, 48000 or 96000
- * nbytes          Size in bytes of the frames, 0 or `INT_MAX` returns
- *                 respectively the minimum and maximum allowed bitrate.
- * return          The according bitrate in bps, -1 on bad parameters
+ * nbytes          Size in bytes of the frames or frame blocks
+ * return          The ceiled bitrate in bps, -1 on bad parameters
  */
 int lc3_hr_resolve_bitrate(bool hrmode, int dt_us, int sr_hz, int nbytes);
 

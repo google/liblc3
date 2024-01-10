@@ -103,21 +103,33 @@ int lc3_frame_samples(int dt_us, int sr_hz)
 }
 
 /**
- * Return the size of frames, from bitrate
+ * Return the size of frames or frame blocks, from bitrate
  */
-int lc3_hr_frame_bytes(bool hrmode, int dt_us, int sr_hz, int bitrate)
+int lc3_hr_frame_block_bytes(bool hrmode,
+    int dt_us, int sr_hz, int nchannels, int bitrate)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
 
-    if (dt >= LC3_NUM_DT || sr >= LC3_NUM_SRATE)
+    if (dt >= LC3_NUM_DT || sr >= LC3_NUM_SRATE
+            || nchannels < 1 || nchannels > 8 || bitrate < 0)
         return -1;
 
-    bitrate = LC3_CLIP(bitrate,
-        lc3_hr_resolve_bitrate(hrmode, dt_us, sr_hz, 0),
-        lc3_hr_resolve_bitrate(hrmode, dt_us, sr_hz, INT_MAX));
+    bitrate = LC3_CLIP(bitrate, 0, 8*LC3_HR_MAX_BITRATE);
 
-    return (bitrate * (1 + dt)) / 3200;
+    return LC3_CLIP((bitrate * (1 + dt)) / 3200,
+        nchannels * lc3_min_frame_bytes(dt, sr),
+        nchannels * lc3_max_frame_bytes(dt, sr) );
+}
+
+int lc3_frame_bock_bytes(int dt_us, int nchannels, int bitrate)
+{
+    return lc3_hr_frame_block_bytes(false, dt_us, 8000, nchannels, bitrate);
+}
+
+int lc3_hr_frame_bytes(bool hrmode, int dt_us, int sr_hz, int bitrate)
+{
+    return lc3_hr_frame_block_bytes(hrmode, dt_us, sr_hz, 1, bitrate);
 }
 
 int lc3_frame_bytes(int dt_us, int bitrate)
@@ -126,21 +138,17 @@ int lc3_frame_bytes(int dt_us, int bitrate)
 }
 
 /**
- * Resolve the bitrate, from the size of frames
+ * Resolve the bitrate, from the size of frames or frame blocks
  */
 int lc3_hr_resolve_bitrate(bool hrmode, int dt_us, int sr_hz, int nbytes)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
 
-    if (dt >= LC3_NUM_DT || sr >= LC3_NUM_SRATE)
+    if (dt >= LC3_NUM_DT || sr >= LC3_NUM_SRATE || nbytes < 0)
         return -1;
 
-    nbytes = LC3_CLIP(nbytes,
-        lc3_min_frame_bytes(dt, sr),
-        lc3_max_frame_bytes(dt, sr));
-
-    return (nbytes * 3200) / (1 + dt);
+    return LC3_MIN(((int64_t)nbytes * 3200 + dt) / (1 + dt), INT_MAX);
 }
 
 int lc3_resolve_bitrate(int dt_us, int nbytes)

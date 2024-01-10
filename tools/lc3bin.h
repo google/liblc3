@@ -42,8 +42,8 @@ int lc3bin_read_header(FILE *fp,
  * Read LC3 block of data
  * fp              Opened file
  * nchannels       Number of channels
- * buffer          Output buffer of `nchannels * LC3_MAX_FRAME_BYTES`
- * return          Size of each 'nchannels` frames, -1 on error
+ * buffer          Output buffer of `nchannels * LC3_HR_MAX_FRAME_BYTES`
+ * return          Size of the frames block, -1 on error
  */
 int lc3bin_read_data(FILE *fp, int nchannels, void *buffer);
 
@@ -65,11 +65,9 @@ void lc3bin_write_header(FILE *fp,
  * Write LC3 block of data
  * fp              Opened file
  * data            The frames data
- * nchannels       Number of channels
- * frame_bytes     Size of each `nchannels` frames
+ * nbytes          Size of the frames block
  */
-void lc3bin_write_data(FILE *fp,
-    const void *data, int nchannels, int frame_bytes);
+void lc3bin_write_data(FILE *fp, const void *data, int nbytes);
 
 
 #endif /* __LC3BIN_H */

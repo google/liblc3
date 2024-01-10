@@ -80,12 +80,11 @@ int lc3bin_read_data(FILE *fp, int nchannels, void *buffer)
     uint16_t nbytes;
 
     if (fread(&nbytes, sizeof(nbytes), 1, fp) < 1
-            || nbytes > nchannels * LC3_MAX_FRAME_BYTES
-            || nbytes % nchannels
+            || nbytes > nchannels * LC3_HR_MAX_FRAME_BYTES
             || fread(buffer, nbytes, 1, fp) < 1)
         return -1;
 
-    return nbytes / nchannels;
+    return nbytes;
 }
 
 /**
@@ -118,11 +117,10 @@ void lc3bin_write_header(FILE *fp,
 /**
  * Write LC3 block of data
  */
-void lc3bin_write_data(FILE *fp,
-    const void *data, int nchannels, int frame_bytes)
+void lc3bin_write_data(FILE *fp, const void *data, int nbytes)
 {
-    uint16_t nbytes = nchannels * frame_bytes;
-    fwrite(&nbytes, sizeof(nbytes), 1, fp);
+    uint16_t hdr_nbytes = nbytes;
+    fwrite(&hdr_nbytes, sizeof(hdr_nbytes), 1, fp);
 
     fwrite(data, 1, nbytes, fp);
 }
