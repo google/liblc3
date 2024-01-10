@@ -605,25 +605,27 @@ LC3_HOT static void unquantize(int lfcb_idx, int hfcb_idx,
  */
 static void enum_mvpq(const int *c, int n, int *idx, bool *ls)
 {
-    int ci, i, j;
+    int ci, i;
 
     /* --- Scan for 1st significant coeff --- */
 
-    for (i = 0, c += n; (ci = *(--c)) == 0 ; i++);
+    for (i = 0, c += n; (ci = *(--c)) == 0 && i < 15; i++);
 
     *idx = 0;
     *ls = ci < 0;
 
     /* --- Scan remaining coefficients --- */
 
-    for (i++, j = LC3_ABS(ci); i < n; i++, j += LC3_ABS(ci)) {
+    unsigned j = LC3_ABS(ci);
+
+    for (i++; i < n; i++, j += LC3_ABS(ci)) {
 
         if ((ci = *(--c)) != 0) {
             *idx = (*idx << 1) | *ls;
             *ls = ci < 0;
         }
 
-        *idx += lc3_sns_mpvq_offsets[i][j];
+        *idx += lc3_sns_mpvq_offsets[i][LC3_MIN(j, 10)];
     }
 }
 
