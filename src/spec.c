@@ -35,7 +35,7 @@ static int resolve_gain_offset(enum lc3_srate sr, int nbytes)
     int sr_ind = lc3_hr(sr) ? 4 + (sr - LC3_SRATE_48K_HR) : sr;
 
     int g_off = (nbytes * 8) / (10 * (1 + sr_ind));
-    return LC3_MIN(lc3_hr(sr) ? 181 : 255,
+    return LC3_MIN(sr >= LC3_SRATE_96K_HR ? 181 : 255,
         105 + 5*(1 + sr_ind) + LC3_MIN(g_off, 115));
 }
 
