@@ -26,7 +26,7 @@ class Tns:
     SUB_LIM_2M5_WB   = [ [   3,  20,  40  ] ]
     SUB_LIM_2M5_SSWB = [ [   3,  30,  60  ] ]
     SUB_LIM_2M5_SWB  = [ [   3,  40,  80  ] ]
-    SUB_LIM_2M5_FB   = [ [   3,  50, 100  ] ]
+    SUB_LIM_2M5_FB   = [ [   3,  51, 100  ] ]
 
     SUB_LIM_2M5 = [
         SUB_LIM_2M5_NB , SUB_LIM_2M5_WB, SUB_LIM_2M5_SSWB,

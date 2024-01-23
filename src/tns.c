@@ -67,7 +67,7 @@ LC3_HOT static void compute_lpc_coeffs(
     static const int sub_2m5_wb[]   = {  3,  20,  40 };
     static const int sub_2m5_sswb[] = {  3,  30,  60 };
     static const int sub_2m5_swb[]  = {  3,  40,  80 };
-    static const int sub_2m5_fb[]   = {  3,  50, 100 };
+    static const int sub_2m5_fb[]   = {  3,  51, 100 };
 
     static const int sub_5m_nb[]    = {  6,  23,  40 };
     static const int sub_5m_wb[]    = {  6,  43,  80 };
