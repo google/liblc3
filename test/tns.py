@@ -203,6 +203,7 @@ class TnsAnalysis(Tns):
         delta = np.pi / 17
         rc_i = np.rint(np.arcsin(rc) / delta).astype(int) + 8
         rc_q = np.sin(delta * (rc_i - 8))
+        rc_q = np.rint(rc_q * 2**15) / 2**15
 
         rc_order = len(rc_i) - np.argmin(rc_i[::-1] == 8)
 
@@ -337,6 +338,7 @@ class TnsSynthesis(Tns):
 
             rc_order = self.rc_order[f]
             rc = np.sin((np.pi / 17) * (self.rc[f] - 8))
+            rc = np.rint(rc * 2**15) / 2**15
 
             if rc_order > 0:
                 i0 = Tns.FREQ_LIM[self.dt][bw][f]

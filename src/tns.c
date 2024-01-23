@@ -241,11 +241,12 @@ LC3_HOT static void lpc_reflection(
  */
 static void quantize_rc(const float *rc, int maxorder, int *order, int *rc_q)
 {
-    /* Quantization table, sin(delta * (i + 0.5)), delta = Pi / 17 */
+    /* Quantization table, sin(delta * (i + 0.5)), delta = Pi / 17,
+     * rounded to fixed point Q15 value (LC3-Plus HR requirements). */
 
     static float q_thr[] = {
-        9.22683595e-02, 2.73662990e-01, 4.45738356e-01, 6.02634636e-01,
-        7.39008917e-01, 8.50217136e-01, 9.32472229e-01, 9.82973100e-01
+        0x0bcfp-15, 0x2307p-15, 0x390ep-15, 0x4d23p-15,
+        0x5e98p-15, 0x6cd4p-15, 0x775bp-15, 0x7dd2p-15,
     };
 
     *order = maxorder;
@@ -270,12 +271,12 @@ static void quantize_rc(const float *rc, int maxorder, int *order, int *rc_q)
  */
 static void unquantize_rc(const int *rc_q, int order, float rc[8])
 {
-    /* Quantization table, sin(delta * i), delta = Pi / 17 */
+    /* Quantization table, sin(delta * i), delta = Pi / 17,
+     * rounded to fixed point Q15 value (LC3-Plus HR requirements). */
 
     static float q_inv[] = {
-        0.00000000e+00, 1.83749517e-01, 3.61241664e-01, 5.26432173e-01,
-        6.73695641e-01, 7.98017215e-01, 8.95163302e-01, 9.61825645e-01,
-        9.95734176e-01
+        0x0000p-15, 0x1785p-15, 0x2e3dp-15, 0x4362p-15,
+        0x563cp-15, 0x6625p-15, 0x7295p-15, 0x7b1dp-15, 0x7f74p-15,
     };
 
     int i;

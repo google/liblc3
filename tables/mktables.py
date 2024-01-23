@@ -141,9 +141,19 @@ def tns_lag_window():
 def tns_quantization_table():
 
     print('\n--- tns quantization table ---')
-    print_table(np.sin((np.arange(8) + 0.5) * (np.pi / 17)))
-    print_table(np.sin((np.arange(8)) * (np.pi / 17)))
 
+    xe = np.sin((np.arange(8) + 0.5) * (np.pi / 17))
+    xe = np.rint(xe * 2**15).astype(np.int16)
+
+    xd = np.sin(np.arange(9) * (np.pi / 17))
+    xd = np.rint(xd * 2**15).astype(np.int16)
+
+    for x in (xe, xd):
+        print()
+        for (i, xi) in enumerate(x):
+            print('0x{:04x}p-15,'.format(xi), end = '\n' if i%4 == 4-1 else ' ')
+        if len(x) % 4:
+            print()
 
 def quant_iq_table():
 
