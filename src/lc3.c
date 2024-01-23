@@ -117,7 +117,7 @@ int lc3_hr_frame_block_bytes(bool hrmode,
 
     bitrate = LC3_CLIP(bitrate, 0, 8*LC3_HR_MAX_BITRATE);
 
-    return LC3_CLIP((bitrate * (1 + dt)) / 3200,
+    return LC3_CLIP((bitrate * (int)(1 + dt)) / 3200,
         nchannels * lc3_min_frame_bytes(dt, sr),
         nchannels * lc3_max_frame_bytes(dt, sr) );
 }
