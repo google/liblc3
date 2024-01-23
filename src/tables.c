@@ -56,19 +56,20 @@ const int lc3_ns_4m[LC3_NUM_SRATE] = {
 
 /**
  * Limits on size of frame
+ * For fallback operation, half-size should be accepted.
  */
 
 const int lc3_frame_bytes_hr_lim
         [LC3_NUM_DT][LC3_NUM_SRATE - LC3_SRATE_48K_HR][2] = {
 
-    [LC3_DT_2M5][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = {  54, 210 },
-    [LC3_DT_2M5][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = {  62, 210 },
+    [LC3_DT_2M5][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = {  54/2, 210 },
+    [LC3_DT_2M5][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = {  62/2, 210 },
 
-    [LC3_DT_5M ][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = {  93, 375 },
-    [LC3_DT_5M ][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = { 109, 375 },
+    [LC3_DT_5M ][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = {  93/2, 375 },
+    [LC3_DT_5M ][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = { 109/2, 375 },
 
-    [LC3_DT_10M][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = { 156, 625 },
-    [LC3_DT_10M][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = { 187, 625 },
+    [LC3_DT_10M][LC3_SRATE_48K_HR - LC3_SRATE_48K_HR] = { 156/2, 625 },
+    [LC3_DT_10M][LC3_SRATE_96K_HR - LC3_SRATE_48K_HR] = { 187/2, 625 },
 
 };
 

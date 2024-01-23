@@ -744,8 +744,8 @@ int lc3_decode(struct lc3_decoder *decoder, const void *in, int nbytes,
     if (!decoder)
         return -1;
 
-    if (in && (nbytes < lc3_min_frame_bytes(decoder->dt, decoder->sr) ||
-               nbytes > lc3_max_frame_bytes(decoder->dt, decoder->sr)   ))
+    if (in && (nbytes < LC3_MIN_FRAME_BYTES ||
+               nbytes > lc3_max_frame_bytes(decoder->dt, decoder->sr) ))
         return -1;
 
     /* --- Processing --- */
