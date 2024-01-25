@@ -75,7 +75,7 @@ struct parameters {
 static struct parameters parse_args(int argc, char *argv[])
 {
     static const char *usage =
-        "Usage: %s [in_file] [wav_file]\n"
+        "Usage: %s [wav_file] [out_file]\n"
         "\n"
         "wav_file\t"  "Input wave file, stdin if omitted\n"
         "out_file\t"  "Output bitstream file, stdout if omitted\n"
