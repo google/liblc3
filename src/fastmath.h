@@ -24,6 +24,51 @@
 
 
 /**
+ * IEEE 754 Floating point representation
+ */
+
+#define LC3_IEEE754_SIGN_SHL   (31)
+#define LC3_IEEE754_SIGN_MASK  (1 << LC3_IEEE754_SIGN_SHL)
+
+#define LC3_IEEE754_EXP_SHL    (23)
+#define LC3_IEEE754_EXP_MASK   (0xff << LC3_IEEE754_EXP_SHL)
+#define LC3_IEEE754_EXP_BIAS   (127)
+
+
+/**
+ * Fast multiply floating-point number by integral power of 2
+ * x               Operand, finite number
+ * exp             Exponent such that 2^x is finite
+ * return          2^exp
+ */
+static inline float lc3_ldexpf(float _x, int exp) {
+    union { float f; uint32_t u; } x = { .f = _x };
+
+    if (x.u & LC3_IEEE754_EXP_MASK)
+        x.u += exp << LC3_IEEE754_EXP_SHL;
+
+    return x.f;
+}
+
+/**
+ * Fast convert floating-point number to fractional and integral components
+ * x               Operand, finite number
+ * exp             Return the exponent part
+ * return          The normalized fraction in [0.5:1[
+ */
+static inline float lc3_frexpf(float _x, int *exp) {
+    union { float f; uint32_t u; } x = { .f = _x };
+
+    int e = (x.u & LC3_IEEE754_EXP_MASK) >> LC3_IEEE754_EXP_SHL;
+    *exp = e - (LC3_IEEE754_EXP_BIAS - 1);
+
+    x.u = (x.u & ~LC3_IEEE754_EXP_MASK) |
+        ((LC3_IEEE754_EXP_BIAS - 1) << LC3_IEEE754_EXP_SHL);
+
+    return x.f;
+}
+
+/**
  * Fast 2^n approximation
  * x               Operand, range -8 to 8
  * return          2^x approximation (max relative error ~ 7e-6)
@@ -69,7 +114,7 @@ static inline float lc3_log2f(float x)
     static const float c[] = {
         -1.29479677, 5.11769018, -8.42295281, 8.10557963, -3.50567360 };
 
-    x = frexpf(x, &e);
+    x = lc3_frexpf(x, &e);
 
     y = (    c[0]) * x;
     y = (y + c[1]) * x;
