@@ -74,6 +74,13 @@
 #endif /* __clang__ */
 
 
+/**
+ * Change the visibility of interface functions
+ */
+
+#define LC3_EXPORT \
+    __attribute__((visibility ("default")))
+
 
 /**
  * Macros

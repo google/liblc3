@@ -86,7 +86,7 @@ static enum lc3_srate resolve_srate(int hz, bool hrmode)
 /**
  * Return the number of PCM samples in a frame
  */
-int lc3_hr_frame_samples(bool hrmode, int dt_us, int sr_hz)
+LC3_EXPORT int lc3_hr_frame_samples(bool hrmode, int dt_us, int sr_hz)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
@@ -97,7 +97,7 @@ int lc3_hr_frame_samples(bool hrmode, int dt_us, int sr_hz)
     return lc3_ns(dt, sr);
 }
 
-int lc3_frame_samples(int dt_us, int sr_hz)
+LC3_EXPORT int lc3_frame_samples(int dt_us, int sr_hz)
 {
     return lc3_hr_frame_samples(false, dt_us, sr_hz);
 }
@@ -105,8 +105,8 @@ int lc3_frame_samples(int dt_us, int sr_hz)
 /**
  * Return the size of frames or frame blocks, from bitrate
  */
-int lc3_hr_frame_block_bytes(bool hrmode,
-    int dt_us, int sr_hz, int nchannels, int bitrate)
+LC3_EXPORT int lc3_hr_frame_block_bytes(
+    bool hrmode, int dt_us, int sr_hz, int nchannels, int bitrate)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
@@ -122,17 +122,18 @@ int lc3_hr_frame_block_bytes(bool hrmode,
         nchannels * lc3_max_frame_bytes(dt, sr) );
 }
 
-int lc3_frame_bock_bytes(int dt_us, int nchannels, int bitrate)
+LC3_EXPORT int lc3_frame_bock_bytes(int dt_us, int nchannels, int bitrate)
 {
     return lc3_hr_frame_block_bytes(false, dt_us, 8000, nchannels, bitrate);
 }
 
-int lc3_hr_frame_bytes(bool hrmode, int dt_us, int sr_hz, int bitrate)
+LC3_EXPORT int lc3_hr_frame_bytes(
+    bool hrmode, int dt_us, int sr_hz, int bitrate)
 {
     return lc3_hr_frame_block_bytes(hrmode, dt_us, sr_hz, 1, bitrate);
 }
 
-int lc3_frame_bytes(int dt_us, int bitrate)
+LC3_EXPORT int lc3_frame_bytes(int dt_us, int bitrate)
 {
     return lc3_hr_frame_bytes(false, dt_us, 8000, bitrate);
 }
@@ -140,7 +141,8 @@ int lc3_frame_bytes(int dt_us, int bitrate)
 /**
  * Resolve the bitrate, from the size of frames or frame blocks
  */
-int lc3_hr_resolve_bitrate(bool hrmode, int dt_us, int sr_hz, int nbytes)
+LC3_EXPORT int lc3_hr_resolve_bitrate(
+    bool hrmode, int dt_us, int sr_hz, int nbytes)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
@@ -151,7 +153,7 @@ int lc3_hr_resolve_bitrate(bool hrmode, int dt_us, int sr_hz, int nbytes)
     return LC3_MIN(((int64_t)nbytes * 3200 + dt) / (1 + dt), INT_MAX);
 }
 
-int lc3_resolve_bitrate(int dt_us, int nbytes)
+LC3_EXPORT int lc3_resolve_bitrate(int dt_us, int nbytes)
 {
     return lc3_hr_resolve_bitrate(false, dt_us, 8000, nbytes);
 }
@@ -159,7 +161,7 @@ int lc3_resolve_bitrate(int dt_us, int nbytes)
 /**
  * Return algorithmic delay, as a number of samples
  */
-int lc3_hr_delay_samples(bool hrmode, int dt_us, int sr_hz)
+LC3_EXPORT int lc3_hr_delay_samples(bool hrmode, int dt_us, int sr_hz)
 {
     enum lc3_dt dt = resolve_dt(dt_us, hrmode);
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
@@ -170,7 +172,7 @@ int lc3_hr_delay_samples(bool hrmode, int dt_us, int sr_hz)
     return 2 * lc3_nd(dt, sr) - lc3_ns(dt, sr);
 }
 
-int lc3_delay_samples(int dt_us, int sr_hz)
+LC3_EXPORT int lc3_delay_samples(int dt_us, int sr_hz)
 {
     return lc3_hr_delay_samples(false, dt_us, sr_hz);
 }
@@ -366,7 +368,7 @@ static void encode(struct lc3_encoder *encoder,
 /**
  * Return size needed for an encoder
  */
-unsigned lc3_hr_encoder_size(bool hrmode, int dt_us, int sr_hz)
+LC3_EXPORT unsigned lc3_hr_encoder_size(bool hrmode, int dt_us, int sr_hz)
 {
     if (resolve_dt(dt_us, hrmode) >= LC3_NUM_DT ||
         resolve_srate(sr_hz, hrmode) >= LC3_NUM_SRATE)
@@ -376,7 +378,7 @@ unsigned lc3_hr_encoder_size(bool hrmode, int dt_us, int sr_hz)
         (LC3_ENCODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
 }
 
-unsigned lc3_encoder_size(int dt_us, int sr_hz)
+LC3_EXPORT unsigned lc3_encoder_size(int dt_us, int sr_hz)
 {
     return lc3_hr_encoder_size(false, dt_us, sr_hz);
 }
@@ -384,8 +386,8 @@ unsigned lc3_encoder_size(int dt_us, int sr_hz)
 /**
  * Setup encoder
  */
-struct lc3_encoder *lc3_hr_setup_encoder(bool hrmode,
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
+LC3_EXPORT struct lc3_encoder *lc3_hr_setup_encoder(
+    bool hrmode, int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
 {
     if (sr_pcm_hz <= 0)
         sr_pcm_hz = sr_hz;
@@ -416,7 +418,7 @@ struct lc3_encoder *lc3_hr_setup_encoder(bool hrmode,
     return encoder;
 }
 
-struct lc3_encoder *lc3_setup_encoder(
+LC3_EXPORT struct lc3_encoder *lc3_setup_encoder(
     int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
 {
     return lc3_hr_setup_encoder(false, dt_us, sr_hz, sr_pcm_hz, mem);
@@ -425,8 +427,8 @@ struct lc3_encoder *lc3_setup_encoder(
 /**
  * Encode a frame
  */
-int lc3_encode(struct lc3_encoder *encoder, enum lc3_pcm_format fmt,
-    const void *pcm, int stride, int nbytes, void *out)
+LC3_EXPORT int lc3_encode(struct lc3_encoder *encoder,
+    enum lc3_pcm_format fmt, const void *pcm, int stride, int nbytes, void *out)
 {
     static void (* const load[])(struct lc3_encoder *, const void *, int) = {
         [LC3_PCM_FORMAT_S16    ] = load_s16,
@@ -666,7 +668,7 @@ static void complete(struct lc3_decoder *decoder)
 /**
  * Return size needed for a decoder
  */
-unsigned lc3_hr_decoder_size(bool hrmode, int dt_us, int sr_hz)
+LC3_EXPORT unsigned lc3_hr_decoder_size(bool hrmode, int dt_us, int sr_hz)
 {
     if (resolve_dt(dt_us, hrmode) >= LC3_NUM_DT ||
         resolve_srate(sr_hz, hrmode) >= LC3_NUM_SRATE)
@@ -676,7 +678,7 @@ unsigned lc3_hr_decoder_size(bool hrmode, int dt_us, int sr_hz)
         (LC3_DECODER_BUFFER_COUNT(dt_us, sr_hz)-1) * sizeof(float);
 }
 
-unsigned lc3_decoder_size(int dt_us, int sr_hz)
+LC3_EXPORT unsigned lc3_decoder_size(int dt_us, int sr_hz)
 {
     return lc3_hr_decoder_size(false, dt_us, sr_hz);
 }
@@ -684,8 +686,8 @@ unsigned lc3_decoder_size(int dt_us, int sr_hz)
 /**
  * Setup decoder
  */
-struct lc3_decoder *lc3_hr_setup_decoder(bool hrmode,
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
+LC3_EXPORT struct lc3_decoder *lc3_hr_setup_decoder(
+    bool hrmode, int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
 {
     if (sr_pcm_hz <= 0)
         sr_pcm_hz = sr_hz;
@@ -720,7 +722,7 @@ struct lc3_decoder *lc3_hr_setup_decoder(bool hrmode,
     return decoder;
 }
 
-struct lc3_decoder *lc3_setup_decoder(
+LC3_EXPORT struct lc3_decoder *lc3_setup_decoder(
     int dt_us, int sr_hz, int sr_pcm_hz, void *mem)
 {
     return lc3_hr_setup_decoder(false, dt_us, sr_hz, sr_pcm_hz, mem);
@@ -729,8 +731,8 @@ struct lc3_decoder *lc3_setup_decoder(
 /**
  * Decode a frame
  */
-int lc3_decode(struct lc3_decoder *decoder, const void *in, int nbytes,
-    enum lc3_pcm_format fmt, void *pcm, int stride)
+LC3_EXPORT int lc3_decode(struct lc3_decoder *decoder,
+    const void *in, int nbytes, enum lc3_pcm_format fmt, void *pcm, int stride)
 {
     static void (* const store[])(struct lc3_decoder *, void *, int) = {
         [LC3_PCM_FORMAT_S16    ] = store_s16,
