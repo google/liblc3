@@ -135,7 +135,7 @@ LC3_HOT static int estimate_gain(
 
     float x_max = sqrtf(x2_max);
     float nf = lc3_hr(sr) ?
-        ldexpf(x_max, -reg_bits) * lc3_exp2f(-low_bits) : 0;
+        lc3_ldexpf(x_max, -reg_bits) * lc3_exp2f(-low_bits) : 0;
 
     for (int i = 0; i < n4; i++)
         e[i].q16 = lc3_db_q16(fmaxf(e[i].f + nf, 1e-10f));

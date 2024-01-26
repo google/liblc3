@@ -222,7 +222,7 @@ static void load_s24(
 
     for (int i = 0; i < ns; i++, pcm += stride) {
         xt[i] = *pcm >> 8;
-        xs[i] = ldexpf(*pcm, -8);
+        xs[i] = lc3_ldexpf(*pcm, -8);
     }
 }
 
@@ -249,7 +249,7 @@ static void load_s24_3le(
                      ((uint32_t)pcm[2] << 24)  ;
 
         xt[i] = in >> 16;
-        xs[i] = ldexpf(in, -16);
+        xs[i] = lc3_ldexpf(in, -16);
     }
 }
 
@@ -271,7 +271,7 @@ static void load_float(
     int ns = lc3_ns(dt, sr);
 
     for (int i = 0; i < ns; i++, pcm += stride) {
-        xs[i] = ldexpf(*pcm, 15);
+        xs[i] = lc3_ldexpf(*pcm, 15);
         xt[i] = LC3_SAT16((int32_t)xs[i]);
     }
 }
@@ -500,8 +500,8 @@ static void store_s24(
     int ns = lc3_ns(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
-        int32_t s = *xs >= 0 ? (int32_t)(ldexpf(*xs, 8) + 0.5f)
-                             : (int32_t)(ldexpf(*xs, 8) - 0.5f);
+        int32_t s = *xs >= 0 ? (int32_t)(lc3_ldexpf(*xs, 8) + 0.5f)
+                             : (int32_t)(lc3_ldexpf(*xs, 8) - 0.5f);
         *pcm = LC3_SAT24(s);
     }
 }
@@ -523,8 +523,8 @@ static void store_s24_3le(
     int ns = lc3_ns(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += 3*stride) {
-        int32_t s = *xs >= 0 ? (int32_t)(ldexpf(*xs, 8) + 0.5f)
-                             : (int32_t)(ldexpf(*xs, 8) - 0.5f);
+        int32_t s = *xs >= 0 ? (int32_t)(lc3_ldexpf(*xs, 8) + 0.5f)
+                             : (int32_t)(lc3_ldexpf(*xs, 8) - 0.5f);
 
         s = LC3_SAT24(s);
         pcm[0] = (s >>  0) & 0xff;
@@ -550,7 +550,7 @@ static void store_float(
     int ns = lc3_ns(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
-        float s = ldexpf(*xs, -15);
+        float s = lc3_ldexpf(*xs, -15);
         *pcm = fminf(fmaxf(s, -1.f), 1.f);
     }
 }
