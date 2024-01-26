@@ -28,7 +28,9 @@ CC := $(if $(CC)=cc,gcc,$(CC))
 AS := $(if $(AS)=as,$(CC),$(AS))
 LD := $(if $(LD)=ld,$(CC),$(LD))
 
-CFLAGS := $(if $(DEBUG),-O0 -g,-O3)
+CFLAGS  := $(if $(DEBUG),-O0 -g,-O3)
+LDFLAGS := $(if $(DEBUG),-O0 -g,-O3)
+
 CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 
 ifneq ($(LC3_PLUS),)
@@ -136,11 +138,12 @@ $(BUILD_DIR)/%.o: %.cc $(MAKEFILE_DEPS)
 	    $(addprefix -I,$(INCLUDE)) \
 	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
 
-$(LIB): CFLAGS += -fPIC
+$(LIB): CFLAGS += -fvisibility=hidden -flto -fPIC
+$(LIB): LDFLAGS += -flto -shared
 $(LIB): $(MAKEFILE_DEPS)
 	@echo "  LD      $(notdir $@)"
 	$(V)mkdir -p $(dir $@)
-	$(V)$(LD) $(filter %.o,$^) -shared -o $@
+	$(V)$(LD) $(filter %.o,$^) $(LDFLAGS) -o $@
 
 $(BIN): $(MAKEFILE_DEPS)
 	@echo "  LD      $(notdir $@)"

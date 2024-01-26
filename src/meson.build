@@ -33,6 +33,7 @@ lc3lib = library('lc3',
 		lc3_sources,
 		dependencies: m_dep,
 		include_directories: inc,
+		gnu_symbol_visibility: 'hidden',
 		soversion: 1,
 		install: true)
 

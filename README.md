@@ -146,7 +146,7 @@ Meson build system is also available to build and install lc3 codec in Linux
 environment.
 
 ```sh
-$ meson build
+$ meson setup build
 $ cd build && meson install
 ```
 
