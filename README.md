@@ -17,6 +17,7 @@ The directory layout is as follows :
 - include:      Library interface
 - src:          Source files
 - tools:        Standalone encoder/decoder tools
+- python:       Python wrapper
 - test:         Unit testing framework
 - fuzz:         Roundtrip fuzz testing harness
 - build:        Building outputs
@@ -62,7 +63,7 @@ Compiled library will be found in `bin` directory.
 
 ## Tools
 
-Tools can be all compiled, while involking `make` as follows :
+Tools can be all compiled, while invoking `make` as follows :
 
 ```sh
 $ make tools
@@ -138,6 +139,7 @@ The conformance reports can be found [here](conformance/README.md)
 The codec was [_here_](https://hydrogenaud.io/index.php/topic,122575.0.html)
 subjectively evaluated in a blind listening test.
 
+
 ## Meson build system
 
 Meson build system is also available to build and install lc3 codec in Linux
@@ -148,3 +150,18 @@ $ meson build
 $ cd build && meson install
 ```
 
+## Python wrapper
+
+A python wrapper, installed as follows, is available in the `python` directory.
+
+```sh
+$ python3 -m pip install ./python
+```
+
+Decoding and encoding tools are provided in `python/tools`, like C tools,
+you can easly test encoding / decoding loop with :
+
+```sh
+$ python3 ./python/tools/encoder.py <in.wav> --bitrate <bitrate> | \
+  python3 ./python/tools/decoder.py > <out.wav>
+```
