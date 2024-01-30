@@ -74,12 +74,8 @@ class Base {
   int GetFrameSamples() {
     return lc3_hr_frame_samples(hrmode_, dt_us_, sr_pcm_hz_); }
 
-  // Return the size of frames, from bitrate
-  int GetFrameBytes(int bitrate) {
-    return lc3_hr_frame_bytes(hrmode_, dt_us_, sr_hz_, bitrate); }
-
   // Return the size of a frame block, from bitrate
-  int GetFrameBlockBytes(int bitrate) {
+  int GetFrameBytes(int bitrate) {
     return lc3_hr_frame_block_bytes(
         hrmode_, dt_us_, sr_hz_, nchannels_, bitrate); }
 
