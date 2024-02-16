@@ -155,7 +155,7 @@ $ cd build && meson install
 A python wrapper, installed as follows, is available in the `python` directory.
 
 ```sh
-$ python3 -m pip install ./python
+$ python3 -m pip install .
 ```
 
 Decoding and encoding tools are provided in `python/tools`, like C tools,

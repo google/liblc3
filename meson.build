@@ -32,3 +32,7 @@ subdir('src')
 if get_option('tools')
     subdir('tools')
 endif
+
+if get_option('python')
+    subdir('python')
+endif

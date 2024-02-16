@@ -16,3 +16,8 @@ option('tools',
     type: 'boolean',
     value: false,
     description: 'Build tools')
+
+option('python',
+    type: 'boolean',
+    value: false,
+    description: 'Build python bindings')

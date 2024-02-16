@@ -17,6 +17,8 @@
 import array
 import ctypes
 import enum
+import glob
+import os
 
 from ctypes import c_bool, c_byte, c_int, c_uint, c_size_t, c_void_p
 from ctypes.util import find_library
@@ -55,7 +57,12 @@ class _Base:
             raise ValueError("Invalid sample rate: %d Hz" % samplerate)
 
         if libpath is None:
-            libpath = find_library("lc3")
+            mesonpy_lib = glob.glob(os.path.join(os.path.dirname(__file__), '.lc3.mesonpy.libs', '*lc3*'))
+
+            if mesonpy_lib:
+                libpath = mesonpy_lib[0]
+            else:
+                libpath = find_library("lc3")
             if not libpath:
                 raise Exception("LC3 library not found")
 
