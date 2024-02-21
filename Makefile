@@ -33,6 +33,16 @@ LDFLAGS := $(if $(DEBUG),-O0 -g,-O3)
 
 CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 
+TARGET = $(lastword $(shell $(CC) -v 2>&1 | grep "Target: "))
+
+LIB_SUFFIX := so
+
+ifeq ($(TARGET),wasm32)
+  LIB_SUFFIX := wasm
+  CFLAGS += -mbulk-memory
+  LDFLAGS += -nostdlib -Wl,--no-entry -Wl,--export-dynamic
+endif
+
 ifneq ($(LC3_PLUS),)
   DEFINE += LC3_PLUS=$(LC3_PLUS)
 endif
@@ -50,7 +60,7 @@ lib_list :=
 bin_list :=
 
 define add-lib
-    $(eval $(1)_bin ?= $(1).so)
+    $(eval $(1)_bin ?= $(1).$(LIB_SUFFIX))
     $(eval $(1)_bin := $(addprefix $(BIN_DIR)/,$($(1)_bin)))
 
     lib_list += $(1)
