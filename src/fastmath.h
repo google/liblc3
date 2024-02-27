@@ -89,33 +89,52 @@ static inline float lc3_frexpf(float _x, int *exp) {
 
 /**
  * Fast 2^n approximation
- * x               Operand, range -8 to 8
- * return          2^x approximation (max relative error ~ 7e-6)
+ * x               Operand, range -100 to 100
+ * return          2^x approximation (max relative error ~ 4e-7)
  */
 static inline float lc3_exp2f(float x)
 {
-    float y;
+    /* --- 2^(i/8) for i from 0 to 7 --- */
 
-    /* --- Polynomial approx in range -0.5 to 0.5 --- */
+    static const float e[] = {
+        1.00000000e+00, 1.09050773e+00, 1.18920712e+00, 1.29683955e+00,
+        1.41421356e+00, 1.54221083e+00, 1.68179283e+00, 1.83400809e+00 };
 
-    static const float c[] = { 1.27191277e-09, 1.47415221e-07,
-        1.35510312e-05, 9.38375815e-04, 4.33216946e-02 };
+    /* --- Polynomial approx in range 0 to 1/8 --- */
 
-    y = (    c[0]) * x;
-    y = (y + c[1]) * x;
-    y = (y + c[2]) * x;
-    y = (y + c[3]) * x;
-    y = (y + c[4]) * x;
-    y = (y + 1.f);
+    static const float p[] = {
+        1.00448128e-02, 5.54563260e-02, 2.40228756e-01, 6.93147140e-01 };
 
-    /* --- Raise to the power of 16  --- */
+    /* --- Split the operand ---
+     *
+     * Such as x = k/8 + y, with k an integer, and |y| < 0.5/8
+     *
+     * Note that `fast-math` compiler option leads to rounding error,
+     * disable optimisation with `volatile`. */
 
-    y = y*y;
-    y = y*y;
-    y = y*y;
-    y = y*y;
+    volatile union { float f; int32_t s; } v;
 
-    return y;
+    v.f = x + 0x1.8p20f;
+    int k = v.s;
+    x -= v.f - 0x1.8p20f;
+
+    /* --- Compute 2^x, with |x| < 1 ---
+     * Perform polynomial approximation in range -0.5/8 to 0.5/8,
+     * and muplity by precomputed value of 2^(i/8), i in [0:7] */
+
+    union { float f; int32_t s; } y;
+
+    y.f = (      p[0]) * x;
+    y.f = (y.f + p[1]) * x;
+    y.f = (y.f + p[2]) * x;
+    y.f = (y.f + p[3]) * x;
+    y.f = (y.f +  1.f) * e[k & 7];
+
+    /* --- Add the exponent --- */
+
+    y.s += (k >> 3) << LC3_IEEE754_EXP_SHL;
+
+    return y.f;
 }
 
 /**
