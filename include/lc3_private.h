@@ -173,4 +173,15 @@ struct lc3_decoder {
     }
 
 
+/**
+ * Change the visibility of interface functions
+ */
+
+#ifdef _WIN32
+#define LC3_EXPORT __declspec(dllexport)
+#else
+#define LC3_EXPORT __attribute__((visibility ("default")))
+#endif
+
+
 #endif /* __LC3_PRIVATE_H */

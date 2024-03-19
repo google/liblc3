@@ -262,9 +262,9 @@ typedef LC3_DECODER_MEM_T(10000, 48000) lc3_decoder_mem_48k_t;
  * sr_hz           Sample rate in Hz, 8000, 16000, 24000, 32000, 48000 or 96000
  * return          Number of PCM samples, -1 on bad parameters
  */
-int lc3_hr_frame_samples(bool hrmode, int dt_us, int sr_hz);
+LC3_EXPORT int lc3_hr_frame_samples(bool hrmode, int dt_us, int sr_hz);
 
-int lc3_frame_samples(int dt_us, int sr_hz);
+LC3_EXPORT int lc3_frame_samples(int dt_us, int sr_hz);
 
 /**
  * Return the size of frames, from bitrate
@@ -275,9 +275,10 @@ int lc3_frame_samples(int dt_us, int sr_hz);
  *                 respectively the minimum and maximum allowed size.
  * return          The floor size in bytes of the frames, -1 on bad parameters
  */
-int lc3_hr_frame_bytes(bool hrmode, int dt_us, int sr_hz, int bitrate);
+LC3_EXPORT int lc3_hr_frame_bytes(
+    bool hrmode, int dt_us, int sr_hz, int bitrate);
 
-int lc3_frame_bytes(int dt_us, int bitrate);
+LC3_EXPORT int lc3_frame_bytes(int dt_us, int bitrate);
 
 /**
  * Return the size of frame blocks, from bitrate
@@ -290,10 +291,10 @@ int lc3_frame_bytes(int dt_us, int bitrate);
  *                 respectively the minimum and maximum allowed size.
  * return          The floor size in bytes of the frames, -1 on bad parameters
  */
-int lc3_hr_frame_block_bytes(bool hrmode,
-    int dt_us, int sr_hz, int nchannels, int bitrate);
+LC3_EXPORT int lc3_hr_frame_block_bytes(
+    bool hrmode, int dt_us, int sr_hz, int nchannels, int bitrate);
 
-int lc3_frame_block_bytes(int dt_us, int nframes, int bitrate);
+LC3_EXPORT int lc3_frame_block_bytes(int dt_us, int nframes, int bitrate);
 
 /**
  * Resolve the bitrate, from the size of frames
@@ -303,9 +304,10 @@ int lc3_frame_block_bytes(int dt_us, int nframes, int bitrate);
  * nbytes          Size in bytes of the frames or frame blocks
  * return          The ceiled bitrate in bps, -1 on bad parameters
  */
-int lc3_hr_resolve_bitrate(bool hrmode, int dt_us, int sr_hz, int nbytes);
+LC3_EXPORT int lc3_hr_resolve_bitrate(
+    bool hrmode, int dt_us, int sr_hz, int nbytes);
 
-int lc3_resolve_bitrate(int dt_us, int nbytes);
+LC3_EXPORT int lc3_resolve_bitrate(int dt_us, int nbytes);
 
 /**
  * Return algorithmic delay, as a number of samples
@@ -314,9 +316,9 @@ int lc3_resolve_bitrate(int dt_us, int nbytes);
  * sr_hz           Sample rate in Hz, 8000, 16000, 24000, 32000, 48000 or 96000
  * return          Number of algorithmic delay samples, -1 on bad parameters
  */
-int lc3_hr_delay_samples(bool hrmode, int dt_us, int sr_hz);
+LC3_EXPORT int lc3_hr_delay_samples(bool hrmode, int dt_us, int sr_hz);
 
-int lc3_delay_samples(int dt_us, int sr_hz);
+LC3_EXPORT int lc3_delay_samples(int dt_us, int sr_hz);
 
 /**
  * Return size needed for an encoder
@@ -328,9 +330,9 @@ int lc3_delay_samples(int dt_us, int sr_hz);
  * The `sr_hz` parameter is the sample rate of the PCM input stream,
  * and will match `sr_pcm_hz` of `lc3_hr_setup_encoder()`.
  */
-unsigned lc3_hr_encoder_size(bool hrmode, int dt_us, int sr_hz);
+LC3_EXPORT unsigned lc3_hr_encoder_size(bool hrmode, int dt_us, int sr_hz);
 
-unsigned lc3_encoder_size(int dt_us, int sr_hz);
+LC3_EXPORT unsigned lc3_encoder_size(int dt_us, int sr_hz);
 
 /**
  * Setup encoder
@@ -347,10 +349,10 @@ unsigned lc3_encoder_size(int dt_us, int sr_hz);
  * sample rate `sr_hz`. The size of the context needed, given by
  * `lc3_hr_encoder_size()` will be set accordingly to `sr_pcm_hz`.
  */
-lc3_encoder_t lc3_hr_setup_encoder(bool hrmode,
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
+LC3_EXPORT lc3_encoder_t lc3_hr_setup_encoder(
+    bool hrmode, int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
 
-lc3_encoder_t lc3_setup_encoder(
+LC3_EXPORT lc3_encoder_t lc3_setup_encoder(
     int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
 
 /**
@@ -362,7 +364,8 @@ lc3_encoder_t lc3_setup_encoder(
  * out             Output buffer of `nbytes` size
  * return          0: On success  -1: Wrong parameters
  */
-int lc3_encode(lc3_encoder_t encoder, enum lc3_pcm_format fmt,
+LC3_EXPORT int lc3_encode(
+    lc3_encoder_t encoder, enum lc3_pcm_format fmt,
     const void *pcm, int stride, int nbytes, void *out);
 
 /**
@@ -375,9 +378,9 @@ int lc3_encode(lc3_encoder_t encoder, enum lc3_pcm_format fmt,
  * The `sr_hz` parameter is the sample rate of the PCM output stream,
  * and will match `sr_pcm_hz` of `lc3_hr_setup_decoder()`.
  */
-unsigned lc3_hr_decoder_size(bool hrmode, int dt_us, int sr_hz);
+LC3_EXPORT unsigned lc3_hr_decoder_size(bool hrmode, int dt_us, int sr_hz);
 
-unsigned lc3_decoder_size(int dt_us, int sr_hz);
+LC3_EXPORT unsigned lc3_decoder_size(int dt_us, int sr_hz);
 
 /**
  * Setup decoder
@@ -394,10 +397,10 @@ unsigned lc3_decoder_size(int dt_us, int sr_hz);
  * sample rate `sr_hz`. The size of the context needed, given by
  * `lc3_hr_decoder_size()` will be set accordingly to `sr_pcm_hz`.
  */
-lc3_decoder_t lc3_hr_setup_decoder(bool hrmode,
-    int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
+LC3_EXPORT lc3_decoder_t lc3_hr_setup_decoder(
+    bool hrmode, int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
 
-lc3_decoder_t lc3_setup_decoder(
+LC3_EXPORT lc3_decoder_t lc3_setup_decoder(
     int dt_us, int sr_hz, int sr_pcm_hz, void *mem);
 
 /**
@@ -408,7 +411,8 @@ lc3_decoder_t lc3_setup_decoder(
  * pcm, stride     Output PCM samples, and count between two consecutives
  * return          0: On success  1: PLC operated  -1: Wrong parameters
  */
-int lc3_decode(lc3_decoder_t decoder, const void *in, int nbytes,
+LC3_EXPORT int lc3_decode(
+    lc3_decoder_t decoder, const void *in, int nbytes,
     enum lc3_pcm_format fmt, void *pcm, int stride);
 
 

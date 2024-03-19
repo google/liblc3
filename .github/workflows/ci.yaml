@@ -29,6 +29,21 @@ jobs:
         CC: gcc
     - run: meson compile -C builddir/
 
+  build-msvc-meson:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    - run: pip install meson ninja
+    - uses: TheMrMilchmann/setup-msvc-dev@v3
+      with:
+        arch: x64
+    - run: meson setup builddir
+    - run: meson compile -C builddir
+
   build-wasm:
     runs-on: ubuntu-latest
     steps:
