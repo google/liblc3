@@ -20,7 +20,9 @@ project('lc3', 'c',
 
 cc = meson.get_compiler('c')
 
-if cc.get_id() != 'msvc'
+if cc.get_id() == 'msvc'
+    add_project_arguments(['/wd4244', '/wd4305', '/fp:fast'], language: 'c')
+else
     add_project_arguments('-ffast-math', language: 'c')
 endif
 

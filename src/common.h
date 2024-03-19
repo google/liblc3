@@ -83,14 +83,6 @@
 
 
 /**
- * Change the visibility of interface functions
- */
-
-#define LC3_EXPORT \
-    __attribute__((visibility ("default")))
-
-
-/**
  * Macros
  * MIN/MAX  Minimum and maximum between 2 values
  * CLIP     Clip a value between low and high limits
