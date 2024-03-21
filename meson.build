@@ -16,7 +16,7 @@ project('lc3', 'c',
 	version: '1.0.4',
 	license: 'Apache-2.0',
 	meson_version: '>= 0.48.0',
-	default_options: ['b_lto=true'])
+	default_options: ['buildtype=release', 'b_lto=true'])
 
 cc = meson.get_compiler('c')
 
