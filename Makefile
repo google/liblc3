@@ -35,11 +35,13 @@ CFLAGS += -std=c11 -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 
 TARGET = $(lastword $(shell $(CC) -v 2>&1 | grep "Target: "))
 
+LIB_SHARED := true
 LIB_SUFFIX := so
 
 ifeq ($(TARGET),wasm32)
+  LIB_SHARED := false
   LIB_SUFFIX := wasm
-  CFLAGS += -mbulk-memory
+  CFLAGS += -Iwasm -mbulk-memory
   LDFLAGS += -nostdlib -Wl,--no-entry -Wl,--export-dynamic
 endif
 
@@ -148,8 +150,11 @@ $(BUILD_DIR)/%.o: %.cc $(MAKEFILE_DEPS)
 	    $(addprefix -I,$(INCLUDE)) \
 	    $(addprefix -D,$(DEFINE)) -MMD -MF $(@:.o=.d) -o $@
 
-$(LIB): CFLAGS += -fvisibility=hidden -flto -fPIC
-$(LIB): LDFLAGS += -flto -shared
+ifeq ($(LIB_SHARED),true)
+    $(LIB): CFLAGS += -fvisibility=hidden -flto -fPIC
+    $(LIB): LDFLAGS += -flto -shared
+endif
+
 $(LIB): $(MAKEFILE_DEPS)
 	@echo "  LD      $(notdir $@)"
 	$(V)mkdir -p $(dir $@)

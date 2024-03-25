@@ -20,26 +20,7 @@
 #define __LC3_FASTMATH_H
 
 #include <stdint.h>
-
-#ifdef __wasm32__
-#define log10f __builtin_log10f
-#define sqrtf __builtin_sqrtf
-#define fabsf __builtin_fabsf
-#define floorf __builtin_floorf
-#define fminf __builtin_fminf
-#define fmaxf __builtin_fmaxf
-#define truncf __builtin_truncf
-// This is not exactly roundf, as this return the even value for two equally near
-// values. e.g
-// - roundf(0.5) = 1, nearbyint(0.5) = 0,
-// - roundf(1.5) = 2, nearbyint(1.5) = 2,
-// - roundf(2.5) = 3, nearbyint(2.5) = 2
-// but this builtin maps to https://webassembly.github.io/spec/core/exec/numerics.html#op-fnearest
-#define roundf __builtin_nearbyint
-#define INFINITY __builtin_inff()
-#else
 #include <math.h>
-#endif
 
 
 /**

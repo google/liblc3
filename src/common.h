@@ -22,17 +22,9 @@
 #include <lc3.h>
 #include "fastmath.h"
 
-#include <stdalign.h>
 #include <limits.h>
-
-#ifdef __wasm32__
-#define memmove __builtin_memmove
-#define memset __builtin_memset
-#define memcpy __builtin_memcpy
-#define NULL ((void*)0)
-#else
+#include <stdalign.h>
 #include <string.h>
-#endif
 
 #ifdef __ARM_ARCH
 #include <arm_acle.h>
