@@ -61,6 +61,20 @@ $ make -j CC=path_to_android_ndk_prebuilt/toolchain-prefix-clang LIBC=bionic
 
 Compiled library will be found in `bin` directory.
 
+#### Web Assembly (WASM)
+
+Web assembly compilation is supported using LLVM WebAssembly backend.
+Installation of LLVM compiler and linker is needed:
+
+```sh
+# apt install clang lld
+```
+
+The webasm object is compiled using:
+```sh
+$ make CC="clang --target=wasm32"
+```
+
 ## Tools
 
 Tools can be all compiled, while invoking `make` as follows :
