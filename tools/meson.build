@@ -24,9 +24,11 @@ lc3toolslib = static_library('lc3toolslib',
 executable('elc3', ['elc3.c'],
     link_with : lc3toolslib,
     include_directories: inc,
-    install: true)
+    install: true,
+    install_rpath: join_paths(get_option('prefix'), get_option('libdir')))
 
 executable('dlc3', ['dlc3.c'],
     link_with : lc3toolslib,
     include_directories: inc,
-    install: true)
+    install: true,
+    install_rpath: join_paths(get_option('prefix'), get_option('libdir')))
