@@ -81,7 +81,7 @@ class Decoder:
         x = np.append(x, np.zeros(self.ns - self.ne))
         x = self.mdct.run(x)
 
-        x = self.ltpf.run(x, len(data))
+        x = self.ltpf.run(x)
 
         return x
 
