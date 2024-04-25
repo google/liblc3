@@ -42,10 +42,10 @@
  * return          2^exp
  */
 static inline float lc3_ldexpf(float _x, int exp) {
-    union { float f; uint32_t u; } x = { .f = _x };
+    union { float f; int32_t s; } x = { .f = _x };
 
-    if (x.u & LC3_IEEE754_EXP_MASK)
-        x.u += exp << LC3_IEEE754_EXP_SHL;
+    if (x.s & LC3_IEEE754_EXP_MASK)
+        x.s += exp << LC3_IEEE754_EXP_SHL;
 
     return x.f;
 }
