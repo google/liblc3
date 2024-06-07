@@ -547,12 +547,12 @@ LC3_HOT static void quantize(const float *scf, int lfcb_idx, int hfcb_idx,
     /* --- Determe shape & gain index ---
      * Search the Mean Square Error, within (shape, gain) combinations */
 
-    float mse_min = INFINITY;
+    float mse_min = FLT_MAX;
     *shape_idx = *gain_idx = 0;
 
     for (int ic = 0; ic < 4; ic++) {
         const struct lc3_sns_vq_gains *cgains = lc3_sns_vq_gains + ic;
-        float cmse_min = INFINITY;
+        float cmse_min = FLT_MAX;
         int cgain_idx = 0;
 
         for (int ig = 0; ig < cgains->count; ig++) {

@@ -20,6 +20,7 @@
 #define __LC3_FASTMATH_H
 
 #include <stdint.h>
+#include <float.h>
 #include <math.h>
 
 
