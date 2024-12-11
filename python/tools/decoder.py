@@ -53,7 +53,7 @@ if header[0] != 0xcc1c:
 
 samplerate = header[2] * 100
 nchannels = header[4]
-frame_duration = header[5] / 100
+frame_duration = header[5] * 10
 stream_length = header[7]
 
 # --- Setup output ---
@@ -80,7 +80,7 @@ encoded_length = stream_length + dec.get_delay_samples()
 for i in range(0, encoded_length, frame_length):
 
     lc3_frame_size = struct.unpack('=H', f_lc3.read(2))[0]
-    pcm = dec.decode(f_lc3.read(lc3_frame_size), bitdepth=bitdepth)
+    pcm = dec.decode(f_lc3.read(lc3_frame_size), bit_depth=bitdepth)
 
     pcm = pcm[max(encoded_length - stream_length - i, 0) * pcm_size:
               min(encoded_length - i, frame_length) * pcm_size]
