@@ -66,7 +66,7 @@ class _Base:
 
         if self.frame_duration_us not in [2500, 5000, 7500, 10000]:
             raise InvalidArgumentError(
-                "Invalid frame duration: %.1f ms" % self.frame_duration_us
+                f"Invalid frame duration: {self.frame_duration_us} us ({self.frame_duration_us / 1000:.1f} ms)"
             )
 
         allowed_samplerate = (
@@ -74,7 +74,7 @@ class _Base:
         )
 
         if self.sample_rate_hz not in allowed_samplerate:
-            raise InvalidArgumentError("Invalid sample rate: %d Hz" % sample_rate_hz)
+            raise InvalidArgumentError(f"Invalid sample rate: {sample_rate_hz} Hz")
 
         if libpath is None:
             mesonpy_lib = glob.glob(
