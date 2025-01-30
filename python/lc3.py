@@ -78,7 +78,7 @@ class _Base:
 
         if libpath is None:
             mesonpy_lib = glob.glob(
-                os.path.join(os.path.dirname(__file__), ".lc3.mesonpy.libs", "*lc3*")
+                os.path.join(os.path.dirname(__file__), ".lc3py.mesonpy.libs", "*lc3*")
             )
 
             if mesonpy_lib:
