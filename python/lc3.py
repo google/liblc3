@@ -342,7 +342,7 @@ class Encoder(_Base):
             pcm_buffer = array.array("f", pcm)
 
             # Invert test to catch NaN
-            if not abs(sum(pcm)) / frame_samples < 2:
+            if not abs(sum(pcm_buffer)) / frame_samples < 2:
                 raise InvalidArgumentError("Out of range PCM input")
 
             padding = max(pcm_len - frame_samples, 0)
