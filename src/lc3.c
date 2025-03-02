@@ -122,7 +122,7 @@ LC3_EXPORT int lc3_hr_frame_block_bytes(
         nchannels * lc3_max_frame_bytes(dt, sr) );
 }
 
-LC3_EXPORT int lc3_frame_bock_bytes(int dt_us, int nchannels, int bitrate)
+LC3_EXPORT int lc3_frame_block_bytes(int dt_us, int nchannels, int bitrate)
 {
     return lc3_hr_frame_block_bytes(false, dt_us, 8000, nchannels, bitrate);
 }
