@@ -472,51 +472,69 @@ class Decoder(_Base):
 
     @typing.overload
     def decode(
-        self, data: bytes | bytearray | memoryview, bit_depth: None = None
+        self,
+        data: bytes | bytearray | memoryview | None | list[bytes | bytearray | memoryview | None],
+        bit_depth: None = None
     ) -> array.array[float]: ...
 
     @typing.overload
-    def decode(self, data: bytes | bytearray | memoryview, bit_depth: int) -> bytes: ...
+    def decode(
+        self,
+        data: bytes | bytearray | memoryview | None | list[bytes | bytearray | memoryview | None],
+        bit_depth: int
+    ) -> bytes: ...
 
     def decode(
-        self, data: bytes | bytearray | memoryview, bit_depth: int | None = None
+        self,
+        data: bytes | bytearray | memoryview | None | list[bytes | bytearray | memoryview | None],
+        bit_depth: int | None = None
     ) -> bytes | array.array[float]:
         """
-        Decodes an LC3 frame.
+        Decodes LC3 frames for one or multiple channels. If `None` is provided for a channel,
+        triggers Packet Loss Concealment (PLC) for that channel.
 
-        The input `data` is the channels concatenation of LC3 frames in a
-        byte-like object. Interleaved PCM samples are returned according to
-        the `bit_depth` indication.
-        When no `bit_depth` is defined, it's a vector of floating point values
-        from -1 to 1, coding the sample levels. When `bit_depth` is defined,
-        it returns a byte array, each sample coded on `bit_depth` bits.
-        The machine endianness, or little endian, is used for 16 or 24 bits
-        width, respectively.
+        The input `data` can be:
+        - A byte-like object or `None` for single-channel decoding.
+        - A list of byte-like objects or `None` for multi-channel decoding.
+        Interleaved PCM samples are returned according to the `bit_depth` indication.
         """
 
         num_channels = self.num_channels
+
+        # Ensure `data` is a list, even for single-channel decoding
+        if not isinstance(data, list):
+            data = [data]
+
+        # Validate the length of the `data` list
+        if len(data) != num_channels:
+            raise InvalidArgumentError(
+                f"Expected data for {num_channels} channels, but got {len(data)}"
+            )
 
         (pcm_fmt, pcm_t) = self._resolve_pcm_format(bit_depth)
         pcm_len = num_channels * self.get_frame_samples()
         pcm_buffer = (pcm_t * pcm_len)()
 
-        data_buffer = bytearray(data)
-        data_offset = 0
-
-        for ich, decoder in enumerate(self.__decoders):
+        for ich, (decoder, channel_data) in enumerate(zip(self.__decoders, data)):
             pcm_offset = ich * ctypes.sizeof(pcm_t)
             pcm = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
 
-            data_size = len(data_buffer) // num_channels + int(
-                ich < len(data_buffer) % num_channels
-            )
-            buf = (c_byte * data_size).from_buffer(data_buffer, data_offset)
-            data_offset += data_size
+            if channel_data is None:
+                # Trigger PLC for this channel
+                ret = self.lib.lc3_decode(
+                    decoder, None, 0, pcm_fmt, pcm, self.num_channels
+                )
+                if ret < 0:
+                    raise InvalidArgumentError(f"PLC failed for channel {ich}")
+            else:
+                # Decode normally for this channel
+                data_buffer = bytearray(channel_data)
+                buf = (c_byte * len(data_buffer)).from_buffer(data_buffer)
 
-            ret = self.lib.lc3_decode(
-                decoder, buf, len(buf), pcm_fmt, pcm, self.num_channels
-            )
-            if ret < 0:
-                raise InvalidArgumentError("Bad parameters")
+                ret = self.lib.lc3_decode(
+                    decoder, buf, len(buf), pcm_fmt, pcm, self.num_channels
+                )
+                if ret < 0:
+                    raise InvalidArgumentError(f"Decoding failed for channel {ich}")
 
         return array.array("f", pcm_buffer) if bit_depth is None else bytes(pcm_buffer)
