@@ -472,14 +472,14 @@ class Decoder(_Base):
 
     @typing.overload
     def decode(
-        self, data: bytes | bytearray | memoryview, bit_depth: None = None
+        self, data: bytes | bytearray | memoryview | None, bit_depth: None = None
     ) -> array.array[float]: ...
 
     @typing.overload
-    def decode(self, data: bytes | bytearray | memoryview, bit_depth: int) -> bytes: ...
+    def decode(self, data: bytes | bytearray | memoryview | None, bit_depth: int) -> bytes: ...
 
     def decode(
-        self, data: bytes | bytearray | memoryview, bit_depth: int | None = None
+        self, data: bytes | bytearray | memoryview | None, bit_depth: int | None = None
     ) -> bytes | array.array[float]:
         """
         Decodes an LC3 frame.
@@ -487,6 +487,8 @@ class Decoder(_Base):
         The input `data` is the channels concatenation of LC3 frames in a
         byte-like object. Interleaved PCM samples are returned according to
         the `bit_depth` indication.
+        Setting `data` to `None` enables PLC (Packet Loss Concealment)
+        reconstruction for the block of LC3 frames.
         When no `bit_depth` is defined, it's a vector of floating point values
         from -1 to 1, coding the sample levels. When `bit_depth` is defined,
         it returns a byte array, each sample coded on `bit_depth` bits.
@@ -500,22 +502,28 @@ class Decoder(_Base):
         pcm_len = num_channels * self.get_frame_samples()
         pcm_buffer = (pcm_t * pcm_len)()
 
-        data_buffer = bytearray(data)
-        data_offset = 0
+        if data is not None:
+            data_buffer = bytearray(data)
+            data_offset = 0
 
         for ich, decoder in enumerate(self.__decoders):
             pcm_offset = ich * ctypes.sizeof(pcm_t)
             pcm = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
 
-            data_size = len(data_buffer) // num_channels + int(
-                ich < len(data_buffer) % num_channels
-            )
-            buf = (c_byte * data_size).from_buffer(data_buffer, data_offset)
-            data_offset += data_size
+            if data is None:
+                ret = self.lib.lc3_decode(
+                    decoder, None, 0, pcm_fmt, pcm, self.num_channels
+                )
+            else:
+                data_size = len(data_buffer) // num_channels + int(
+                    ich < len(data_buffer) % num_channels
+                )
+                buf = (c_byte * data_size).from_buffer(data_buffer, data_offset)
+                data_offset += data_size
+                ret = self.lib.lc3_decode(
+                    decoder, buf, len(buf), pcm_fmt, pcm, self.num_channels
+                )
 
-            ret = self.lib.lc3_decode(
-                decoder, buf, len(buf), pcm_fmt, pcm, self.num_channels
-            )
             if ret < 0:
                 raise InvalidArgumentError("Bad parameters")
 
