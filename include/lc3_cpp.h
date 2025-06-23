@@ -28,7 +28,9 @@
 #include <vector>
 #include <stdlib.h>
 
+extern "C" {
 #include "lc3.h"
+}
 
 namespace lc3 {
 
