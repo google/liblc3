@@ -702,7 +702,7 @@ LC3_EXPORT struct lc3_decoder *lc3_hr_setup_decoder(
     enum lc3_srate sr = resolve_srate(sr_hz, hrmode);
     enum lc3_srate sr_pcm = resolve_srate(sr_pcm_hz, hrmode);
 
-    if (dt >= LC3_NUM_DT || sr_pcm >= LC3_NUM_SRATE || sr > sr_pcm || !mem)
+    if (dt >= LC3_NUM_DT || sr_pcm >= LC3_NUM_SRATE || sr < sr_pcm || !mem)
         return NULL;
 
     struct lc3_decoder *decoder = mem;
