@@ -130,13 +130,13 @@ static struct parameters parse_args(int argc, char *argv[])
 /**
  * Return time in (us) from unspecified point in the past
  */
-static unsigned clock_us(void)
+static uint64_t clock_us(void)
 {
     struct timespec ts;
 
     clock_gettime(CLOCK_REALTIME, &ts);
 
-    return (unsigned)(ts.tv_sec * 1000*1000) + (unsigned)(ts.tv_nsec / 1000);
+    return (uint64_t)(ts.tv_sec * 1000000ULL) + (uint64_t)(ts.tv_nsec / 1000);
 }
 
 /**
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
 
     int nsec = 0;
     int nerr = 0;
-    unsigned t0 = clock_us();
+    uint64_t t0 = clock_us();
 
     for (int i = 0; i * frame_samples < encode_samples; i++) {
 

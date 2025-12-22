@@ -130,13 +130,13 @@ static struct parameters parse_args(int argc, char *argv[])
  * Return time in (us) from unspecified point in the past
  */
 
-static unsigned clock_us(void)
+static uint64_t clock_us(void)
 {
     struct timespec ts;
 
     clock_gettime(CLOCK_MONOTONIC, &ts);
 
-    return (unsigned)(ts.tv_sec * 1000*1000) + (unsigned)(ts.tv_nsec / 1000);
+    return (uint64_t)(ts.tv_sec * 1000000ULL) + (uint64_t)(ts.tv_nsec / 1000);
 }
 
 
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     static const char *dash_line = "========================================";
 
     int nsec = 0;
-    unsigned t0 = clock_us();
+    uint64_t t0 = clock_us();
 
     for (int i = 0; i * frame_samples < encode_samples; i++) {
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     unsigned t = (clock_us() - t0) / 1000;
     nsec = encode_samples / srate_hz;
 
-    fprintf(stderr, "%02d:%02d Encoded in %d.%d seconds %20s\n",
+    fprintf(stderr, "%02d:%02d Encoded in %d.%03d seconds %20s\n",
         nsec / 60, nsec % 60, t / 1000, t % 1000, "");
 
     /* --- Cleanup --- */
