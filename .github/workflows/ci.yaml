@@ -90,4 +90,5 @@ jobs:
       with:
         python-version: '3.10'
         cache: 'pip'
-    - run: pip install .
+    - run: pip install . --group dev
+    - run: pytest python/tests
