@@ -16,10 +16,11 @@
 #
 
 import argparse
-import lc3
 import struct
 import sys
 import wave
+
+import lc3
 
 parser = argparse.ArgumentParser(description='LC3 Decoder')
 

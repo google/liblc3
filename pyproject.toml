@@ -1,5 +1,5 @@
 [build-system]
-requires = ["meson-python"]
+requires = ["meson-python", "pybind11"]
 build-backend = "mesonpy"
 
 [project]

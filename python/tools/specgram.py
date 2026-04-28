@@ -16,6 +16,7 @@
 #
 
 import argparse
+
 import lc3
 import matplotlib
 import matplotlib.pyplot as plt

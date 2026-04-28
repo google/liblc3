@@ -36,5 +36,6 @@ if get_option('tools')
 endif
 
 if get_option('python')
+    add_languages('cpp')
     subdir('python')
 endif
