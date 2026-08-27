@@ -20,6 +20,7 @@ import ctypes
 import enum
 import glob
 import os
+import sys
 import typing
 from collections.abc import Iterable
 from ctypes import c_bool, c_byte, c_int, c_uint, c_void_p
@@ -60,6 +61,16 @@ def _find_library(libpath: str | None = None) -> str:
     if (env_path := os.environ.get("LIBLC3_PATH")) and os.path.exists(env_path):
         return env_path
 
+    if sys.platform == "win32":
+        exts = ("dll",)
+        sonames = ("lc3-1.dll", "lc3.dll", "liblc3.dll")
+    elif sys.platform == "darwin":
+        exts = ("dylib",)
+        sonames = ("liblc3.1.dylib", "liblc3.dylib")
+    else:
+        exts = ("so*",)
+        sonames = ("liblc3.so.1", "liblc3.so")
+
     # Search package directory and wheel directory (.lc3py.mesonpy.libs)
     pkg_dir = os.path.dirname(os.path.abspath(__file__))
     search_dirs = [
@@ -67,16 +78,18 @@ def _find_library(libpath: str | None = None) -> str:
         os.path.join(pkg_dir, ".lc3py.mesonpy.libs"),
     ]
     for directory in search_dirs:
-        for ext in ("so*", "dylib", "dll"):
+        for ext in exts:
             for match in glob.glob(os.path.join(directory, f"*lc3*.{ext}")):
                 if os.path.isfile(match) and "cpython" not in match:
+                    if sys.platform == "win32":
+                        os.add_dll_directory(os.path.dirname(match))
                     return match
 
     # Search standard system library and dynamic linker paths
     if sys_lib := find_library("lc3"):
         return sys_lib
 
-    for soname in ("liblc3.so.1", "liblc3.so", "liblc3.dylib", "lc3.dll"):
+    for soname in sonames:
         try:
             ctypes.cdll.LoadLibrary(soname)
             return soname
@@ -403,7 +416,7 @@ class Encoder(_Base):
 
         else:
             padding = max(pcm_len * ctypes.sizeof(pcm_t) - len(pcm), 0)
-            pcm_buffer = bytearray(pcm) + bytearray(padding)  # type: ignore
+            pcm_buffer = bytearray(pcm) + bytearray(padding)
 
         data_buffer = (c_byte * num_bytes)()
         data_offset = 0

@@ -64,7 +64,7 @@ jobs:
         python-version: '3.10'
         cache: 'pip'
     - run: pip install meson ninja
-    - uses: TheMrMilchmann/setup-msvc-dev@ced9887c29958f18f71b18c99d9eb0837859434c # v3.0.2
+    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       with:
         arch: x64
     - run: meson setup builddir
@@ -102,7 +102,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
@@ -111,5 +111,9 @@ jobs:
       with:
         python-version: '3.10'
         cache: 'pip'
+    - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+      if: runner.os == 'Windows'
+      with:
+        arch: x64
     - run: pip install . pytest
     - run: pytest python/tests
