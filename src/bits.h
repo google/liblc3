@@ -289,12 +289,20 @@ LC3_HOT static inline unsigned lc3_get_symbol(
 
     int s = 16;
 
+    /* Each probe of the binary search would chain a data-dependent
+     * multiply on the critical path. For the decoder's unsigned values
+     * (low < 2^24, and 0x40 <= range <= 0x3fff from the renormalization
+     * invariant ac->range >= 0x10000),
+     *     low < range * symbols[s].low  <=>  low / range < symbols[s].low
+     * so the quotient, computed once, decides every probe instead. */
+
     if (ac->low < range * symbols[s].low) {
+        unsigned q = ac->low / range;
         s >>= 1;
-        s -= ac->low < range * symbols[s].low ? 4 : -4;
-        s -= ac->low < range * symbols[s].low ? 2 : -2;
-        s -= ac->low < range * symbols[s].low ? 1 : -1;
-        s -= ac->low < range * symbols[s].low;
+        s -= q < symbols[s].low ? 4 : -4;
+        s -= q < symbols[s].low ? 2 : -2;
+        s -= q < symbols[s].low ? 1 : -1;
+        s -= q < symbols[s].low;
     }
 
     ac->low -= range * symbols[s].low;
