@@ -192,6 +192,12 @@ LC3_HOT static void neon_resample_48k_12k8(
  */
 #ifndef dot
 
+//
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wconversion"
+#endif
+
 LC3_HOT static inline float neon_dot(const int16_t *a, const int16_t *b, int n)
 {
     int64x2_t v = vmovq_n_s64(0);
@@ -208,9 +214,24 @@ LC3_HOT static inline float neon_dot(const int16_t *a, const int16_t *b, int n)
         v = vpadalq_s32(v, u);
     }
 
-    int32_t v32 = (vaddvq_s64(v) + (1 << 5)) >> 6;
+    // Stepwise accumulation to avoid narrowing warnings
+
+    // Accumulate 64-bit sum
+    int64_t acc = vaddvq_s64(v);
+
+    // Add rounding offset and shift
+    acc += (1LL << 5);
+    acc >>= 6;
+
+    // Explicit cast to int32_t
+    int32_t v32 = (int32_t)acc;
+
     return (float)v32;
 }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #ifndef TEST_NEON
 #define dot neon_dot
