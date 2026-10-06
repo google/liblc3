@@ -291,10 +291,20 @@ LC3_HOT static inline unsigned lc3_get_symbol(
 
     if (ac->low < range * symbols[s].low) {
         s >>= 1;
+#if LC3_FAST_UDIV
+        /* low < range * L  <=>  low / range < L : one division
+         * instead of a dependent multiply at every probe */
+        unsigned q = ac->low / range;
+        s -= q < symbols[s].low ? 4 : -4;
+        s -= q < symbols[s].low ? 2 : -2;
+        s -= q < symbols[s].low ? 1 : -1;
+        s -= q < symbols[s].low;
+#else
         s -= ac->low < range * symbols[s].low ? 4 : -4;
         s -= ac->low < range * symbols[s].low ? 2 : -2;
         s -= ac->low < range * symbols[s].low ? 1 : -1;
         s -= ac->low < range * symbols[s].low;
+#endif
     }
 
     ac->low -= range * symbols[s].low;

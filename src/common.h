@@ -75,6 +75,21 @@
 
 
 /**
+ * Fast hardware unsigned division
+ * Set on cores where a runtime 32-bit division beats a few dependent
+ * multiplies (x86-64, AArch64). Unset for MCUs and audio DSPs.
+ */
+
+#ifndef LC3_FAST_UDIV
+#if defined(__x86_64__) || defined(__aarch64__) || defined(_M_X64) || defined(_M_ARM64)
+#define LC3_FAST_UDIV 1
+#else
+#define LC3_FAST_UDIV 0
+#endif
+#endif
+
+
+/**
  * Macros
  * MIN/MAX  Minimum and maximum between 2 values
  * CLIP     Clip a value between low and high limits
