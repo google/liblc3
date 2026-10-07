@@ -1,5 +1,5 @@
 #
-# Copyright 2022 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
 # limitations under the License.
 #
 
-test_py:
-	$(V)cd $(TEST_DIR) && python3 setup.py && PYTHONPATH=build python3 run.py
+test_mve_src += \
+    $(TEST_DIR)/mve/test_mve.c \
+    $(TEST_DIR)/mve/ltpf_mve.c \
+    $(SRC_DIR)/tables.c
 
-.PHONY: test test-clean
+test_mve_include += $(SRC_DIR)
+test_mve_ldlibs += m
 
-test: test_py
+$(eval $(call add-bin,test_mve))
 
-test-clean:
-	$(V)cd $(TEST_DIR) && python3 setup.py clean > /tmp/zero
+test_mve: $(test_mve_bin)
+	@echo "  RUN     $(notdir $<)"
+	$(V)$<
 
--include $(TEST_DIR)/arm/makefile.mk
--include $(TEST_DIR)/neon/makefile.mk
--include $(TEST_DIR)/mve/makefile.mk
-
-clean-all: test-clean
+test: test_mve
