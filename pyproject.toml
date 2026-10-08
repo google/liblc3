@@ -12,7 +12,7 @@ authors = [
 description = "LC3 Codec library wrapper"
 requires-python = ">=3.10"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = ["pytest"]
 
 [project.urls]
