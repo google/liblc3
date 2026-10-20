@@ -93,7 +93,8 @@ LC3_HOT static inline void fft_5(
 #ifndef fft_bf3
 LC3_HOT static inline void fft_bf3(
     const struct lc3_fft_bf3_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
+    const struct lc3_complex *x, struct lc3_complex *y,
+    int n)
 {
     int n3 = twiddles->n3;
     const struct lc3_complex (*w0)[2] = twiddles->t;
@@ -135,7 +136,8 @@ LC3_HOT static inline void fft_bf3(
 #ifndef fft_bf2
 LC3_HOT static inline void fft_bf2(
     const struct lc3_fft_bf2_twiddles *twiddles,
-    const struct lc3_complex *x, struct lc3_complex *y, int n)
+    const struct lc3_complex *x, struct lc3_complex *y,
+    int n)
 {
     int n2 = twiddles->n2;
     const struct lc3_complex *w = twiddles->t;
@@ -147,11 +149,20 @@ LC3_HOT static inline void fft_bf2(
 
         for (int j = 0; j < n2; j++, x0++, x1++) {
 
-            y0[j].re = x0->re + x1->re * w[j].re - x1->im * w[j].im;
-            y0[j].im = x0->im + x1->im * w[j].re + x1->re * w[j].im;
+            /* Load before storing, and compute the rotated value `x1 * w` once for both outputs. */
 
-            y1[j].re = x0->re - x1->re * w[j].re + x1->im * w[j].im;
-            y1[j].im = x0->im - x1->im * w[j].re - x1->re * w[j].im;
+            const float x0r = x0->re, x0i = x0->im;
+            const float x1r = x1->re, x1i = x1->im;
+            const float wr = w[j].re, wi = w[j].im;
+
+            const float tr = x1r * wr - x1i * wi;
+            const float ti = x1i * wr + x1r * wi;
+
+            y0[j].re = x0r + tr;
+            y0[j].im = x0i + ti;
+
+            y1[j].re = x0r - tr;
+            y1[j].im = x0i - ti;
         }
     }
 }
