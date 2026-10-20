@@ -483,8 +483,10 @@ static void store_s16(
     float *xs = decoder->x + decoder->xs_off;
     int ns = lc3_ns(dt, sr);
 
+    /* The `copysignf` form is branchless, and lets the compiler vectorize
+     * the unit stride case, while rounding identically to `x +/- 0.5`. */
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
-        int32_t s = *xs >= 0 ? (int)(*xs + 0.5f) : (int)(*xs - 0.5f);
+        const int32_t s = (int32_t)(*xs + copysignf(0.5f, *xs));
         *pcm = LC3_SAT16(s);
     }
 }
@@ -506,8 +508,7 @@ static void store_s24(
     int ns = lc3_ns(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += stride) {
-        int32_t s = *xs >= 0 ? (int32_t)(lc3_ldexpf(*xs, 8) + 0.5f)
-                             : (int32_t)(lc3_ldexpf(*xs, 8) - 0.5f);
+        const int32_t s = (int32_t)(lc3_ldexpf(*xs, 8) + copysignf(0.5f, *xs));
         *pcm = LC3_SAT24(s);
     }
 }
@@ -529,10 +530,8 @@ static void store_s24_3le(
     int ns = lc3_ns(dt, sr);
 
     for ( ; ns > 0; ns--, xs++, pcm += 3*stride) {
-        int32_t s = *xs >= 0 ? (int32_t)(lc3_ldexpf(*xs, 8) + 0.5f)
-                             : (int32_t)(lc3_ldexpf(*xs, 8) - 0.5f);
+        const int32_t s = LC3_SAT24((int32_t)(lc3_ldexpf(*xs, 8) + copysignf(0.5f, *xs)));
 
-        s = LC3_SAT24(s);
         pcm[0] = (s >>  0) & 0xff;
         pcm[1] = (s >>  8) & 0xff;
         pcm[2] = (s >> 16) & 0xff;
