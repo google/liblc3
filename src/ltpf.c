@@ -597,11 +597,11 @@ static bool detect_pitch(struct lc3_ltpf_analysis *ltpf,
     const int16_t *x1 = x - (r0 + t1);
     const int16_t *x2 = x - (r0 + t2);
 
-    float nc1 = rm1 <= 0 ? 0 :
-        rm1 / sqrtf(dot(x, x, n) * dot(x1, x1, n));
+    const float e = dot(x, x, n);
 
-    float nc2 = rm2 <= 0 ? 0 :
-        rm2 / sqrtf(dot(x, x, n) * dot(x2, x2, n));
+    const float nc1 = rm1 <= 0 ? 0 : rm1 / sqrtf(e * dot(x1, x1, n));
+
+    const float nc2 = rm2 <= 0 ? 0 : rm2 / sqrtf(e * dot(x2, x2, n));
 
     int t1sel = nc2 <= 0.85f * nc1;
     ltpf->tc = (t1sel ? t1 : t2);
