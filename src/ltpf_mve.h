@@ -20,16 +20,16 @@
  * Arm Helium (M-Profile Vector Extension, MVE) backend for the LTPF
  * pitch-detection hotspot, targeting Armv8.1-M cores (e.g. Cortex-M55).
  *
- * `dot()` / `correlate()` accumulate int16 x int16 products into a 64-bit
- * integer and apply the rounding `(v + 32) >> 6`. MVE `vmlaldavaq_s16`
+ * `dot()` accumulates int16 x int16 products into a 64-bit integer and
+ * applies the rounding `(v + 32) >> 6`. MVE `vmlaldavaq_s16`
  * performs an 8-lane int16 x int16 -> int64 multiply-accumulate across the
  * vector; the integer sum and the subsequent rounding are therefore
  * identical to the scalar reference, i.e. the result is strictly bit-exact.
  *
  * This mirrors the NEON (`ltpf_neon.h`) and Arm DSP (`ltpf_arm.h`) backends
- * and hooks the same `dot` / `correlate` override points. Include this file
- * before the NEON/DSP backends in `ltpf.c` so its definitions take
- * precedence on MVE targets.
+ * and hooks the same `dot` override point. Include this file before the
+ * NEON/DSP backends in `ltpf.c` so its definitions take precedence on MVE
+ * targets.
  */
 
 #if (__ARM_FEATURE_MVE & 1) && !defined(TEST_ARM) && !defined(TEST_NEON) \
@@ -68,29 +68,5 @@ LC3_HOT static inline float mve_dot(const int16_t *a, const int16_t *b, int n)
 #endif
 
 #endif /* dot */
-
-/**
- * Return vector of correlations
- * a, b, n         The 2 vectors of size `n` (> 0 and <= 128)
- * y, nc           Output the correlation vector of size `nc`
- *
- * Sliding dot product: for each output the `b` window is shifted by one
- * sample. Each lag reuses the 8-lane MVE `dot`, matching the scalar
- * reference exactly.
- */
-#ifndef correlate
-
-LC3_HOT static void mve_correlate(
-    const int16_t *a, const int16_t *b, int n, float *y, int nc)
-{
-    for (const float *ye = y + nc; y < ye; )
-        *(y++) = mve_dot(a, b--, n);
-}
-
-#ifndef TEST_MVE
-#define correlate mve_correlate
-#endif
-
-#endif /* correlate */
 
 #endif /* __ARM_FEATURE_MVE & 1 */

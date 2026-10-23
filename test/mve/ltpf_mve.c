@@ -49,6 +49,13 @@ static int check_dot()
     return 0;
 }
 
+static void mve_correlate(
+    const int16_t *a, const int16_t *b, int n, float *y, int nc)
+{
+    for (const float *ye = y + nc; y < ye; )
+        *(y++) = mve_dot(a, b--, n);
+}
+
 static int check_correlate()
 {
     int16_t alignas(4) a[500], b[500];
