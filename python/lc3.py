@@ -20,11 +20,11 @@ import ctypes
 import enum
 import glob
 import os
+import sys
 import typing
-
-from ctypes import c_bool, c_byte, c_int, c_uint, c_size_t, c_void_p
-from ctypes.util import find_library
 from collections.abc import Iterable
+from ctypes import c_bool, c_byte, c_int, c_uint, c_void_p
+from ctypes.util import find_library
 
 
 class BaseError(Exception):
@@ -46,8 +46,170 @@ class _PcmFormat(enum.IntEnum):
     FLOAT = 3
 
 
-class _Base:
+_LIB_CACHE: dict[str, ctypes.CDLL] = {}
 
+
+def _find_library(libpath: str | None = None) -> str:
+    """Finds the liblc3 shared library via explicit path, bundled wheel, or dynamic linker."""
+    if libpath:
+        if os.path.exists(libpath):
+            return libpath
+        raise InitializationError(
+            f"Specified LC3 library path does not exist: {libpath}"
+        )
+
+    if (env_path := os.environ.get("LIBLC3_PATH")) and os.path.exists(env_path):
+        return env_path
+
+    if sys.platform == "win32":
+        exts = ("dll",)
+        sonames = ("lc3-1.dll", "lc3.dll", "liblc3.dll")
+    elif sys.platform == "darwin":
+        exts = ("dylib",)
+        sonames = ("liblc3.1.dylib", "liblc3.dylib")
+    else:
+        exts = ("so*",)
+        sonames = ("liblc3.so.1", "liblc3.so")
+
+    # Search package directory and wheel directory (.lc3py.mesonpy.libs)
+    pkg_dir = os.path.dirname(os.path.abspath(__file__))
+    search_dirs = [
+        pkg_dir,
+        os.path.join(pkg_dir, ".lc3py.mesonpy.libs"),
+    ]
+    for directory in search_dirs:
+        for ext in exts:
+            for match in glob.glob(os.path.join(directory, f"*lc3*.{ext}")):
+                if os.path.isfile(match) and "cpython" not in match:
+                    if sys.platform == "win32":
+                        os.add_dll_directory(os.path.dirname(match))
+                    return match
+
+    # Search standard system library and dynamic linker paths
+    if sys_lib := find_library("lc3"):
+        return sys_lib
+
+    for soname in sonames:
+        try:
+            ctypes.cdll.LoadLibrary(soname)
+            return soname
+        except OSError:
+            pass
+
+    raise InitializationError(
+        "LC3 library not found. Please ensure liblc3 is installed or set the LIBLC3_PATH environment variable."
+    )
+
+
+def _load_lc3_library(libpath: str | None = None) -> ctypes.CDLL:
+    """Loads and configures the liblc3 ctypes library once (cached singleton)."""
+    resolved_path = _find_library(libpath)
+    if resolved_path in _LIB_CACHE:
+        return _LIB_CACHE[resolved_path]
+
+    try:
+        lib = ctypes.cdll.LoadLibrary(resolved_path)
+    except Exception as e:
+        raise InitializationError(
+            f"Failed to load LC3 library from {resolved_path}: {e}"
+        ) from e
+
+    if not all(
+        hasattr(lib, func)
+        for func in (
+            "lc3_hr_frame_samples",
+            "lc3_hr_frame_block_bytes",
+            "lc3_hr_resolve_bitrate",
+            "lc3_hr_delay_samples",
+        )
+    ):
+        lc3_hr_frame_samples = lambda hrmode, dt_us, sr_hz: lib.lc3_frame_samples(
+            dt_us, sr_hz
+        )
+        lc3_hr_frame_block_bytes = lambda hrmode, dt_us, sr_hz, num_channels, bitrate: (
+            num_channels * lib.lc3_frame_bytes(dt_us, bitrate // 2)
+        )
+        lc3_hr_resolve_bitrate = lambda hrmode, dt_us, sr_hz, nbytes: (
+            lib.lc3_resolve_bitrate(dt_us, nbytes)
+        )
+        lc3_hr_delay_samples = lambda hrmode, dt_us, sr_hz: lib.lc3_delay_samples(
+            dt_us, sr_hz
+        )
+        lib.lc3_hr_frame_samples = lc3_hr_frame_samples
+        lib.lc3_hr_frame_block_bytes = lc3_hr_frame_block_bytes
+        lib.lc3_hr_resolve_bitrate = lc3_hr_resolve_bitrate
+        lib.lc3_hr_delay_samples = lc3_hr_delay_samples
+        lib._has_hr = False
+    else:
+        lib.lc3_hr_frame_samples.argtypes = [c_bool, c_int, c_int]
+        lib.lc3_hr_frame_samples.restype = c_int
+        lib.lc3_hr_frame_block_bytes.argtypes = [c_bool, c_int, c_int, c_int, c_int]
+        lib.lc3_hr_frame_block_bytes.restype = c_int
+        lib.lc3_hr_resolve_bitrate.argtypes = [c_bool, c_int, c_int, c_int]
+        lib.lc3_hr_resolve_bitrate.restype = c_int
+        lib.lc3_hr_delay_samples.argtypes = [c_bool, c_int, c_int]
+        lib.lc3_hr_delay_samples.restype = c_int
+        lib._has_hr = True
+
+    if not all(
+        hasattr(lib, func) for func in ("lc3_hr_encoder_size", "lc3_hr_setup_encoder")
+    ):
+        lc3_hr_encoder_size = lambda hrmode, dt_us, sr_hz: lib.lc3_encoder_size(
+            dt_us, sr_hz
+        )
+        lc3_hr_setup_encoder = lambda hrmode, dt_us, sr_hz, sr_pcm_hz, mem: (
+            lib.lc3_setup_encoder(dt_us, sr_hz, sr_pcm_hz, mem)
+        )
+        lib.lc3_hr_encoder_size = lc3_hr_encoder_size
+        lib.lc3_hr_setup_encoder = lc3_hr_setup_encoder
+    else:
+        lib.lc3_hr_encoder_size.argtypes = [c_bool, c_int, c_int]
+        lib.lc3_hr_encoder_size.restype = c_uint
+        lib.lc3_hr_setup_encoder.argtypes = [c_bool, c_int, c_int, c_int, c_void_p]
+        lib.lc3_hr_setup_encoder.restype = c_void_p
+
+    if not all(
+        hasattr(lib, func) for func in ("lc3_hr_decoder_size", "lc3_hr_setup_decoder")
+    ):
+        lc3_hr_decoder_size = lambda hrmode, dt_us, sr_hz: lib.lc3_decoder_size(
+            dt_us, sr_hz
+        )
+        lc3_hr_setup_decoder = lambda hrmode, dt_us, sr_hz, sr_pcm_hz, mem: (
+            lib.lc3_setup_decoder(dt_us, sr_hz, sr_pcm_hz, mem)
+        )
+        lib.lc3_hr_decoder_size = lc3_hr_decoder_size
+        lib.lc3_hr_setup_decoder = lc3_hr_setup_decoder
+    else:
+        lib.lc3_hr_decoder_size.argtypes = [c_bool, c_int, c_int]
+        lib.lc3_hr_decoder_size.restype = c_uint
+        lib.lc3_hr_setup_decoder.argtypes = [c_bool, c_int, c_int, c_int, c_void_p]
+        lib.lc3_hr_setup_decoder.restype = c_void_p
+
+    lib.lc3_encode.argtypes = [
+        c_void_p,
+        c_int,
+        c_void_p,
+        c_int,
+        c_int,
+        c_void_p,
+    ]
+    lib.lc3_encode.restype = c_int
+
+    lib.lc3_decode.argtypes = [
+        c_void_p,
+        c_void_p,
+        c_int,
+        c_int,
+        c_void_p,
+        c_int,
+    ]
+    lib.lc3_decode.restype = c_int
+
+    _LIB_CACHE[resolved_path] = lib
+    return lib
+
+
+class _Base:
     def __init__(
         self,
         frame_duration_us: int,
@@ -76,68 +238,9 @@ class _Base:
         if self.sample_rate_hz not in allowed_samplerate:
             raise InvalidArgumentError(f"Invalid sample rate: {sample_rate_hz} Hz")
 
-        if libpath is None:
-            mesonpy_lib = glob.glob(
-                os.path.join(os.path.dirname(__file__), ".lc3py.mesonpy.libs", "*lc3*")
-            )
-
-            if mesonpy_lib:
-                libpath = mesonpy_lib[0]
-            else:
-                libpath = find_library("lc3")
-            if not libpath:
-                raise InitializationError("LC3 library not found")
-
-        lib = ctypes.cdll.LoadLibrary(libpath)
-
-        if not all(
-            hasattr(lib, func)
-            for func in (
-                "lc3_hr_frame_samples",
-                "lc3_hr_frame_block_bytes",
-                "lc3_hr_resolve_bitrate",
-                "lc3_hr_delay_samples",
-            )
-        ):
-            if self.hrmode:
-                raise InitializationError("High-Resolution interface not available")
-
-            lc3_hr_frame_samples = lambda hrmode, dt_us, sr_hz: lib.lc3_frame_samples(
-                dt_us, sr_hz
-            )
-            lc3_hr_frame_block_bytes = (
-                lambda hrmode, dt_us, sr_hz, num_channels, bitrate: num_channels
-                * lib.lc3_frame_bytes(dt_us, bitrate // 2)
-            )
-            lc3_hr_resolve_bitrate = (
-                lambda hrmode, dt_us, sr_hz, nbytes: lib.lc3_resolve_bitrate(
-                    dt_us, nbytes
-                )
-            )
-            lc3_hr_delay_samples = lambda hrmode, dt_us, sr_hz: lib.lc3_delay_samples(
-                dt_us, sr_hz
-            )
-            setattr(lib, "lc3_hr_frame_samples", lc3_hr_frame_samples)
-            setattr(lib, "lc3_hr_frame_block_bytes", lc3_hr_frame_block_bytes)
-            setattr(lib, "lc3_hr_resolve_bitrate", lc3_hr_resolve_bitrate)
-            setattr(lib, "lc3_hr_delay_samples", lc3_hr_delay_samples)
-
-        lib.lc3_hr_frame_samples.argtypes = [c_bool, c_int, c_int]
-        lib.lc3_hr_frame_block_bytes.argtypes = [c_bool, c_int, c_int, c_int, c_int]
-        lib.lc3_hr_resolve_bitrate.argtypes = [c_bool, c_int, c_int, c_int]
-        lib.lc3_hr_delay_samples.argtypes = [c_bool, c_int, c_int]
-        self.lib = lib
-
-        if not (libc_path := find_library("c")):
-            raise InitializationError("Unable to find libc")
-        libc = ctypes.cdll.LoadLibrary(libc_path)
-
-        self.malloc = libc.malloc
-        self.malloc.argtypes = [c_size_t]
-        self.malloc.restype = c_void_p
-
-        self.free = libc.free
-        self.free.argtypes = [c_void_p]
+        self.lib = _load_lc3_library(libpath)
+        if self.hrmode and not getattr(self.lib, "_has_hr", True):
+            raise InitializationError("High-Resolution interface not available")
 
     def get_frame_samples(self) -> int:
         """
@@ -190,9 +293,11 @@ class _Base:
         return ret
 
     @classmethod
-    def _resolve_pcm_format(cls, bit_depth: int | None) -> tuple[
+    def _resolve_pcm_format(
+        cls, bit_depth: int | None
+    ) -> tuple[
         _PcmFormat,
-        type[ctypes.c_int16] | type[ctypes.Array[ctypes.c_byte]] | type[ctypes.c_float],
+        type[ctypes.c_int16 | ctypes.Array[ctypes.c_byte] | ctypes.c_float],
     ]:
         match bit_depth:
             case 16:
@@ -224,9 +329,6 @@ class Encoder(_Base):
         libpath              : LC3 library path and name
     """
 
-    class c_encoder_t(c_void_p):
-        pass
-
     def __init__(
         self,
         frame_duration_us: int,
@@ -247,62 +349,26 @@ class Encoder(_Base):
         )
 
         lib = self.lib
+        enc_size = lib.lc3_hr_encoder_size(
+            self.hrmode, self.frame_duration_us, self.pcm_sample_rate_hz
+        )
+        if enc_size == 0:
+            raise InitializationError("Failed to determine LC3 encoder size")
 
-        if not all(
-            hasattr(lib, func)
-            for func in ("lc3_hr_encoder_size", "lc3_hr_setup_encoder")
-        ):
-            if self.hrmode:
-                raise InitializationError("High-Resolution interface not available")
-
-            lc3_hr_encoder_size = lambda hrmode, dt_us, sr_hz: lib.lc3_encoder_size(
-                dt_us, sr_hz
-            )
-
-            lc3_hr_setup_encoder = (
-                lambda hrmode, dt_us, sr_hz, sr_pcm_hz, mem: lib.lc3_setup_encoder(
-                    dt_us, sr_hz, sr_pcm_hz, mem
-                )
-            )
-            setattr(lib, "lc3_hr_encoder_size", lc3_hr_encoder_size)
-            setattr(lib, "lc3_hr_setup_encoder", lc3_hr_setup_encoder)
-
-        lib.lc3_hr_encoder_size.argtypes = [c_bool, c_int, c_int]
-        lib.lc3_hr_encoder_size.restype = c_uint
-
-        lib.lc3_hr_setup_encoder.argtypes = [c_bool, c_int, c_int, c_int, c_void_p]
-        lib.lc3_hr_setup_encoder.restype = self.c_encoder_t
-
-        lib.lc3_encode.argtypes = [
-            self.c_encoder_t,
-            c_int,
-            c_void_p,
-            c_int,
-            c_int,
-            c_void_p,
-        ]
-
-        def new_encoder():
-            return lib.lc3_hr_setup_encoder(
+        # Allocate memory buffers managed by Python GC - no libc.malloc/free needed
+        self._mem_buffers = [(c_byte * enc_size)() for _ in range(num_channels)]
+        self.__encoders = [
+            lib.lc3_hr_setup_encoder(
                 self.hrmode,
                 self.frame_duration_us,
                 self.sample_rate_hz,
                 self.pcm_sample_rate_hz,
-                self.malloc(
-                    lib.lc3_hr_encoder_size(
-                        self.hrmode, self.frame_duration_us, self.pcm_sample_rate_hz
-                    )
-                ),
+                ctypes.byref(buf),
             )
-
-        self.__encoders = [new_encoder() for _ in range(num_channels)]
-
-    def __del__(self) -> None:
-
-        try:
-            (self.free(encoder) for encoder in self.__encoders)
-        finally:
-            return
+            for buf in self._mem_buffers
+        ]
+        if any(not enc for enc in self.__encoders):
+            raise InitializationError("Failed to initialize LC3 encoder")
 
     @typing.overload
     def encode(
@@ -350,21 +416,22 @@ class Encoder(_Base):
 
         else:
             padding = max(pcm_len * ctypes.sizeof(pcm_t) - len(pcm), 0)
-            pcm_buffer = bytearray(pcm) + bytearray(padding)  # type: ignore
+            pcm_buffer = bytearray(pcm) + bytearray(padding)
 
         data_buffer = (c_byte * num_bytes)()
         data_offset = 0
 
         for ich, encoder in enumerate(self.__encoders):
-
             pcm_offset = ich * ctypes.sizeof(pcm_t)
-            pcm = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
+            pcm_slice = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
 
             data_size = num_bytes // nchannels + int(ich < num_bytes % nchannels)
             data = (c_byte * data_size).from_buffer(data_buffer, data_offset)
             data_offset += data_size
 
-            ret = self.lib.lc3_encode(encoder, pcm_fmt, pcm, nchannels, len(data), data)
+            ret = self.lib.lc3_encode(
+                encoder, pcm_fmt, pcm_slice, nchannels, len(data), data
+            )
             if ret < 0:
                 raise InvalidArgumentError("Bad parameters")
 
@@ -380,7 +447,7 @@ class Decoder(_Base):
     or 48000, unless High-Resolution mode is enabled. In High-Resolution mode,
     the `sample_rate_hz` is 48000 or 96000.
 
-    By default, one channel is processed. When `num_chanels` is greater than one,
+    By default, one channel is processed. When `num_channels` is greater than one,
     the PCM input stream is read interleaved and consecutives LC3 frames are
     output, for each channel.
 
@@ -389,9 +456,6 @@ class Decoder(_Base):
         output_sample_rate_hz : Output PCM sample_rate_hz, enable upsampling of output.
         libpath               : LC3 library path and name
     """
-
-    class c_decoder_t(c_void_p):
-        pass
 
     def __init__(
         self,
@@ -413,62 +477,26 @@ class Decoder(_Base):
         )
 
         lib = self.lib
+        dec_size = lib.lc3_hr_decoder_size(
+            self.hrmode, self.frame_duration_us, self.pcm_sample_rate_hz
+        )
+        if dec_size == 0:
+            raise InitializationError("Failed to determine LC3 decoder size")
 
-        if not all(
-            hasattr(lib, func)
-            for func in ("lc3_hr_decoder_size", "lc3_hr_setup_decoder")
-        ):
-            if self.hrmode:
-                raise InitializationError("High-Resolution interface not available")
-
-            lc3_hr_decoder_size = lambda hrmode, dt_us, sr_hz: lib.lc3_decoder_size(
-                dt_us, sr_hz
-            )
-
-            lc3_hr_setup_decoder = (
-                lambda hrmode, dt_us, sr_hz, sr_pcm_hz, mem: lib.lc3_setup_decoder(
-                    dt_us, sr_hz, sr_pcm_hz, mem
-                )
-            )
-            setattr(lib, "lc3_hr_decoder_size", lc3_hr_decoder_size)
-            setattr(lib, "lc3_hr_setup_decoder", lc3_hr_setup_decoder)
-
-        lib.lc3_hr_decoder_size.argtypes = [c_bool, c_int, c_int]
-        lib.lc3_hr_decoder_size.restype = c_uint
-
-        lib.lc3_hr_setup_decoder.argtypes = [c_bool, c_int, c_int, c_int, c_void_p]
-        lib.lc3_hr_setup_decoder.restype = self.c_decoder_t
-
-        lib.lc3_decode.argtypes = [
-            self.c_decoder_t,
-            c_void_p,
-            c_int,
-            c_int,
-            c_void_p,
-            c_int,
-        ]
-
-        def new_decoder():
-            return lib.lc3_hr_setup_decoder(
+        # Allocate memory buffers managed by Python GC - no libc.malloc/free needed
+        self._mem_buffers = [(c_byte * dec_size)() for _ in range(num_channels)]
+        self.__decoders = [
+            lib.lc3_hr_setup_decoder(
                 self.hrmode,
                 self.frame_duration_us,
                 self.sample_rate_hz,
                 self.pcm_sample_rate_hz,
-                self.malloc(
-                    lib.lc3_hr_decoder_size(
-                        self.hrmode, self.frame_duration_us, self.pcm_sample_rate_hz
-                    )
-                ),
+                ctypes.byref(buf),
             )
-
-        self.__decoders = [new_decoder() for i in range(num_channels)]
-
-    def __del__(self) -> None:
-
-        try:
-            (self.free(decoder) for decoder in self.__decoders)
-        finally:
-            return
+            for buf in self._mem_buffers
+        ]
+        if any(not dec for dec in self.__decoders):
+            raise InitializationError("Failed to initialize LC3 decoder")
 
     @typing.overload
     def decode(
@@ -476,7 +504,9 @@ class Decoder(_Base):
     ) -> array.array[float]: ...
 
     @typing.overload
-    def decode(self, data: bytes | bytearray | memoryview | None, bit_depth: int) -> bytes: ...
+    def decode(
+        self, data: bytes | bytearray | memoryview | None, bit_depth: int
+    ) -> bytes: ...
 
     def decode(
         self, data: bytes | bytearray | memoryview | None, bit_depth: int | None = None
@@ -508,11 +538,11 @@ class Decoder(_Base):
 
         for ich, decoder in enumerate(self.__decoders):
             pcm_offset = ich * ctypes.sizeof(pcm_t)
-            pcm = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
+            pcm_slice = (pcm_t * (pcm_len - ich)).from_buffer(pcm_buffer, pcm_offset)
 
             if data is None:
                 ret = self.lib.lc3_decode(
-                    decoder, None, 0, pcm_fmt, pcm, self.num_channels
+                    decoder, None, 0, pcm_fmt, pcm_slice, self.num_channels
                 )
             else:
                 data_size = len(data_buffer) // num_channels + int(
@@ -521,7 +551,7 @@ class Decoder(_Base):
                 buf = (c_byte * data_size).from_buffer(data_buffer, data_offset)
                 data_offset += data_size
                 ret = self.lib.lc3_decode(
-                    decoder, buf, len(buf), pcm_fmt, pcm, self.num_channels
+                    decoder, buf, len(buf), pcm_fmt, pcm_slice, self.num_channels
                 )
 
             if ret < 0:
