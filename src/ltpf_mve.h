@@ -46,6 +46,13 @@
  * return          round( sum( a[i] * b[i] ) / 64 ), as float
  *
  * The size `n` of vectors is a multiple of 16 (so also of 8).
+ *
+ * The intrinsic is used instead of relying on the compiler's
+ * auto-vectorizer: at normal optimization levels for an MVE target,
+ * e.g. -O3 -march=armv8.1-m.main+dsp+mve.fp+fp.dp, gcc does not
+ * vectorize the scalar loop, while clang vectorizes it only at
+ * width 4. The intrinsic guarantees the 8-lane vmlaldavaq_s16 form,
+ * same as the NEON and Arm backends.
  */
 #ifndef dot
 
