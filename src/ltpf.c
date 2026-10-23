@@ -19,6 +19,7 @@
 #include "ltpf.h"
 #include "tables.h"
 
+#include "ltpf_mve.h"
 #include "ltpf_neon.h"
 #include "ltpf_arm.h"
 

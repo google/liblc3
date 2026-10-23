@@ -26,5 +26,6 @@ test-clean:
 
 -include $(TEST_DIR)/arm/makefile.mk
 -include $(TEST_DIR)/neon/makefile.mk
+-include $(TEST_DIR)/mve/makefile.mk
 
 clean-all: test-clean
