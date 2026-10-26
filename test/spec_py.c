@@ -88,7 +88,9 @@ static PyObject *quantize_py(PyObject *m, PyObject *args)
 
     CTYPES_CHECK("x", x_obj = to_1d_ptr(x_obj, NPY_FLOAT, ne, &x));
 
-    quantize(dt, sr, g_int, x, &nq);
+    int32_t xq[LC3_MAX_NE];
+
+    quantize(dt, sr, g_int, x, xq, &nq);
 
     return Py_BuildValue("Oi", x_obj, nq);
 }
@@ -113,8 +115,19 @@ static PyObject *compute_nbits_py(PyObject *m, PyObject *args)
 
     bool lsb_mode;
 
-    int nbits = compute_nbits(
-        dt, sr, nbytes, x, &nq, nbits_budget, &lsb_mode);
+    /* `compute_nbits()` now takes the quantized spectrum, which the
+     * encoder derives in `quantize()`. Rebuild it here, to keep the
+     * Python side interface on floating point values. */
+
+    int32_t xq[LC3_MAX_NE];
+    const float xq_off = lc3_hr(sr) ? 0.5f : 6.f/16;
+
+    for (int i = 0; i < ne; i++) {
+        const int32_t a = (int32_t)(fabsf(x[i]) + xq_off);
+        xq[i] = x[i] < 0 ? -a : a;
+    }
+
+    const int nbits = compute_nbits(dt, sr, nbytes, xq, &nq, nbits_budget, &lsb_mode);
 
     return Py_BuildValue("iii", nbits, nq, lsb_mode);
 }
