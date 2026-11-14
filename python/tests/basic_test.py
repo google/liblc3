@@ -295,6 +295,31 @@ def test_silence_roundtrip(bit_depth: int | None) -> None:
         assert rms < 1e-4, f"Expected silence, but got RMS {rms:.6f}"
 
 
+@pytest.mark.parametrize("num_channels", [1, 2])
+@pytest.mark.parametrize("bit_depth", [None, 16, 24])
+def test_encode_pads_short_input(num_channels: int, bit_depth: int | None) -> None:
+    """Verifies that PCM input shorter than a frame is padded with zeros."""
+    spf = lc3.Encoder(
+        frame_duration_us=10000, sample_rate_hz=48000, num_channels=num_channels
+    ).get_frame_samples()
+    pcm_len = num_channels * spf
+
+    short = _generate_sine(pcm_len // 3, 48000, freq_hz=440.0)
+    padded = short + [0.0] * (pcm_len - len(short))
+
+    encoded = []
+    for samples in (short, padded):
+        encoder = lc3.Encoder(
+            frame_duration_us=10000, sample_rate_hz=48000, num_channels=num_channels
+        )
+        pcm_in = _floats_to_pcm(samples, bit_depth)
+        encoded.append(
+            encoder.encode(pcm_in, num_bytes=120 * num_channels, bit_depth=bit_depth)
+        )
+
+    assert encoded[0] == encoded[1]
+
+
 @pytest.mark.parametrize("bit_depth", [None, 16, 24])
 def test_packet_loss_concealment(bit_depth: int | None) -> None:
     """Verifies PLC generates smooth concealed frames when packet loss occurs."""

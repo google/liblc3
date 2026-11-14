@@ -411,7 +411,7 @@ class Encoder(_Base):
             if not abs(sum(pcm_buffer)) / frame_samples < 2:
                 raise InvalidArgumentError("Out of range PCM input")
 
-            padding = max(pcm_len - frame_samples, 0)
+            padding = max(pcm_len - len(pcm_buffer), 0)
             pcm_buffer.extend(array.array("f", [0] * padding))
 
         else:
