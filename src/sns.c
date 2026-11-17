@@ -19,6 +19,13 @@
 #include "sns.h"
 #include "tables.h"
 
+/*
+ * GCC 14 with loop vectorization generates out-of-range literal pool offsets
+ * for vldr instructions in sns.c on Arm MVE (Cortex-M55).
+ */
+#if defined(__GNUC__) && !defined(__clang__) && (__ARM_FEATURE_MVE & 1)
+#pragma GCC optimize("no-tree-vectorize")
+#endif
 
 /* ----------------------------------------------------------------------------
  *  DCT-16
